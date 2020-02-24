@@ -245,17 +245,9 @@ def export_transport_mode(current_vid, path):
     slopeData = get_slopes(current_vid.log_msd)
     b = slopeData[1].mean()
 
-    data_sheet.merge_range(1, columns+2,
-                           1, columns+5,
-                           'Guides', header_format)
-
-    data_sheet.merge_range(2, columns+2,
-                           3, columns+2,
-                           'x', header_format)
-
-    data_sheet.merge_range(2, columns+3,
-                           2, columns+5,
-                           'y', header_format)
+    data_sheet.merge_range(1, columns+2, 1, columns+5, 'Guides', header_format)
+    data_sheet.merge_range(2, columns+2, 3, columns+2, 'x', header_format)
+    data_sheet.merge_range(2, columns+3, 2, columns+5, 'y', header_format)
 
     data_sheet.write(3, columns+3, 'm=0.9', header_format)
     data_sheet.write(3, columns+4, 'm=1', header_format)
@@ -264,21 +256,23 @@ def export_transport_mode(current_vid, path):
     col = columns + 2
     line = 4
     ref_cell = f'INDIRECT(ADDRESS({line+1}, {col+1}))'
-
-    data_sheet.write(line, col, '=-2', num_format)
+    data_sheet.write(
+        line, col, '=-2', num_format)
     data_sheet.write_formula(
         line, col+1, f'=0.9*{ref_cell}-0.2+{b}', num_format)
-    data_sheet.write_formula(line, col+2, f'={ref_cell}+{b}', num_format)
+    data_sheet.write_formula(
+        line, col+2, f'={ref_cell}+{b}', num_format)
     data_sheet.write_formula(
         line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
 
     line += 1
     ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
-
-    data_sheet.write(line, col, '=-2', num_format)
+    data_sheet.write(
+        line, col, '=-2', num_format)
     data_sheet.write_formula(
         line, col+1, f'=0.9*{ref_cell}-0.2+{b}', num_format)
-    data_sheet.write_formula(line, col+2, f'={ref_cell}+{b}', num_format)
+    data_sheet.write_formula(
+        line, col+2, f'={ref_cell}+{b}', num_format)
     data_sheet.write_formula(
         line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
     # ----------------------------
