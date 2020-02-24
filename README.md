@@ -4,10 +4,11 @@ The Multiple Particle Tracking Analysis app to help on the analysis of data from
 
 There are 3 main sources for analysis:
 
--   Multiple particle tracking report file in .csv format generated from an ImageJ plugin (Mosaic);
--   Multiple particle tracking report file in .txt format generated from an ImageJ plugin (Mosaic) **\***;
--   Video file in .avi format (needs microscope data);
--   Video file in .lif format (containing microscope data in its metadata).
+1. Multiple particle tracking report generated from an ImageJ plugin (Mosaic)
+   - file in .csv format;
+   - file in .txt format **\***;
+2. Video file in .avi format (needs microscope data);
+3. Video file in .lif format (containing microscope data in its metadata).
 
 _**\* This .txt file format must be avoided as it is not well formated for analysis.**_
 
