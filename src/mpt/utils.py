@@ -155,23 +155,10 @@ def make_chart_LOG(workbook: xls.book, data: pd.DataFrame, start_row: int):
 
 def get_diffusivity_ranges(CFG_PATH):
     return pd.read_json(os.path.join(CFG_PATH, "cfg-diffusivity.json"))
-    # if ref == 0:
-    #     return get_config('transport_mode', 'immobile_range')
-    # elif ref == 1:
-    #     return get_config('transport_mode', 'sub-diffusive_range')
-    # elif ref == 2:
-    #     return get_config('transport_mode', 'diffusive_range')
-
-    # return get_config('transport_mode', 'active_range')
 
 
-# def export_individual_particle_analysis(analysis, video_index):
 def export_individual_particle_analysis(current_vid, path):
-    # Individual Particle Analysis ------
     print("Exporting 'Individual Particle Analysis' report...")
-    # current_vid = analysis.videos[video_index]
-    # file_name = os.path.join(analysis.out_path,
-    #                          current_vid.name + " - Individual Particle Analysis.xlsx")
     file_name = os.path.join(path,
                              current_vid.name + " - Individual Particle Analysis.xlsx")
 
@@ -217,17 +204,13 @@ def export_individual_particle_analysis(current_vid, path):
     writer.save()
 
 
-# def export_transport_mode(analysis, video_index):
 def export_transport_mode(current_vid, path):
     print("Export transport mode sheet")
-    # current_vid = analysis.videos[video_index]
     current_vid.log_msd = np.log10(current_vid.msd.reset_index())
     current_vid.log_msd.name = current_vid.msd.name
 
     columns = current_vid.msd.shape[1]
 
-    # file_name = os.path.join(analysis.out_path,
-    #                          current_vid.name + " - Transport Mode Characterization.xlsx")
     file_name = os.path.join(path,
                              current_vid.name + " - Transport Mode Characterization.xlsx")
 
@@ -259,7 +242,6 @@ def export_transport_mode(current_vid, path):
                            msd_title, header_format)
 
     # Add guide series data
-
     slopeData = get_slopes(current_vid.log_msd)
     b = slopeData[1].mean()
 

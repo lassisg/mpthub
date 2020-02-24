@@ -81,7 +81,6 @@ class MPT():
                 mpt_utils.export_transport_mode(video, self.out_path)
 
     def get_full_MSD(self, new_msd):
-        # msd_full = pd.concat([msd_full, msd], axis=1, sort=False)
         self.msd = pd.concat([self.msd, new_msd],
                              axis=1,
                              ignore_index=True,
