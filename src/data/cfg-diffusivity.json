@@ -1,0 +1,6 @@
+{
+    "immobile": { "low": 0, "high": 0.2 },
+    "sub_diffusive": { "low": 0.2, "high": 0.9 },
+    "diffusive": { "low": 0.9, "high": 1.1 },
+    "active": { "low": 1.1, "high": null }
+}
