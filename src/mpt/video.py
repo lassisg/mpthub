@@ -36,7 +36,7 @@ class Video():
         self.m_mass = None
         self.m_size = None
         self.m_ecc = None
-        self.filter = 560
+        self.filter = 590
         self.time_lag = 0.0
         self.features = pd.DataFrame()  # particles
         self.trajectories = pd.DataFrame()
@@ -149,37 +149,95 @@ class Video():
 
     def read_txt_data(self) -> None:
         print("txt file selected")
-        # f = open(self.full_path)
-        # f_list = list(f)
-        # first_trajectory_row = f_list.index('%% Trajectory 1\n')
-        # f.close()
+        data = import_txt()
+        data = clean_data(data)
+        data = correct_separator(data)
+        data = remove_index(data)
+        # data['particle'] = 0
+        data = add_label(data)
+        data_list = split_trajectories(data)
+        data_list = add_trajectory_nr(data_list)
+        data_list = get_valid_trajectories(data_list)
+        for data in data_list:
+            data = to_numeric(data)
 
-        # rows_to_skip = first_trajectory_row + 1
+        full_data = pd.concat(data_list)
 
-        # data = pd.read_csv(
-        #     self.full_path,
-        #     skiprows=rows_to_skip,
-        #     delim_whitespace=True,
-        #     usecols=[1, 2],
-        #     names=["x", "y"],
-        #     decimal=",",
-        # )
+    def to_numeric(data):
+        data["particle"] = pd.to_numeric(data["particle"])
+        data["frame"] = pd.to_numeric(data["frame"])
+        data["x"] = pd.to_numeric(data["x"])
+        data["y"] = pd.to_numeric(data["y"])
+        return data
 
-        new_series = Series()
+    def get_valid_trajectories(self, data):
+        result = []
+        for trajectory in data:
+            if len(trajectory) >= 590:
+                result.append(trajectory)
 
-        new_series.name = self.name
-        new_series.frames = None
-        new_series.width_px = None
-        new_series.height_px = None
-        new_series.width_SI = None
-        new_series.height_SI = None
-        new_series.fps = None
-        new_series.time_lag = None
+        return result
 
-        self.series.append(new_series)
+    def add_trajectory_nr(self, data):
+        if len(data) > 0:
+            data.reset_index(drop=True, inplace=True)
+            data.insert(loc=0, column='particle', value=data.at[0, 'y'])
+            # data['particle'] = data.at[0,'y']
+            data.drop([0], inplace=True)
 
-        # del new_series, txt_file
-        del new_series
+        return data
+
+    def split_trajectories(self, data):
+        result = []
+        last_index = 0
+        for ind, row in data.iterrows():
+            if data.loc[ind, "x"] == 0 and ind > 0:
+                index = ind
+                result.append(data.iloc[last_index:index])
+                last_index = ind
+
+        result.append(data.iloc[last_index:index])
+
+        return result
+
+    def remove_index(self, data):
+        data.reset_index(drop=True, inplace=True)
+        return data
+
+    def correct_separator(self, data):
+        data.replace(to_replace=",", value=".",
+                     regex=True, inplace=True)
+        return data
+
+    def clean_data(self, data):
+        data.loc[:, "x"].replace(
+            to_replace="Trajectory", value="0", regex=True, inplace=True
+        )
+
+        # Delete rows that have the value 'frame'
+        indexNames = data[data['x'] == 'frame'].index
+        data.drop(indexNames, inplace=True)
+
+        return data
+
+    def import_txt(self) -> pd.DataFrame:
+
+        f = open(self.full_path)
+        f_list = list(f)
+        first_trajectory_row = f_list.index('%% Trajectory 1\n')
+        f.close()
+
+        rows_to_skip = first_trajectory_row + 1
+
+        data = pd.read_csv(
+            self.full_path,
+            skiprows=rows_to_skip,
+            delim_whitespace=True,
+            usecols=[0, 1, 2],
+            names=["frame", "x", "y"],
+            # decimal=",",
+        )
+        return data
 
     def read_csv_data(self) -> None:
         print("csv file selected")
@@ -228,13 +286,11 @@ class Video():
             self.frames[:], self.f_size, minmass=self.m_mass)
         # ============================ Link features into particle trajectories
         print("Linking particles into trajectories...")
-        all_trajectories = tp.link(
-            self.features, self.f_size, memory=0)
+        all_trajectories = tp.link(self.features, self.f_size, memory=0)
 
         # ============================ Filter spurious trajectories
         print("Filtering trajectories...")
-        self.trajectories = tp.filter_stubs(
-            all_trajectories, self.filter)
+        self.trajectories = tp.filter_stubs(all_trajectories, self.filter)
 
         # Compare the number of particles in the unfiltered and filtered data.
         print(f"Before: {all_trajectories['particle'].nunique()}")
@@ -300,13 +356,14 @@ class Video():
         ax.set_xscale('log')
         ax.set_yscale('log')
         ax.set(ylabel=f'MSD {chr(956)}m{chr(178)}',
-               xlabel='Timescale ($\tau$) [$s$]')
+               xlabel='Timescale ($\\tau$) [$s$]')
 
         plt.figure()
         plt.title('Ensemble Data - <MSD> vs. Time Scale')
         plt.ylabel(f'MSD {chr(956)}m{chr(178)}')
-        plt.xlabel('Timescale ($\tau$) [$s$]')
+        plt.xlabel('Timescale ($\\tau$) [$s$]')
         tp.utils.fit_powerlaw(self.msd['mean'])
+        # print(f"n: {n}, A: {A}")
 
     def get_Deff(self):
         self.deff = self.msd.div((4*self.msd.index), axis=0)
