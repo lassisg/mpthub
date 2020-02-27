@@ -149,21 +149,20 @@ class Video():
 
     def read_txt_data(self) -> None:
         print("txt file selected")
-        data = import_txt()
-        data = clean_data(data)
-        data = correct_separator(data)
-        data = remove_index(data)
+        raw_data = self.import_txt()
+        raw_data = self.clean_data(raw_data)
+        raw_data = self.correct_separator(raw_data)
+        raw_data = self.remove_index(raw_data)
         # data['particle'] = 0
-        data = add_label(data)
-        data_list = split_trajectories(data)
-        data_list = add_trajectory_nr(data_list)
-        data_list = get_valid_trajectories(data_list)
+        data_list = self.split_trajectories(raw_data)
+        data_list = self.add_trajectory_nr(data_list)
+        data_list = self.get_valid_trajectories(data_list)
         for data in data_list:
-            data = to_numeric(data)
+            data = self.to_numeric(data)
 
-        full_data = pd.concat(data_list)
+        self.trajectories = pd.concat(data_list)
 
-    def to_numeric(data):
+    def to_numeric(self, data):
         data["particle"] = pd.to_numeric(data["particle"])
         data["frame"] = pd.to_numeric(data["frame"])
         data["x"] = pd.to_numeric(data["x"])
