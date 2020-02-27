@@ -268,7 +268,7 @@ def export_transport_mode(current_vid, path):
     line += 1
     ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
     data_sheet.write(
-        line, col, '=-2', num_format)
+        line, col, '=2', num_format)
     data_sheet.write_formula(
         line, col+1, f'=0.9*{ref_cell}-0.2+{b}', num_format)
     data_sheet.write_formula(
