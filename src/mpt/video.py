@@ -155,12 +155,14 @@ class Video():
         raw_data = self.remove_index(raw_data)
         # data['particle'] = 0
         data_list = self.split_trajectories(raw_data)
-        data_list = self.add_trajectory_nr(data_list)
+        for data in data_list:
+            data = self.add_trajectory_nr(data)
         data_list = self.get_valid_trajectories(data_list)
         for data in data_list:
             data = self.to_numeric(data)
 
         self.trajectories = pd.concat(data_list)
+        print(self.trajectories.head())
 
     def to_numeric(self, data):
         data["particle"] = pd.to_numeric(data["particle"])
@@ -189,8 +191,8 @@ class Video():
     def split_trajectories(self, data):
         result = []
         last_index = 0
-        for ind, row in data.iterrows():
-            if data.loc[ind, "x"] == 0 and ind > 0:
+        for ind, column in data.iterrows():
+            if data.loc[ind, "x"] == 0:
                 index = ind
                 result.append(data.iloc[last_index:index])
                 last_index = ind
@@ -210,7 +212,7 @@ class Video():
 
     def clean_data(self, data):
         data.loc[:, "x"].replace(
-            to_replace="Trajectory", value="0", regex=True, inplace=True
+            to_replace="Trajectory", value=0, regex=True, inplace=True
         )
 
         # Delete rows that have the value 'frame'
