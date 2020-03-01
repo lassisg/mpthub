@@ -7,6 +7,7 @@ import os
 import trackpy as tp
 import pandas as pd
 import math
+import wx
 import matplotlib
 from matplotlib import pyplot as plt
 matplotlib.use('WXAgg')
@@ -25,14 +26,32 @@ class MPT():
         self.emsd = pd.Series()
 
     def add_file(self) -> None:
-        root = tk.Tk()
-        root.withdraw()
+        # root = tk.Tk()
+        # root.withdraw()
 
-        file_list = filedialog.askopenfilenames()
+        # file_list = filedialog.askopenfilenames()
 
-        if not file_list:
+        # if not file_list:
+        #     print("No file selected...")
+        #     return None
+
+        # -----------------------------
+        app = wx.App()
+        # Create open file dialog
+        file_dialog = wx.FileDialog(None, "Open", "", "",
+                                    "ImageJ trajectory report (*.csv)|*.csv|\
+                                   ImageJ full report (*.txt)|*.txt|\
+                                   TIF image file (*.tif)|*.tif",
+                                    wx.FD_OPEN | wx.FD_MULTIPLE)
+
+        if file_dialog.ShowModal() == wx.ID_CANCEL:
             print("No file selected...")
+            file_dialog.Destroy()
             return None
+
+        file_list = file_dialog.GetPaths()
+        file_dialog.Destroy()
+        # -----------------------------
 
         for file in file_list:
             new_item = MPT_File()
