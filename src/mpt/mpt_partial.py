@@ -14,7 +14,7 @@ from math import ceil
 matplotlib.use('WXAgg')
 
 
-class MPT_File():
+class MPT_Partial():
     def __init__(self) -> None:
         self.config_path = None
         self.full_path = None
@@ -33,6 +33,11 @@ class MPT_File():
         self.filter = ceil(self.frames * .975)
         self.mpp = self.width_SI/self.width_px
         self.time_lag = 1 / self.fps
+
+        self.trajectories = pd.DataFrame()
+        self.msd = pd.DataFrame()
+        self.deff = pd.DataFrame()
+        self.emsd = pd.Series()
 
         # self.m_mass = None
         # self.m_size = None
@@ -99,6 +104,7 @@ class MPT_File():
 
         # ============================ Locate features in all frames
         print(f"\nLocating particles in all frames...")
+        tp.quiet()
         features = tp.batch(frames[:], self.f_size, minmass=self.m_mass)
         # processes="auto")
 
@@ -194,6 +200,91 @@ class MPT_File():
         self.time_lag = 1 / self.fps
 
         del tif_file
+
+    def filter_trajectories(self) -> None:
+        # ============================ Filter spurious trajectories
+        print("Filtering trajectories...")
+        previous = self.trajectories['particle'].nunique()
+
+        self.trajectories = tp.filter_stubs(
+            self.trajectories, self.filter)
+
+        # Compare the number of particles in the unfiltered and filtered data.
+        print(f"Before: {previous}")
+        print(f"After: \t{self.trajectories['particle'].nunique()}")
+
+    def refine_trajectories(self) -> None:
+        # # Convenience function -- just plots size vs. mass
+        # tp.mass_size(self.trajectories.groupby('particle').mean())
+
+        # # mass: brightness of the particle
+        # # size: diameter of the particle
+        # # ecc: eccentricity of the particle (0 = circular)
+        # t2 = self.trajectories[(
+        #     (self.trajectories['mass'] > self.m_mass) &
+        #     (self.trajectories['size'] < self.m_size) &
+        #     (self.trajectories['ecc'] < self.m_ecc))]
+
+        # tp.annotate(t2[t2['frame'] == 0], self.frames[0])
+
+        # ax = tp.plot_traj(t2)
+        # plt.show()
+
+        # ============================== Remove overall drift
+        print("Removing drift...")
+        drift = tp.compute_drift(self.trajectories)
+        # drift.plot()
+        # plt.show()
+
+        self.trajectories = tp.subtract_drift(self.trajectories.copy(), drift)
+        # ax = tp.plot_traj(self.trajectories)
+        # plt.show()
+
+    def analyze_trajectories(self) -> None:
+        # ============================== Analyze trajectories
+        print("Analyzing trajectories...")
+        fps = self.file_list[0].fps
+        mpp = self.file_list[0].mpp
+        mlt = math.ceil(fps*10)  # Time to use (10s, 1s, 0.1s)
+
+        # ============================== Mean Squared Displacement
+        self.msd = tp.imsd(self.trajectories, mpp, fps, mlt)
+
+        # fig, ax = plt.subplots()
+        # # black lines, semitransparent
+        # ax.plot(self.msd.index, self.msd, 'k-', alpha=0.1)
+        # ax.set(ylabel=r'MSD [$\mu$m$^2$]', xlabel='Timescale ($\\tau$) [$s$]')
+        # ax.set_xscale('log')
+        # ax.set_yscale('log')
+
+        self.msd.name = "MSD"
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+
+        # ============================== Ensemble Mean Squared Displacement
+        # Best option ?
+        self.emsd = tp.emsd(self.trajectories, mpp, fps, mlt)
+        self.msd['mean2'] = self.emsd.values
+
+        # fig, ax = plt.subplots()
+        # ax.plot(self.msd['mean'].index, self.msd['mean'], 'o')
+        # ax.set_xscale('log')
+        # ax.set_yscale('log')
+        # ax.set(ylabel=f'MSD {chr(956)}m{chr(178)}',
+        #        xlabel='Timescale ($\\tau$) [$s$]')
+
+        # plt.figure()
+        # plt.title('Ensemble Data - <MSD> vs. Time Scale')
+        # plt.ylabel(f'MSD {chr(956)}m{chr(178)}')
+        # plt.xlabel('Timescale ($\\tau$) [$s$]')
+        # tp.utils.fit_powerlaw(self.msd['mean'])
+        # print(f"n: {n}, A: {A}")
+
+        # ============================== Diffusivity coeficient
+        self.deff = self.msd.div((4*self.msd.index), axis=0)
+        self.deff.name = "Deff"
+
+        self.msd = mpt_utils.rename_columns(self.msd)
+        self.deff = mpt_utils.rename_columns(self.deff)
 
     # def get_avi_metadata(self) -> None:
     #     # print("avi file selected")
