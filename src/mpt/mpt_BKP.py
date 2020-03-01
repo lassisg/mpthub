@@ -108,7 +108,6 @@ def compute_msd(data_list):
     return msd
 
 
-# TODO: Improve MSD calculation (TrackPy!)
 def calc_msd(trajectory):
     shifts = trajectory["t"].index.values + 1
     msdp = np.zeros(shifts.size)
