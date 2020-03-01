@@ -1,4 +1,4 @@
-from mpt.mpt import MPT
+from mpt.mpt import MPT_Full
 import os
 import timeit
 
@@ -9,7 +9,7 @@ CFG_PATH = os.path.join(os.path.dirname(
 
 def execute_all():
     # TODO: Code below must go to GUI
-    analysis = MPT(CFG_PATH)
+    analysis = MPT_Full(CFG_PATH)
     analysis.add_file()
     # analysis.to_string()
     if analysis.file_list:
