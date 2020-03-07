@@ -15,13 +15,13 @@ def rename_columns(data: pd.DataFrame) -> pd.DataFrame:
     return data
 
 
-def get_slopes(dataIn: pd.DataFrame):
+def get_slopes(dataIn: pd.DataFrame) -> pd.Series:
     return pd.Series([np.polyfit(dataIn[dataIn.columns[0]],
                                  np.asarray(dataIn[column]), 1)[0]
                       for column in dataIn.columns[1:-1]])
 
 
-def make_chart(workbook: xls.book, data: pd.DataFrame, start_row: int):
+def make_chart(workbook: xls.book, data: pd.DataFrame, start_row: int) -> None:
     #       (workbook: xls.book, data: df, data_name: str, startrow: int):
 
     # Create a chart object.
@@ -67,7 +67,9 @@ def make_chart(workbook: xls.book, data: pd.DataFrame, start_row: int):
     time_chart.set_chart(chart)
 
 
-def make_chart_LOG(workbook: xls.book, data: pd.DataFrame, start_row: int):
+def make_chart_LOG(workbook: xls.book,
+                   data: pd.DataFrame,
+                   start_row: int) -> None:
     """Creates a log-log plot from given data.
 
     Arguments:
@@ -153,11 +155,11 @@ def make_chart_LOG(workbook: xls.book, data: pd.DataFrame, start_row: int):
     time_chart.set_chart(chart)
 
 
-def get_diffusivity_ranges(CFG_PATH):
+def get_diffusivity_ranges(CFG_PATH: str) -> pd.DataFrame:
     return pd.read_json(os.path.join(CFG_PATH, "cfg-diffusivity.json"))
 
 
-def export_individual_particle_analysis(current_vid, path):
+def export_individual_particle_analysis(current_vid, path: str) -> None:
     print("Exporting 'Individual Particle Analysis' report...")
     file_name = os.path.join(path,
                              current_vid.name + " - Individual Particle Analysis.xlsx")
@@ -204,7 +206,7 @@ def export_individual_particle_analysis(current_vid, path):
     writer.save()
 
 
-def export_transport_mode(current_vid, path):
+def export_transport_mode(current_vid, path: str) -> None:
     print("Export transport mode sheet")
     current_vid.log_msd = np.log10(current_vid.msd.reset_index())
     current_vid.log_msd.name = current_vid.msd.name

@@ -18,7 +18,7 @@ from math import ceil
 import wx
 import matplotlib
 from matplotlib import pyplot as plt
-matplotlib.use('WXAgg')
+# matplotlib.use('WXAgg')
 
 
 class MPT_Full():
@@ -46,9 +46,9 @@ class MPT_Full():
         # -----------------------------
         app = wx.App()
         # Create open file dialog
-        allowed_files = "ImageJ trajectory report (*.csv)|*.csv"
+        allowed_files = "TIF image file (*.tif)|*.tif"
+        allowed_files += "|ImageJ trajectory report (*.csv)|*.csv"
         allowed_files += "|ImageJ full report (*.txt)|*.txt"
-        allowed_files += "|TIF image file (*.tif)|*.tif"
         file_dialog = wx.FileDialog(None, "Open", "", "", allowed_files,
                                     wx.FD_OPEN | wx.FD_MULTIPLE)
 
@@ -182,7 +182,7 @@ class MPT_Partial():
         )
         return data
 
-    def from_csv(self) -> pd.DataFrame:
+    def from_csv(self, is_msd: False) -> pd.DataFrame:
         data = pd.read_csv(
             self.full_path,
             skiprows=1,
@@ -219,7 +219,7 @@ class MPT_Partial():
 
         # ============================ Locate features in all frames
         print(f"\nLocating particles in all frames...")
-        tp.quiet()
+        # tp.quiet()
         features = tp.batch(frames[:], self.f_size, minmass=self.m_mass)
         # processes="auto")
 
@@ -358,40 +358,40 @@ class MPT_Partial():
     def analyze_trajectories(self) -> None:
         # ============================== Analyze trajectories
         print("Analyzing trajectories...")
-        fps = self.file_list[0].fps
-        mpp = self.file_list[0].mpp
-        mlt = math.ceil(fps*10)  # Time to use (10s, 1s, 0.1s)
+        # fps = self.fps
+        # mpp = self.mpp
+        mlt = math.ceil(self.fps*10)  # Time to use (10s, 1s, 0.1s)
 
         # ============================== Mean Squared Displacement
-        self.msd = tp.imsd(self.trajectories, mpp, fps, mlt)
+        self.msd = tp.imsd(self.trajectories, self.mpp, self.fps, mlt)
 
-        # fig, ax = plt.subplots()
-        # # black lines, semitransparent
-        # ax.plot(self.msd.index, self.msd, 'k-', alpha=0.1)
-        # ax.set(ylabel=r'MSD [$\mu$m$^2$]', xlabel='Timescale ($\\tau$) [$s$]')
-        # ax.set_xscale('log')
-        # ax.set_yscale('log')
+        fig, ax = plt.subplots()
+        # black lines, semitransparent
+        ax.plot(self.msd.index, self.msd, 'k-', alpha=0.1)
+        ax.set(ylabel=r'MSD [$\mu$m$^2$]', xlabel='Timescale ($\\tau$) [$s$]')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
 
         self.msd.name = "MSD"
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
 
         # ============================== Ensemble Mean Squared Displacement
         # Best option ?
-        self.emsd = tp.emsd(self.trajectories, mpp, fps, mlt)
+        self.emsd = tp.emsd(self.trajectories, self.mpp, self.fps, mlt)
         self.msd['mean2'] = self.emsd.values
 
-        # fig, ax = plt.subplots()
-        # ax.plot(self.msd['mean'].index, self.msd['mean'], 'o')
-        # ax.set_xscale('log')
-        # ax.set_yscale('log')
-        # ax.set(ylabel=f'MSD {chr(956)}m{chr(178)}',
-        #        xlabel='Timescale ($\\tau$) [$s$]')
+        fig, ax = plt.subplots()
+        ax.plot(self.emsd.index, self.emsd, 'o')
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set(ylabel=f'MSD {chr(956)}m{chr(178)}',
+               xlabel='Timescale ($\\tau$) [$s$]')
 
-        # plt.figure()
-        # plt.title('Ensemble Data - <MSD> vs. Time Scale')
-        # plt.ylabel(f'MSD {chr(956)}m{chr(178)}')
-        # plt.xlabel('Timescale ($\\tau$) [$s$]')
-        # tp.utils.fit_powerlaw(self.msd['mean'])
+        plt.figure()
+        plt.title('Ensemble Data - <MSD> vs. Time Scale')
+        plt.ylabel(f'MSD {chr(956)}m{chr(178)}')
+        plt.xlabel('Timescale ($\\tau$) [$s$]')
+        tp.utils.fit_powerlaw(self.emsd)
         # print(f"n: {n}, A: {A}")
 
         # ============================== Diffusivity coeficient
