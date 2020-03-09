@@ -79,6 +79,7 @@ class MPT:
         self.pixel_size = 0.0       # TODO: Calculate from config
         self.msd = pd.DataFrame()
         self.deff = pd.DataFrame()
+        self.msd_log = pd.DataFrame()
         self.trajectories_list = []
 
     def load_config(self) -> None:
@@ -117,6 +118,26 @@ class MPT:
 
                 del new_report
 
+    def rename_columns(self, name: str) -> pd.DataFrame:
+
+        if name == self.msd.name:
+            data = self.msd
+        elif name == self.msd_log.name:
+            data = self.msd
+        else:
+            data = self.deff
+
+        name = data.name.split('-')[0]
+        unit = f"{chr(956)}m{chr(178)}"
+
+        columns_names = pd.Series(range(1, len(data.columns)+1))-1
+        columns_names = [f'{name} {x+1} ({unit})' for x in columns_names]
+        columns_names[len(columns_names) - 1] = f'<{name}> ({unit})'
+
+        data.columns = columns_names
+
+        return data
+
     def compute_msd(self) -> None:
         time_step = 1 / self.fps
         max_time = self.total_frames / self.fps
@@ -151,17 +172,21 @@ class MPT:
         self.msd.name = "MSD"
         self.msd.set_index('tau', inplace=True)
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
-
-        # deff = calc_deff(msd.copy())
-        # msd_log = np.log10(self.msd)
-        # msd_log['mean'] = msd_log.iloc[:, 1:].mean(axis=1)
-
         self.msd['mean'] = self.msd.iloc[:, 1:].mean(axis=1)
-        # deff["mean"] = deff.iloc[:, 1:].mean(axis=1)
 
-        # msd = rename_columns(msd, "MSD")
-        # deff = rename_columns(deff, "Deff")
-        # msd_log.to_csv(f"_Series00{i+1}.csv")
+        self.msd_log = np.log10(self.msd.iloc[:, :-1])
+        self.msd_log.name = "MSD-LOG"
+        self.msd_log['mean'] = self.msd_log.iloc[:, 1:].mean(axis=1)
+
+        self.msd = self.rename_columns("MSD")
+        self.msd_log = self.rename_columns("MSD-LOG")
+        # self.msd_log.to_csv(f"_Series00{i+1}.csv")
+
+        # self.deff = self.msd.div((4*self.msd.index), axis=0)
+        # self.deff.name = "Deff"
+        # self.deff["mean"] = self.deff.iloc[:, 1:].mean(axis=1)
+
+        # self.deff = self.rename_columns("Deff")
         print("-----------\n")
 
     def analyze(self) -> None:
