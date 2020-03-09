@@ -178,15 +178,13 @@ class MPT:
         self.msd_log.name = "MSD-LOG"
         self.msd_log['mean'] = self.msd_log.iloc[:, 1:].mean(axis=1)
 
+        self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
+        self.deff.name = "Deff"
+        self.deff["mean"] = self.deff.iloc[:, :].mean(axis=1)
+
         self.msd = self.rename_columns("MSD")
         self.msd_log = self.rename_columns("MSD-LOG")
-        # self.msd_log.to_csv(f"_Series00{i+1}.csv")
-
-        # self.deff = self.msd.div((4*self.msd.index), axis=0)
-        # self.deff.name = "Deff"
-        # self.deff["mean"] = self.deff.iloc[:, 1:].mean(axis=1)
-
-        # self.deff = self.rename_columns("Deff")
+        self.deff = self.rename_columns("Deff")
         print("-----------\n")
 
     def analyze(self) -> None:
@@ -195,7 +193,7 @@ class MPT:
                 print(f"Can't read file {report.file_name}. Wrong format?")
                 continue
 
-            print(f"Analyzing report file: '{report.file_name}'")
+            print(f"\nAnalyzing report file: '{report.file_name}'")
 
             report.count_trajectories()
             print(f"Total trajectories: {report.total_trajectories}")
