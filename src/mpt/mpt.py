@@ -329,7 +329,7 @@ class Result:
             line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
         # ----------------------------
 
-        # self.make_chart_LOG(workbook, msd_log, 1)
+        self.make_chart_LOG(workbook, msd, 1)
 
         slopeData.to_excel(writer, index=False, sheet_name='Characterization')
 
