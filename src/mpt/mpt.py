@@ -1,6 +1,7 @@
 import os
 import tkinter as tk
 from tkinter import filedialog
+import wx
 import pandas as pd
 import numpy as np
 
@@ -88,28 +89,31 @@ class MPT:
             return 0
 
     def add_report(self) -> None:
-        root = tk.Tk()
-        root.withdraw()
+        app = wx.App()
 
-        file_list = filedialog.askopenfilenames()
-        if not file_list:
-            print("No file selected...")
-            return None
+        with wx.FileDialog(None, "Open ImageJ Full report file(s)", wildcard="ImageJ full report files (*.csv)|*.csv",
+                           style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
 
-        self.filter = self.load_config('filter')
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                print("No file selected...")
+                return None  # the user changed their mind
 
-        for file in file_list:
-            new_report = Report()
+            file_list = fileDialog.GetPaths()
 
-            new_report.full_path = file
-            new_report.folder_path = os.path.dirname(file)
-            new_report.file_name, new_report.extension = os.path.splitext(
-                os.path.basename(file))
-            new_report.raw_data = new_report.load_data()
+            self.filter = self.load_config('filter')
 
-            self.report_list.append(new_report)
+            for file in file_list:
+                new_report = Report()
 
-            del new_report
+                new_report.full_path = file
+                new_report.folder_path = os.path.dirname(file)
+                new_report.file_name, new_report.extension = os.path.splitext(
+                    os.path.basename(file))
+                new_report.raw_data = new_report.load_data()
+
+                self.report_list.append(new_report)
+
+                del new_report
 
     def analyze(self) -> None:
         for report in self.report_list:
