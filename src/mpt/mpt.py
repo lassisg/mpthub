@@ -32,7 +32,7 @@ class Report:
 
     def clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
         if all([item in data.columns for item in ['Trajectory', 'Frame', 'x', 'y']]):
-            return data
+            return data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
         else:
             return pd.DataFrame()
 
@@ -69,24 +69,25 @@ class Report:
 class MPT:
     def __init__(self, config_path: str) -> None:
         self.config_path = config_path
-        self.out_path = None        # TODO: Ask user
+        self.out_path = None        # TODO: Ask user / Add config / =input path
         self.report_list = []
         self.filter = 0             # TODO: Add config
         self.total_frames = 0       # TODO: Add config
         self.fps = 0                # TODO: Add config
+        self.width_px = 0           # TODO: Add config
+        self.width_um = 0           # TODO: Add config
+        self.pixel_size = 0.0       # TODO: Calculate from config
         self.msd = pd.DataFrame()
         self.deff = pd.DataFrame()
         self.trajectories_list = []
 
-    def load_config(self, config: str) -> int:
-        if config == "filter":
-            return 590
-        elif config == "frames":
-            return 606
-        elif config == "fps":
-            return 30
-        else:
-            return 0
+    def load_config(self) -> None:
+        self.filter = 590
+        self.fps = 30
+        self.total_frames = 606
+        self.width_px = 512
+        self.width_um = 160
+        self.pixel_size = self.width_px / self.width_um
 
     def add_report(self) -> None:
         app = wx.App()
@@ -101,7 +102,7 @@ class MPT:
 
             file_list = fileDialog.GetPaths()
 
-            self.filter = self.load_config('filter')
+            self.load_config()
 
             for file in file_list:
                 new_report = Report()
@@ -115,6 +116,53 @@ class MPT:
                 self.report_list.append(new_report)
 
                 del new_report
+
+    def compute_msd(self) -> None:
+        time_step = 1 / self.fps
+        max_time = self.total_frames / self.fps
+        tau = np.linspace(time_step, max_time, self.total_frames)
+
+        for i, trajectory in enumerate(self.trajectories_list):
+            frames = len(trajectory)
+            t = tau[:frames]
+
+            xy = trajectory.values
+
+            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
+
+            # Compute MSD
+            shifts = position["t"].index.values + 1
+            msdp = np.zeros(shifts.size)
+            for j, shift in enumerate(shifts):
+                diffs_x = position['x'] - position['x'].shift(-shift)
+                diffs_y = position['y'] - position['y'].shift(-shift)
+                square_sum = np.square(diffs_x) + np.square(diffs_y)
+                msdp[j] = square_sum.mean()
+
+            msdm = msdp * (1 / (self.pixel_size ** 2))
+            msdm = msdm[:self.filter]
+            self.msd[i] = msdm
+
+        tau = tau[:self.filter]
+
+        self.msd.insert(0, "tau", tau, True)
+        self.msd = self.msd[self.msd[self.msd.columns[0]] < 10]
+
+        self.msd.name = "MSD"
+        self.msd.set_index('tau', inplace=True)
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+
+        # deff = calc_deff(msd.copy())
+        # msd_log = np.log10(self.msd)
+        # msd_log['mean'] = msd_log.iloc[:, 1:].mean(axis=1)
+
+        self.msd['mean'] = self.msd.iloc[:, 1:].mean(axis=1)
+        # deff["mean"] = deff.iloc[:, 1:].mean(axis=1)
+
+        # msd = rename_columns(msd, "MSD")
+        # deff = rename_columns(deff, "Deff")
+        # msd_log.to_csv(f"_Series00{i+1}.csv")
+        print("-----------\n")
 
     def analyze(self) -> None:
         for report in self.report_list:
@@ -134,50 +182,5 @@ class MPT:
             self.trajectories_list.extend(report.valid_trajectories_list)
 
         print("Full trajectory list compiled. Initializing calculations...")
-        # # ----------------------------------------------------------
-        # time_step = 1 / self.fps
-        # max_time = 606 / self.fps
-        # tau = np.linspace(time_step, max_time, self.total_frames)
 
-        # trajectories = []
-        # msd = pd.DataFrame()
-
-        # for j, trace in enumerate(traj_list):
-        #     frames = len(trace)
-        #     t = tau[:frames]
-
-        #     xy = trace.values
-
-        #     trajectory = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
-
-        #     # Compute MSD
-        #     shifts = trajectory["t"].index.values + 1
-        #     msdp = np.zeros(shifts.size)
-        #     for k, shift in enumerate(shifts):
-        #         diffs_x = trajectory['x'] - trajectory['x'].shift(-shift)
-        #         diffs_y = trajectory['y'] - trajectory['y'].shift(-shift)
-        #         square_sum = np.square(diffs_x) + np.square(diffs_y)
-        #         msdp[k] = square_sum.mean()
-
-        #     msdm = msdp * (1 / 3.2 ** 2)
-        #     msdm = msdm[:590]
-        #     msd[j] = msdm
-
-        #     trajectories.append(msd)
-        # # ----------------------------------------------------------
-        # tau = tau[:590]
-
-        # msd.insert(0, "tau", tau, True)
-        # msd = msd[msd[msd.columns[0]] < 10]
-
-        # # deff = calc_deff(msd.copy())
-        # msd_log = np.log10(msd)
-        # msd_log['mean'] = msd_log.iloc[:, 1:].mean(axis=1)
-
-        # msd['mean'] = msd.iloc[:, 1:].mean(axis=1)
-        # # deff["mean"] = deff.iloc[:, 1:].mean(axis=1)
-
-        # # msd = rename_columns(msd, "MSD")
-        # # deff = rename_columns(deff, "Deff")
-        # msd_log.to_csv(f"_Series00{i+1}.csv")
-        # print("-----------\n")
+        self.compute_msd()
