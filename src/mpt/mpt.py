@@ -66,14 +66,16 @@ class Result:
         print("Result instance created...")
 
     def get_slopes(self, dataIn: pd.DataFrame) -> pd.Series:
-        return pd.Series([np.polyfit(dataIn[dataIn.columns[0]],
+        return pd.Series([np.polyfit(dataIn.index.values,
                                      np.asarray(dataIn[column]), 1)[0]
-                          for column in dataIn.columns[1:-1]])
+                          for column in dataIn.columns[:-1]])
 
-    def get_diffusivity_ranges(self, CFG_PATH):
-        return pd.read_json(os.path.join(CFG_PATH, "cfg-diffusivity.json"))
+    def get_diffusivity_ranges(self, config_path: str):
+        return pd.read_json(os.path.join(config_path, "cfg-diffusivity.json"))
 
-    def make_chart(self, workbook: xls.book, data: pd.DataFrame, start_row: int):
+    def make_chart(self, workbook: xls.book,
+                   data: pd.DataFrame,
+                   start_row: int) -> None:
 
         # Create a chart object.
         chart = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
@@ -165,7 +167,9 @@ class Result:
         workbook.close()
         writer.save()
 
-    def make_chart_LOG(workbook: xls.book, data: pd.DataFrame, start_row: int):
+    def make_chart_LOG(self, workbook: xls.book,
+                       data: pd.DataFrame,
+                       start_row: int):
         """Creates a log-log plot from given data.
 
         Arguments:
@@ -250,20 +254,21 @@ class Result:
         time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart.set_chart(chart)
 
-    def export_transport_mode(data, path):
+    def export_transport_mode(self, path: str,
+                              config_path: str,
+                              msd: pd.DataFrame):
+
         print("Export transport mode sheet")
-        data.log_msd = np.log10(data.msd.reset_index())
-        data.log_msd.name = data.msd.name
+        # data.log_msd = np.log10(data.msd.reset_index())
+        # data.log_msd.name = data.msd.name
 
-        columns = data.msd.shape[1]
+        columns = msd.shape[1]
 
-        file_name = os.path.join(path,
-                                 data.name + " - Transport Mode Characterization.xlsx")
+        file_name = os.path.join(path, "Transport Mode Characterization.xlsx")
 
         writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
 
-        data.log_msd.to_excel(writer, sheet_name='Data',
-                              startrow=1, index=False)
+        msd.to_excel(writer, sheet_name='Data', startrow=1)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
@@ -277,18 +282,18 @@ class Result:
 
         data_sheet = writer.sheets['Data']
         data_sheet.set_row(1, 21, header_format)
-        data_sheet.set_row(len(data.msd)+4, 21, header_format)
+        data_sheet.set_row(len(msd)+4, 21, header_format)
         data_sheet.set_column(0, columns, 15, sheet_format)
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{data.log_msd.name} Data'
+        msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, columns,
                                msd_title, header_format)
 
         # Add guide series data
-        slopeData = get_slopes(data.log_msd)
+        slopeData = self.get_slopes(msd)
         b = slopeData[1].mean()
 
         data_sheet.merge_range(1, columns+2, 1, columns +
@@ -324,7 +329,7 @@ class Result:
             line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
         # ----------------------------
 
-        make_chart_LOG(workbook, data.log_msd, 1)
+        # self.make_chart_LOG(workbook, msd_log, 1)
 
         slopeData.to_excel(writer, index=False, sheet_name='Characterization')
 
@@ -349,7 +354,7 @@ class Result:
         data_sheet.write('D4', 'Diffusive')
         data_sheet.write('D5', 'Active')
 
-        diff_ranges = get_diffusivity_ranges(data.config_path)
+        diff_ranges = self.get_diffusivity_ranges(config_path)
 
         immobile_low = float(diff_ranges.immobile.low)
         immobile_high = float('{0:.3g}'.format(
@@ -459,7 +464,7 @@ class MPT:
         if name == self.msd.name:
             data = self.msd
         elif name == self.msd_log.name:
-            data = self.msd
+            data = self.msd_log
         else:
             data = self.deff
 
@@ -510,7 +515,9 @@ class MPT:
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
         self.msd['mean'] = self.msd.iloc[:, 1:].mean(axis=1)
 
-        self.msd_log = np.log10(self.msd.iloc[:, :-1])
+        self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
+        # self.msd_log.reset_index()
+        self.msd_log.set_index(f'Timescale ({chr(120591)}) (s)', inplace=True)
         self.msd_log.name = "MSD-LOG"
         self.msd_log['mean'] = self.msd_log.iloc[:, 1:].mean(axis=1)
 
@@ -548,3 +555,5 @@ class MPT:
         result = Result()
         result.export_individual_particle_analysis(
             self.out_path, self.msd, self.deff)
+        result.export_transport_mode(
+            self.out_path, self.config_path, self.msd_log)
