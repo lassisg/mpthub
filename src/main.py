@@ -19,9 +19,10 @@ if __name__ == '__main__':
     # TODO: Code below must go to GUI
     analysis = MPT(CFG_PATH)
     analysis.add_report()
-    analysis.analyze()
-    analysis.export()
-    # analysis.end()
+    if analysis.report_list:
+        analysis.analyze()
+        analysis.export()
+        # analysis.end()
 
     # end_time = time.time()
     # print(f"Elapsed time: {end_time-start_time}")
