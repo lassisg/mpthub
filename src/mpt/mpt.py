@@ -91,7 +91,8 @@ class MPT:
     def add_report(self) -> None:
         app = wx.App()
 
-        with wx.FileDialog(None, "Open ImageJ Full report file(s)", wildcard="ImageJ full report files (*.csv)|*.csv",
+        with wx.FileDialog(None, "Open ImageJ Full report file(s)",
+                           wildcard="ImageJ full report files (*.csv)|*.csv",
                            style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
@@ -129,8 +130,10 @@ class MPT:
             report.filter_trajectories(self.filter)
             print(f"Valid trajectories: {report.valid_trajectories}")
 
-            report.summarize_trajectories()
+            # report.summarize_trajectories()
+            self.trajectories_list.extend(report.valid_trajectories_list)
 
+        print("Full trajectory list compiled. Initializing calculations...")
         # # ----------------------------------------------------------
         # time_step = 1 / self.fps
         # max_time = 606 / self.fps
