@@ -65,16 +65,15 @@ class Result:
     def __init__(self) -> None:
         print("Result instance created...")
 
-    def get_slopes(dataIn: pd.DataFrame) -> pd.Series:
+    def get_slopes(self, dataIn: pd.DataFrame) -> pd.Series:
         return pd.Series([np.polyfit(dataIn[dataIn.columns[0]],
                                      np.asarray(dataIn[column]), 1)[0]
                           for column in dataIn.columns[1:-1]])
 
-    def get_diffusivity_ranges(CFG_PATH):
+    def get_diffusivity_ranges(self, CFG_PATH):
         return pd.read_json(os.path.join(CFG_PATH, "cfg-diffusivity.json"))
 
-    def make_chart(workbook: xls.book, data: pd.DataFrame, start_row: int):
-        #       (workbook: xls.book, data: df, data_name: str, startrow: int):
+    def make_chart(self, workbook: xls.book, data: pd.DataFrame, start_row: int):
 
         # Create a chart object.
         chart = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
@@ -119,17 +118,18 @@ class Result:
         time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart.set_chart(chart)
 
-    def export_individual_particle_analysis(data, path):
+    def export_individual_particle_analysis(self,
+                                            path: str,
+                                            msd: pd.DataFrame,
+                                            deff: pd.DataFrame):
+
         print("Exporting 'Individual Particle Analysis' report...")
-        file_name = os.path.join(path,
-                                 data.name + " - Individual Particle Analysis.xlsx")
+        file_name = os.path.join(path, "Individual Particle Analysis.xlsx")
 
         writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
 
-        data.msd.to_excel(writer, sheet_name='Data',
-                          startrow=1)
-        data.deff.to_excel(writer, sheet_name='Data',
-                           startrow=len(data.msd)+4)
+        msd.to_excel(writer, sheet_name='Data', startrow=1)
+        deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
@@ -140,27 +140,27 @@ class Result:
 
         data_sheet = writer.sheets['Data']
         data_sheet.set_row(1, 21, header_format)
-        data_sheet.set_row(len(data.msd)+4, 21, header_format)
+        data_sheet.set_row(len(msd)+4, 21, header_format)
         # data_sheet.set_column(0, 0, 15, sheet_format)
         # data_sheet.set_column(1, len(current_vid.msd.columns), 12, sheet_format)
-        data_sheet.set_column(0, len(data.msd.columns), 15, sheet_format)
+        data_sheet.set_column(0, len(msd.columns), 15, sheet_format)
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{data.msd.name} Data'
+        msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
-                               0, len(data.msd.columns),
+                               0, len(msd.columns),
                                msd_title, header_format)
 
-        deff_title = f'{data.deff.name} Data'
-        data_sheet.merge_range(len(data.msd)+3,
+        deff_title = f'{deff.name} Data'
+        data_sheet.merge_range(len(msd)+3,
                                0,
-                               len(data.msd) + 3,
-                               len(data.msd.columns),
+                               len(msd) + 3,
+                               len(msd.columns),
                                deff_title, header_format)
 
-        make_chart(workbook, data.msd, 1)
-        make_chart(workbook, data.deff, len(data.msd)+4)
+        self.make_chart(workbook, msd, 1)
+        self.make_chart(workbook, deff, len(msd)+4)
 
         workbook.close()
         writer.save()
@@ -403,7 +403,8 @@ class Result:
 class MPT:
     def __init__(self, config_path: str) -> None:
         self.config_path = config_path
-        self.out_path = None        # TODO: Ask user / Add config / =input path
+        # TODO: Ask user / Add config / =input path
+        self.out_path = os.path.join(config_path, 'export')
         self.report_list = []
         self.filter = 0
         self.total_frames = 0
@@ -545,3 +546,5 @@ class MPT:
     def export(self) -> None:
         print("\nExporting reports...")
         result = Result()
+        result.export_individual_particle_analysis(
+            self.out_path, self.msd, self.deff)
