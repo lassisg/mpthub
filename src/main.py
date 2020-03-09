@@ -14,6 +14,6 @@ if __name__ == '__main__':
 
     # TODO: Code below must go to GUI
     analysis = MPT(CFG_PATH)
-    analysis.addVideos()
-    analysis.start_analysis()
+    analysis.add_report()
+    analysis.analyze()
     # analysis.end()
