@@ -6,7 +6,11 @@ import numpy as np
 
 
 class Report:
+
     def __init__(self) -> None:
+        """Initialize basic variables of the full report result class \
+            implementation.
+        """
         self.full_path = None
         self.folder_path = None
         self.file_name = None
@@ -20,23 +24,49 @@ class Report:
         self.deff = pd.DataFrame()
 
     def load_data(self) -> pd.DataFrame:
+        """Imports ImageJ full report in '.csv' formtat into a DataFrame.
+
+        Returns:
+            pd.DataFrame -- DataFrame containing all data from the imported \
+                file.
+        """
         data = pd.read_csv(self.full_path)
-        data = self.clean_data(data)
+        # data = self.clean_data(data)
 
         return data
 
     def clean_data(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Removes all unnecessary columns from the imported raw data.
+
+        Arguments:
+            data {pd.DataFrame} -- DataFrame contining the raw data, imported \
+                 from ImageJ full report in '.csv' format.
+
+        Returns:
+            pd.DataFrame -- Cleaned DataFrame containing only the useful \
+                columns.
+        """
         if all([item in data.columns for item in ['Trajectory', 'Frame', 'x', 'y']]):
             return data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
         else:
             return pd.DataFrame()
 
     def count_trajectories(self) -> None:
+        """Counts the number of trajectories in the imported ImageJ full \
+            report file.
+        """
         if not self.raw_data.empty:
             self.total_trajectories = len(self.raw_data.iloc[:, :1].
                                           groupby('Trajectory').nunique())
 
     def filter_trajectories(self, filter: int) -> None:
+        """Excludes from raw data all trajectories with less consecutive \
+            frames than the given value of 'filter'.
+
+        Arguments:
+            filter {int} -- Minimum number of consecutive frames that a \
+                valid trajectory must have.
+        """
         if not self.raw_data.empty and filter > 0:
             grouped_trajectories = self.raw_data.groupby(
                 'Trajectory').filter(lambda x: len(x['Trajectory']) > filter)
@@ -54,6 +84,8 @@ class Report:
             self.valid_trajectories = len(self.valid_trajectories_number)
 
     def summarize_trajectories(self) -> None:
+        """Prints trajectory summary for each trajectory in analysis.
+        """
         for trajectory_nr, trajectory in zip(
                 self.valid_trajectories_number,
                 self.valid_trajectories_list):
@@ -428,8 +460,14 @@ class MPT:
         self.msd_log = pd.DataFrame()
         self.trajectories_list = []
 
-    # TODO: Allow user to changeAsk user / Add config / =input path
+    # TODO: Implement functionality
     def resolve_config(self) -> str:
+        """Verifies if config file exists in the same folder as the App.
+        If it does not exist, creates it.
+
+        Returns:
+            str -- Path to config file.
+        """
         path = self.out_path
 
         return path
@@ -473,7 +511,8 @@ class MPT:
                 new_report.folder_path = os.path.dirname(file)
                 new_report.file_name, new_report.extension = os.path.splitext(
                     os.path.basename(file))
-                new_report.raw_data = new_report.load_data()
+                full_data = new_report.load_data()
+                new_report.raw_data = new_report.clean_data(full_data)
 
                 self.report_list.append(new_report)
 
