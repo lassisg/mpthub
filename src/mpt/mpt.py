@@ -54,11 +54,11 @@ class Report:
             self.valid_trajectories = len(self.valid_trajectories_number)
 
     def summarize_trajectories(self) -> None:
-        traj_number = self.valid_trajectories_number
-        traj_data = self.valid_trajectories_list
-        for traj_nr, trajectory in zip(traj_number, traj_data):
+        for trajectory_nr, trajectory in zip(
+                self.valid_trajectories_number,
+                self.valid_trajectories_list):
             print(
-                f"Trajectory {traj_nr} lenght: {len(trajectory.loc[trajectory['Trajectory'] == traj_nr])}")
+                f"Trajectory {trajectory_nr} lenght: {len(trajectory.loc[trajectory['Trajectory'] == trajectory_nr])}")
 
 
 class Result:
@@ -406,10 +406,16 @@ class Result:
 
 
 class MPT:
+
     def __init__(self, config_path: str) -> None:
-        self.config_path = config_path
-        # TODO: Ask user / Add config / =input path
+        """Initialize core variables with empty values.
+
+        Arguments:
+            config_path {str} -- Path to the configuration file tha will \
+                be necessary for some functions. Defaults to the App directory.
+        """
         self.out_path = os.path.join(config_path, 'export')
+        self.config_path = self.resolve_config()
         self.report_list = []
         self.filter = 0
         self.total_frames = 0
@@ -422,7 +428,16 @@ class MPT:
         self.msd_log = pd.DataFrame()
         self.trajectories_list = []
 
+    # TODO: Allow user to changeAsk user / Add config / =input path
+    def resolve_config(self) -> str:
+        path = self.out_path
+
+        return path
+
     def load_config(self) -> None:
+        """Load configuration needed for analysis such as video aquisition \
+            setup and diffusivity ranges. 
+        """
         # TODO: Load setting from file/DB
         self.filter = 590
         self.fps = 30
@@ -432,6 +447,11 @@ class MPT:
         self.pixel_size = self.width_px / self.width_um
 
     def add_report(self) -> None:
+        """
+        Adds one or more 'ImageJ Full Report' file (in .csv format) to a \
+            list of reports to be analyzed.
+        If the user cancels the operation, nothong is done.
+        """
         app = wx.App()
 
         with wx.FileDialog(None, "Open ImageJ Full report file(s)",
@@ -440,7 +460,7 @@ class MPT:
 
             if fileDialog.ShowModal() == wx.ID_CANCEL:
                 print("No file selected...")
-                return None  # the user changed their mind
+                return None
 
             file_list = fileDialog.GetPaths()
 
@@ -459,27 +479,37 @@ class MPT:
 
                 del new_report
 
-    def rename_columns(self, name: str) -> pd.DataFrame:
+    def rename_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Rename Pandas DataFrame columns to meaningfull names according \
+            with the input's Pandas DataFrame name.
 
-        if name == self.msd.name:
-            data = self.msd
-        elif name == self.msd_log.name:
-            data = self.msd_log
-        else:
-            data = self.deff
+        Arguments:
+            data {pd.DataFrame} -- Pandas DataFrame with columns in an \
+                undesired naming.
 
-        name = data.name.split('-')[0]
+        Returns:
+            pd.DataFrame -- Input Pandas DataFrame with renamed \
+                columns. No data changed.
+        """
+        header = data.name
         unit = f"{chr(956)}m{chr(178)}"
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
-        columns_names = [f'{name} {x+1} ({unit})' for x in columns_names]
-        columns_names[len(columns_names) - 1] = f'<{name}> ({unit})'
+        columns_names = [f'{header} {x+1} ({unit})' for x in columns_names]
+        columns_names[len(columns_names) - 1] = f'<{header}> ({unit})'
 
         data.columns = columns_names
 
         return data
 
-    def compute_msd(self) -> None:
+    def compute_msd(self) -> pd.DataFrame:
+        """Computes the Mean-squared Displacement (MSD).
+        It is mandatory to have configuration data previously loaded.
+
+        Returns:
+            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
+        """
+        # TODO: Raise error if anything goes wrong
         time_step = 1 / self.fps
         max_time = self.total_frames / self.fps
         tau = np.linspace(time_step, max_time, self.total_frames)
@@ -487,13 +517,12 @@ class MPT:
         for i, trajectory in enumerate(self.trajectories_list):
             frames = len(trajectory)
             t = tau[:frames]
-
             xy = trajectory.values
+            msd = pd.DataFrame()
 
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
-
-            # Compute MSD
             shifts = position["t"].index.values + 1
+
             msdp = np.zeros(shifts.size)
             for j, shift in enumerate(shifts):
                 diffs_x = position['x'] - position['x'].shift(-shift)
@@ -503,33 +532,76 @@ class MPT:
 
             msdm = msdp * (1 / (self.pixel_size ** 2))
             msdm = msdm[:self.filter]
-            self.msd[i] = msdm
+            msd[i] = msdm
 
         tau = tau[:self.filter]
 
-        self.msd.insert(0, "tau", tau, True)
-        self.msd = self.msd[self.msd[self.msd.columns[0]] < 10]
+        msd.insert(0, "tau", tau, True)
+        msd = msd[msd[msd.columns[0]] < 10]
 
-        self.msd.name = "MSD"
-        self.msd.set_index('tau', inplace=True)
-        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        self.msd['mean'] = self.msd.iloc[:, 1:].mean(axis=1)
+        msd.name = "MSD"
+        msd.set_index('tau', inplace=True)
+        msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        msd['mean'] = msd.iloc[:, 1:].mean(axis=1)
 
-        self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
-        # self.msd_log.reset_index()
-        self.msd_log.set_index(f'Timescale ({chr(120591)}) (s)', inplace=True)
-        self.msd_log.name = "MSD-LOG"
-        self.msd_log['mean'] = self.msd_log.iloc[:, 1:].mean(axis=1)
+        return msd
 
-        self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
-        self.deff.name = "Deff"
-        self.deff["mean"] = self.deff.iloc[:, :].mean(axis=1)
+    def compute_msd_log(self, msd: pd.DataFrame) -> pd.DataFrame:
+        """Computes the log version of Mean-squared Displacement.
+        It is mandatory that the MSD is already computed.
 
-        self.msd = self.rename_columns("MSD")
-        self.msd_log = self.rename_columns("MSD-LOG")
-        self.deff = self.rename_columns("Deff")
+        Arguments:
+            msd {pd.DataFrame} -- Pandas DataFrame containing analysis MSD.
+
+        Returns:
+            pd.DataFrame -- Pandas DataFrame containing MSD values in \
+                logarithm scale. Returns an empty Pandas DataFrame if \
+                MSD DataFrame is empty.
+        """
+        if msd.empty:
+            return pd.DataFrame()
+
+        msd_log = np.log10(msd.reset_index().iloc[:, :-1])
+        # msd_log.reset_index()
+        msd_log.set_index(
+            f'Timescale ({chr(120591)}) (s)', inplace=True)
+        msd_log.name = "MSD-LOG"
+        msd_log['mean'] = msd_log.iloc[:, 1:].mean(axis=1)
+
+        return msd_log
+
+    def compute_deff(self, msd: pd.DataFrame) -> pd.DataFrame:
+        """Calculate Diffusivity efficiency coefficient (Deff).
+        It is mandatory that the Mean-squared Displacement (MSD) \
+            is already computed.
+
+        Arguments:
+            msd {pd.DataFrame} -- Pandas DataFrame containing analysis MSD.
+
+        Returns:
+            pd.DataFrame -- Pandas DataFrame containing Diffusivity \
+                coefficients values. Returns an empty Pandas DataFrame \
+                if MSD DataFrame is empty.
+        """
+        if self.msd.empty:
+            return pd.DataFrame()
+
+        deff = msd.iloc[:, :-1].div((4*msd.index), axis=0)
+        deff.name = "Deff"
+        deff["mean"] = deff.iloc[:, :].mean(axis=1)
+
+        return deff
 
     def analyze(self) -> None:
+        """
+        Starts the analysis proccess of the listed files.
+        If the list is empty, then the proccess is ignored and the user is \
+            informed.
+        If a file on the file list contains wrong structure (different \
+            from expected), then this file is ignored and the user is \
+            informed.
+        """
+        # TODO: Add empty list verification
         for report in self.report_list:
             if report.raw_data.empty:
                 print(f"\nCan't read file {report.file_name}. Wrong format?")
@@ -548,9 +620,17 @@ class MPT:
 
         print("\nFull trajectory list compiled. Initializing calculations...")
 
-        self.compute_msd()
+        self.msd = self.compute_msd()
+        self.msd_log = self.compute_msd_log(self.msd)
+        self. deff = self.compute_deff(self.msd)
+
+        self.msd = self.rename_columns(self.msd)
+        self.msd_log = self.rename_columns(self.msd_log)
+        self.deff = self.rename_columns(self.deff)
 
     def export(self) -> None:
+        """Call specific export functions.
+        """
         print("\nExporting reports...")
         result = Result()
         result.export_individual_particle_analysis(
