@@ -1,4 +1,4 @@
-from mpt.mpt import MPT
+import mpt
 import os
 # import time
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     # start_time = time.time()
 
     # TODO: Code below must go to GUI
-    analysis = MPT(CFG_PATH)
+    analysis = mpt.Analysis(CFG_PATH)
     analysis.add_report()
     if analysis.report_list:
         analysis.analyze()

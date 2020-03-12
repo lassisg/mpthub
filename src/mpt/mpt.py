@@ -475,7 +475,7 @@ class Result:
         writer.save()
 
 
-class MPT:
+class Analysis:
 
     def __init__(self, config_path: str) -> None:
         """Initialize core variables with empty values.
