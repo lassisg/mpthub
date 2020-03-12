@@ -95,19 +95,49 @@ class Report:
 
 class Result:
     def __init__(self) -> None:
-        print("Result instance created...")
+        """Inform user that the result is being exported.
+        """
+        print("Exporting results...")
 
     def get_slopes(self, dataIn: pd.DataFrame) -> pd.Series:
+        """Return the slopes (alfa) from each trajectory's MSD.
+
+        Arguments:
+            dataIn {pd.DataFrame} -- DataFrame with all trajectories' MSD \
+                in logarithm scale.
+
+        Returns:
+            pd.Series -- Series of slopes refering to each trajectory.
+        """
         return pd.Series([np.polyfit(dataIn.index.values,
                                      np.asarray(dataIn[column]), 1)[0]
                           for column in dataIn.columns[:-1]])
 
-    def get_diffusivity_ranges(self, config_path: str):
+    def get_diffusivity_ranges(self, config_path: str) -> pd.DataFrame:
+        """Get the diffusivity ranges from configuration file.
+
+        Arguments:
+            config_path {str} -- Path to the configuration file.
+
+        Returns:
+            pd.DataFrame -- DataFrame containing the information for each \
+                range of diffusivity.
+        """
         return pd.read_json(os.path.join(config_path, "cfg-diffusivity.json"))
 
     def make_chart(self, workbook: xls.book,
                    data: pd.DataFrame,
                    start_row: int) -> None:
+        # TODO: Improve function to be more generic so it can be used for any chart
+        """Create a chart for individual particle analysis.
+
+        Arguments:
+            workbook {xls.book} -- Excel spreadsheet object that will hod the \
+                chart.
+            data {pd.DataFrame} -- Data to be used for chart creation.
+            start_row {int} -- Initial row to start the data series of the \
+                chart.
+        """
 
         # Create a chart object.
         chart = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
@@ -156,7 +186,13 @@ class Result:
                                             path: str,
                                             msd: pd.DataFrame,
                                             deff: pd.DataFrame):
+        """Export 'Individual Particle Analysis' report file.
 
+        Arguments:
+            path {str} -- Path to the file.
+            msd {pd.DataFrame} -- DataFrame containing MSD Data.
+            deff {pd.DataFrame} -- DataFrame containing Deff data.
+        """
         print("Exporting 'Individual Particle Analysis' report...")
         file_name = os.path.join(path, "Individual Particle Analysis.xlsx")
 
@@ -175,8 +211,6 @@ class Result:
         data_sheet = writer.sheets['Data']
         data_sheet.set_row(1, 21, header_format)
         data_sheet.set_row(len(msd)+4, 21, header_format)
-        # data_sheet.set_column(0, 0, 15, sheet_format)
-        # data_sheet.set_column(1, len(current_vid.msd.columns), 12, sheet_format)
         data_sheet.set_column(0, len(msd.columns), 15, sheet_format)
 
         data_sheet = writer.sheets['Data']
@@ -201,14 +235,14 @@ class Result:
 
     def make_chart_LOG(self, workbook: xls.book,
                        data: pd.DataFrame,
-                       start_row: int):
+                       start_row: int) -> None:
         """Creates a log-log plot from given data.
 
         Arguments:
-            workbook {ExcelWriter.book} -- Excel file to add the chart
-            data {Dataframe} -- Data do populate the chart
-            data_name {str} -- Title of the data
-            startrow {int} -- Starting row for data entry
+            workbook {ExcelWriter.book} -- Excel file to add the chart.
+            data {Dataframe} -- Data do populate the chart.
+            data_name {str} -- Title of the data.
+            startrow {int} -- Starting row for data entry.
         """
 
         # Create a chart object.
@@ -289,10 +323,14 @@ class Result:
     def export_transport_mode(self, path: str,
                               config_path: str,
                               msd: pd.DataFrame):
+        """Export 'Transport Mode Characterization' report.
 
+        Arguments:
+            path {str} -- Path to the report file.
+            config_path {str} -- Path to configuration file.
+            msd {pd.DataFrame} -- DataFrame containing MSD data.
+        """
         print("Export transport mode sheet")
-        # data.log_msd = np.log10(data.msd.reset_index())
-        # data.log_msd.name = data.msd.name
 
         columns = msd.shape[1]
 
