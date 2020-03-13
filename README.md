@@ -9,7 +9,7 @@ The application relies on the following workflow:
 3. Video analysis (using ImageJ with Mosaic plugin);
 4. Data analysis (performed by this app and described bellow).
 
-## App instalation
+## App installation
 
 Just download the latest version for your Operating System and use. No need for installation.
 
@@ -26,7 +26,7 @@ There are some configurations that need to exist in order to allow the app to ma
 #### 1.1. App configuration
 
 The App configuration basically means input and output folder. The App saves this folder's path in a way to make it easy for the user.
-We anderstand that the user may have a specific folder with result files (from ImageJ) and a different one for report files (from this App).
+We understand that the user may have a specific folder with result files (from ImageJ) and a different one for report files (from this App).
 The default configurations are:
 
 | Operating System | Input folder                 | Output folder                        |
