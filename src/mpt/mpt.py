@@ -7,6 +7,38 @@ import numpy as np
 from mpt.database import Database
 
 
+class Utils:
+    @staticmethod
+    def save_report(path: str, file_name: str) -> str:
+        """Shows Save dialog for each report and saves the path for the future.
+
+        Arguments:
+            path {str} -- Path to save the report.
+            file_name {str} -- Report file name, without extension (because \
+                it is used on the dialog title).
+
+        Returns:
+            str -- Full path for report save (path + file_name), after user \
+                confirmation or edit.
+        """
+        app = wx.App()
+        report_name = os.path.join(path, file_name+".xlsx")
+        with wx.FileDialog(None, f"Save {file_name} Report",
+                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE) as saveDialog:
+
+            saveDialog.SetDirectory(path)
+            saveDialog.SetFilename(file_name)
+            save_path = saveDialog.GetDirectory()
+            # TODO: Add save path to app_config table
+            if saveDialog.ShowModal() == wx.ID_CANCEL:
+                print("Saving to user folder...")
+
+            report_name = saveDialog.GetPath()
+
+        return report_name
+
+
 class Report:
 
     def __init__(self) -> None:
@@ -185,8 +217,8 @@ class Result:
             deff {pd.DataFrame} -- DataFrame containing Deff data.
         """
         print("Exporting 'Individual Particle Analysis' report...")
-        file_name = "Individual Particle Analysis.xlsx"
-        full_path = os.path.join(path, file_name)
+        file_name = "Individual Particle Analysis"
+        full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
@@ -222,21 +254,7 @@ class Result:
         self.make_chart(workbook, msd, 1)
         self.make_chart(workbook, deff, len(msd)+4)
 
-        app = wx.App()
-        # TODO: Move save dialog to function
-        with wx.FileDialog(None, "Save Individual Particle Analysis Report",
-                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
-                           style=wx.FD_SAVE) as saveDialog:
-
-            saveDialog.SetDirectory(path)
-            saveDialog.SetFilename(file_name)
-            save_path = saveDialog.GetDirectory()
-            # TODO: Add save path to app_config table
-            if saveDialog.ShowModal() == wx.ID_CANCEL:
-                print("Saving to user folder...")
-
-            workbook.filename = saveDialog.GetPath()
-
+        workbook.filename = Utils.save_report(path, file_name)
         workbook.close()
         writer.save()
 
@@ -336,8 +354,8 @@ class Result:
             msd {pd.DataFrame} -- DataFrame containing MSD data.
         """
         print("Export transport mode sheet")
-        file_name = "Transport Mode Characterization.xlsx"
-        full_path = os.path.join(path, file_name)
+        file_name = "Transport Mode Characterization"
+        full_path = os.path.join(path, file_name+".xlsx")
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
@@ -369,7 +387,6 @@ class Result:
         # Add guide series data
         slope_data = self.get_slopes(msd)
         _, intercept = slope_data.mean().tolist()
-        # intercept = slope_data.mean()
 
         data_sheet.merge_range(1, columns+2, 1, columns +
                                5, 'Guides', header_format)
@@ -471,21 +488,7 @@ class Result:
         data_sheet.write_formula('E9', '=COUNT(A:A)')
         data_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        app = wx.App()
-        # TODO: Move save dialog to function
-        with wx.FileDialog(None, "Save Transport Mode Characterization Report",
-                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
-                           style=wx.FD_SAVE) as saveDialog:
-
-            saveDialog.SetDirectory(path)
-            saveDialog.SetFilename(file_name)
-            save_path = saveDialog.GetDirectory()
-            # TODO: Add save path to app_config table
-            if saveDialog.ShowModal() == wx.ID_CANCEL:
-                print("Saving to user folder...")
-
-            workbook.filename = saveDialog.GetPath()
-
+        workbook.filename = Utils.save_report(path, file_name)
         workbook.close()
         writer.save()
 
