@@ -3,6 +3,8 @@ import wx
 import pandas as pd
 from pandas import ExcelWriter as xls
 import numpy as np
+# import sqlite3
+from mpt.database import Database
 
 
 class Report:
@@ -59,17 +61,18 @@ class Report:
             self.total_trajectories = len(self.raw_data.iloc[:, :1].
                                           groupby('Trajectory').nunique())
 
-    def filter_trajectories(self, filter: int) -> None:
+    def filter_trajectories(self, min_frames: int) -> None:
         """Excludes from raw data all trajectories with less consecutive \
             frames than the given value of 'filter'.
 
         Arguments:
-            filter {int} -- Minimum number of consecutive frames that a \
+            min_frames {int} -- Minimum number of consecutive frames that a \
                 valid trajectory must have.
         """
-        if not self.raw_data.empty and filter > 0:
+        # if not self.raw_data.empty:
+        if not self.raw_data.empty and min_frames > 0:
             grouped_trajectories = self.raw_data.groupby(
-                'Trajectory').filter(lambda x: len(x['Trajectory']) > filter)
+                'Trajectory').filter(lambda x: len(x['Trajectory']) > min_frames)
 
             self.valid_trajectories_number = list(
                 grouped_trajectories.iloc[:, :1].
@@ -100,7 +103,7 @@ class Result:
         print("Exporting results...")
 
     def get_slopes(self, dataIn: pd.DataFrame) -> pd.Series:
-        """Return the slopes (alfa) from each trajectory's MSD.
+        """Return the slope (alfa) from each trajectory's MSD.
 
         Arguments:
             dataIn {pd.DataFrame} -- DataFrame with all trajectories' MSD \
@@ -109,21 +112,9 @@ class Result:
         Returns:
             pd.Series -- Series of slopes refering to each trajectory.
         """
-        return pd.Series([np.polyfit(dataIn.index.values,
-                                     np.asarray(dataIn[column]), 1)[0]
-                          for column in dataIn.columns[:-1]])
-
-    def get_diffusivity_ranges(self, config_path: str) -> pd.DataFrame:
-        """Get the diffusivity ranges from configuration file.
-
-        Arguments:
-            config_path {str} -- Path to the configuration file.
-
-        Returns:
-            pd.DataFrame -- DataFrame containing the information for each \
-                range of diffusivity.
-        """
-        return pd.read_json(os.path.join(config_path, "cfg-diffusivity.json"))
+        return pd.DataFrame([np.polyfit(dataIn.index.values,
+                                        np.asarray(dataIn[column]), 1)
+                             for column in dataIn.columns[:-1]])
 
     def make_chart(self, workbook: xls.book,
                    data: pd.DataFrame,
@@ -250,21 +241,22 @@ class Result:
 
         # Configure the series of the chart from the dataframe data.
         trendLine = False
-        if data.name in "MSD":
+        if data.name in ("MSD", "MSD-LOG"):
             trendLine = {
                 'type': 'linear',
                 'display_equation': True,
+                'display_r_squared': True,
                 'line': {'none': True},
                 'data_labels': {'position': True}
             }
 
-        columns = data.shape[1]
+        columns = len(data.columns)
         for i in range(1, columns):
             chart.add_series({
                 'name': ['Data', start_row, i],
                 'categories': ['Data', start_row + 1, 0, start_row + len(data), 0],
                 'values': ['Data', start_row + 1, i, start_row + len(data), i],
-                'trendline': False,
+                'trendline': trendLine,
             })
 
         # i = 1
@@ -279,34 +271,31 @@ class Result:
 
         # Add guides series
         chart.add_series({
-            'name': ['Data', 3, columns+2],
-            'categories': ['Data', 4, columns+1, 5, columns+1],
-            'values': ['Data', 4, columns+2, 5, columns+2],
+            'name': ['Data', 3, columns+3],
+            'categories': ['Data', 4, columns+2, 5, columns+2],
+            'values': ['Data', 4, columns+3, 5, columns+3],
             'line': {
                 'color': 'black',
                 'width': 1.25,
                 'dash_type': 'square_dot'},
-            # 'trendline': trendLine,
         })
         chart.add_series({
-            'name': ['Data', 3, columns+3],
-            'categories': ['Data', 4, columns+1, 5, columns+1],
-            'values': ['Data', 4, columns+3, 5, columns+3],
+            'name': ['Data', 3, columns+4],
+            'categories': ['Data', 4, columns+2, 5, columns+2],
+            'values': ['Data', 4, columns+4, 5, columns+4],
             'line': {
                 'color': 'red',
                 'width': 1.25,
                 'dash_type': 'square_dot'},
-            # 'trendline': trendLine,
         })
         chart.add_series({
-            'name': ['Data', 3, columns+4],
-            'categories': ['Data', 4, columns+1, 5, columns+1],
-            'values': ['Data', 4, columns+4, 5, columns+4],
+            'name': ['Data', 3, columns+5],
+            'categories': ['Data', 4, columns+2, 5, columns+2],
+            'values': ['Data', 4, columns+5, 5, columns+5],
             'line': {
                 'color': 'black',
                 'width': 1.25,
                 'dash_type': 'square_dot'},
-            # 'trendline': trendLine,
         })
         # ----------------
 
@@ -321,13 +310,13 @@ class Result:
         time_chart.set_chart(chart)
 
     def export_transport_mode(self, path: str,
-                              config_path: str,
+                              config: pd.DataFrame,
                               msd: pd.DataFrame):
         """Export 'Transport Mode Characterization' report.
 
         Arguments:
             path {str} -- Path to the report file.
-            config_path {str} -- Path to configuration file.
+            config {pd.DataFrame} -- DataFrame with diffusivity configuration.
             msd {pd.DataFrame} -- DataFrame containing MSD data.
         """
         print("Export transport mode sheet")
@@ -363,8 +352,9 @@ class Result:
                                msd_title, header_format)
 
         # Add guide series data
-        slopeData = self.get_slopes(msd)
-        b = slopeData[1].mean()
+        slope_data = self.get_slopes(msd)
+        _, intercept = slope_data.mean().tolist()
+        # intercept = slope_data.mean()
 
         data_sheet.merge_range(1, columns+2, 1, columns +
                                5, 'Guides', header_format)
@@ -381,27 +371,28 @@ class Result:
         data_sheet.write(
             line, col, '=-2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{b}', num_format)
+            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{b}', num_format)
+            line, col+2, f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
+            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
 
         line += 1
         ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
         data_sheet.write(
             line, col, '=2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{b}', num_format)
+            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{b}', num_format)
+            line, col+2, f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{b}', num_format)
+            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
         # ----------------------------
 
         self.make_chart_LOG(workbook, msd, 1)
 
-        slopeData.to_excel(writer, index=False, sheet_name='Characterization')
+        slope_data[0].to_excel(writer, index=False,
+                               sheet_name='Characterization')
 
         sheet_format = workbook.add_format(
             {'align': 'center', 'valign': 'vcenter'})
@@ -424,19 +415,13 @@ class Result:
         data_sheet.write('D4', 'Diffusive')
         data_sheet.write('D5', 'Active')
 
-        diff_ranges = self.get_diffusivity_ranges(config_path)
-
-        immobile_low = float(diff_ranges.immobile.low)
-        immobile_high = float('{0:.3g}'.format(
-            diff_ranges.immobile.high-0.001))
-        subdiffusive_low = float(
-            '{0:.1g}'.format(diff_ranges.sub_diffusive.low))
-        subdiffusive_high = float('{0:.3g}'.format(
-            diff_ranges.sub_diffusive.high-0.001))
-        diffusive_low = float('{0:.2g}'.format(diff_ranges.diffusive.low))
-        diffusive_high = float('{0:.3g}'.format(
-            diff_ranges.diffusive.high-0.001))
-        active_low = float('{0:.2g}'.format(diff_ranges.active.low))
+        immobile_low = config.iloc[0, 1]
+        immobile_high = config.iloc[0, 2]
+        subdiffusive_low = config.iloc[1, 1]
+        subdiffusive_high = config.iloc[1, 2]
+        diffusive_low = config.iloc[2, 1]
+        diffusive_high = config.iloc[2, 2]
+        active_low = config.iloc[3, 1]
 
         data_sheet.write('E2', f'{str(immobile_low)}-{str(immobile_high)}')
         data_sheet.write(
@@ -485,42 +470,32 @@ class Analysis:
                 be necessary for some functions. Defaults to the App directory.
         """
         self.out_path = os.path.join(config_path, 'export')
-        self.config_path = self.resolve_config()
         self.report_list = []
-        self.filter = 0
-        self.total_frames = 0
-        self.fps = 0
-        self.width_px = 0
-        self.width_um = 0
-        self.pixel_size = 0.0
         self.msd = pd.DataFrame()
         self.deff = pd.DataFrame()
         self.msd_log = pd.DataFrame()
         self.trajectories_list = []
 
-    # TODO: Implement functionality
-    def resolve_config(self) -> str:
-        """Verifies if config file exists in the same folder as the App.
-        If it does not exist, creates it.
-
-        Returns:
-            str -- Path to config file.
-        """
-        path = self.out_path
-
-        return path
-
-    def load_config(self) -> None:
+    def load_config(self, db: Database) -> None:
         """Load configuration needed for analysis such as video aquisition \
-            setup and diffusivity ranges. 
+            setup and diffusivity ranges.
+
+        Arguments:
+            db {Database} -- Database object to get data from.
         """
-        # TODO: Load setting from file/DB
-        self.filter = 590
-        self.fps = 30
-        self.total_frames = 606
-        self.width_px = 512
-        self.width_um = 160
-        self.pixel_size = self.width_px / self.width_um
+        self.analysis_config = pd.DataFrame(db.fetch('analysis_config'),
+                                            columns=['id',
+                                                     'fps',
+                                                     'total_frames',
+                                                     'width_px',
+                                                     'width_um',
+                                                     'min_frames'])
+        self.analysis_config['pixel_size'] = \
+            self.analysis_config.width_px / self.analysis_config.width_um
+        self.transport_mode_config = pd.DataFrame(db.fetch('diffusivity'),
+                                                  columns=['mode',
+                                                           'min',
+                                                           'max'])
 
     def add_report(self) -> None:
         """
@@ -540,7 +515,7 @@ class Analysis:
 
             file_list = fileDialog.GetPaths()
 
-            self.load_config()
+            # self.load_config(conn)
 
             for file in file_list:
                 new_report = Report()
@@ -587,31 +562,33 @@ class Analysis:
             pd.DataFrame -- Pandas DataFrame containing analysis MSD.
         """
         # TODO: Raise error if anything goes wrong
-        time_step = 1 / self.fps
-        max_time = self.total_frames / self.fps
-        tau = np.linspace(time_step, max_time, self.total_frames)
+        time_step = 1 / self.analysis_config.fps[0]
+        max_time = \
+            self.analysis_config.total_frames[0] / self.analysis_config.fps[0]
+        tau = np.linspace(time_step, max_time,
+                          self.analysis_config.total_frames[0])
 
+        msd = pd.DataFrame()
         for i, trajectory in enumerate(self.trajectories_list):
             frames = len(trajectory)
             t = tau[:frames]
             xy = trajectory.values
-            msd = pd.DataFrame()
 
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
             shifts = position["t"].index.values + 1
 
             msdp = np.zeros(shifts.size)
-            for j, shift in enumerate(shifts):
+            for k, shift in enumerate(shifts):
                 diffs_x = position['x'] - position['x'].shift(-shift)
                 diffs_y = position['y'] - position['y'].shift(-shift)
                 square_sum = np.square(diffs_x) + np.square(diffs_y)
-                msdp[j] = square_sum.mean()
+                msdp[k] = square_sum.mean()
 
-            msdm = msdp * (1 / (self.pixel_size ** 2))
-            msdm = msdm[:self.filter]
+            msdm = msdp * (1 / (self.analysis_config.pixel_size[0] ** 2))
+            msdm = msdm[:self.analysis_config.min_frames[0]]
             msd[i] = msdm
 
-        tau = tau[:self.filter]
+        tau = tau[:self.analysis_config.min_frames[0]]
 
         msd.insert(0, "tau", tau, True)
         msd = msd[msd[msd.columns[0]] < 10]
@@ -619,7 +596,7 @@ class Analysis:
         msd.name = "MSD"
         msd.set_index('tau', inplace=True)
         msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        msd['mean'] = msd.iloc[:, 1:].mean(axis=1)
+        msd['mean'] = msd.mean(axis=1)
 
         return msd
 
@@ -643,7 +620,7 @@ class Analysis:
         msd_log.set_index(
             f'Timescale ({chr(120591)}) (s)', inplace=True)
         msd_log.name = "MSD-LOG"
-        msd_log['mean'] = msd_log.iloc[:, 1:].mean(axis=1)
+        msd_log['mean'] = msd_log.mean(axis=1)
 
         return msd_log
 
@@ -665,7 +642,7 @@ class Analysis:
 
         deff = msd.iloc[:, :-1].div((4*msd.index), axis=0)
         deff.name = "Deff"
-        deff["mean"] = deff.iloc[:, :].mean(axis=1)
+        deff["mean"] = deff.mean(axis=1)
 
         return deff
 
@@ -689,17 +666,17 @@ class Analysis:
             report.count_trajectories()
             print(f"Total trajectories: {report.total_trajectories}")
 
-            report.filter_trajectories(self.filter)
+            report.filter_trajectories(self.analysis_config.min_frames[0])
             print(f"Valid trajectories: {report.valid_trajectories}")
 
             # report.summarize_trajectories()
             self.trajectories_list.extend(report.valid_trajectories_list)
 
-        print("\nFull trajectory list compiled. Initializing calculations...")
+        print("\nFull trajectory list compiled.\nInitializing calculations...")
 
         self.msd = self.compute_msd()
         self.msd_log = self.compute_msd_log(self.msd)
-        self. deff = self.compute_deff(self.msd)
+        self.deff = self.compute_deff(self.msd)
 
         self.msd = self.rename_columns(self.msd)
         self.msd_log = self.rename_columns(self.msd_log)
@@ -713,4 +690,4 @@ class Analysis:
         result.export_individual_particle_analysis(
             self.out_path, self.msd, self.deff)
         result.export_transport_mode(
-            self.out_path, self.config_path, self.msd_log)
+            self.out_path, self.transport_mode_config, self.msd_log)
