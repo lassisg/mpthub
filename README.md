@@ -33,11 +33,10 @@ The default configurations are:
 | ---------------- | ---------------------------- | ------------------------------------ |
 | Windows          | C:\\Users\\\<username>\\.mpt | C:\\Users\\\<username>\\.mpt\\export |
 | Linux            | /home/\<username>/.mpt       | /home/\<username>/.mpt/export        |
+| Mac OS           | /Users/\<username>/.mpt      | /Users/\<username>/.mpt/export       |
 
 If those folders don't exist, they will be created at first App use.
 _**The values are saved each time the user uses the App.**_
-
-<!-- | Mac OS           |                              |                                      | -->
 
 #### 1.2. Analysis configuration
 
