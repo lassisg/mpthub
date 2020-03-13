@@ -7,17 +7,23 @@ import os
 import time
 from pathlib import Path, PurePath
 
-# Initial setup
-CFG_PATH = os.path.join(os.path.dirname(
-    os.path.realpath(__file__)), 'data')
+DEV = True
 
 
 def main():
     if not PurePath.joinpath(Path.home(), '.mpt').exists():
         Path.mkdir(PurePath.joinpath(Path.home(), '.mpt'))
+    if not PurePath.joinpath(Path.home(), '.mpt', 'export').exists():
+        Path.mkdir(PurePath.joinpath(Path.home(), '.mpt', 'export'))
 
-    DB_PATH = str(PurePath.joinpath(Path.home(), '.mpt', 'config.db'))
+    if DEV:
+        BASE_PATH = os.path.join(os.path.dirname(
+            os.path.realpath(__file__)), 'data')
+    else:
+        BASE_PATH = str(PurePath.joinpath(Path.home(), '.mpt'))
 
+    DB_PATH = os.path.join(BASE_PATH, 'config.db')
+    OUT_PATH = os.path.join(BASE_PATH, 'export')
     # app = mptApp()
     # app = wx.App()
     # frame = Main()
@@ -25,15 +31,15 @@ def main():
     # app.MainLoop()
 
     db = Database(DB_PATH)
-    db.persist()
+    db.persist(BASE_PATH)
 
-    # # TODO: Code below must go to GUI
-    # analysis = Analysis(CFG_PATH)
-    # analysis.load_config(db)
-    # analysis.add_report()
-    # if analysis.report_list:
-    #     analysis.analyze()
-    #     analysis.export()
+    # TODO: Code below must go to GUI
+    analysis = Analysis(OUT_PATH)
+    analysis.load_config(db)
+    analysis.add_report(db)
+    if analysis.report_list:
+        analysis.analyze()
+        analysis.export()
 
     db.conn.close()
 
@@ -43,4 +49,3 @@ if __name__ == '__main__':
     main()
     # end_time = time.time()
     # print(f"Elapsed time: {end_time-start_time}")
-    # home = str(Path.home())

@@ -185,9 +185,10 @@ class Result:
             deff {pd.DataFrame} -- DataFrame containing Deff data.
         """
         print("Exporting 'Individual Particle Analysis' report...")
-        file_name = os.path.join(path, "Individual Particle Analysis.xlsx")
+        file_name = "Individual Particle Analysis.xlsx"
+        full_path = os.path.join(path, file_name)
 
-        writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+        writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
         msd.to_excel(writer, sheet_name='Data', startrow=1)
         deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
@@ -220,6 +221,22 @@ class Result:
 
         self.make_chart(workbook, msd, 1)
         self.make_chart(workbook, deff, len(msd)+4)
+
+        app = wx.App()
+        # TODO: Move save dialog to function
+        with wx.FileDialog(None, "Save Individual Particle Analysis Report",
+                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE) as saveDialog:
+
+            saveDialog.SetDirectory(path)
+            saveDialog.SetFilename(file_name)
+            save_path = saveDialog.GetDirectory()
+            # TODO: Add save path to app_config table
+            if saveDialog.ShowModal() == wx.ID_CANCEL:
+                print("Saving to user folder...")
+
+            report_name = saveDialog.GetPath()
+            workbook.filename = report_name
 
         workbook.close()
         writer.save()
@@ -462,14 +479,13 @@ class Result:
 
 class Analysis:
 
-    def __init__(self, config_path: str) -> None:
+    def __init__(self, out_path: str) -> None:
         """Initialize core variables with empty values.
 
         Arguments:
-            config_path {str} -- Path to the configuration file tha will \
-                be necessary for some functions. Defaults to the App directory.
+            out_path {str} -- Path to export reports.
         """
-        self.out_path = os.path.join(config_path, 'export')
+        self.out_path = out_path
         self.report_list = []
         self.msd = pd.DataFrame()
         self.deff = pd.DataFrame()
@@ -497,14 +513,14 @@ class Analysis:
                                                            'min',
                                                            'max'])
 
-    def add_report(self) -> None:
+    def add_report(self, db: Database) -> None:
         """
         Adds one or more 'ImageJ Full Report' file (in .csv format) to a \
             list of reports to be analyzed.
         If the user cancels the operation, nothong is done.
         """
         app = wx.App()
-
+        # TODO: Move open dialog to function
         with wx.FileDialog(None, "Open ImageJ Full report file(s)",
                            wildcard="ImageJ full report files (*.csv)|*.csv",
                            style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
@@ -514,9 +530,8 @@ class Analysis:
                 return None
 
             file_list = fileDialog.GetPaths()
-
-            # self.load_config(conn)
-
+            open_path = fileDialog.GetDirectory()
+            # TODO: Add open path to app_config table
             for file in file_list:
                 new_report = Report()
 
