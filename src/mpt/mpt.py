@@ -235,8 +235,7 @@ class Result:
             if saveDialog.ShowModal() == wx.ID_CANCEL:
                 print("Saving to user folder...")
 
-            report_name = saveDialog.GetPath()
-            workbook.filename = report_name
+            workbook.filename = saveDialog.GetPath()
 
         workbook.close()
         writer.save()
@@ -337,12 +336,10 @@ class Result:
             msd {pd.DataFrame} -- DataFrame containing MSD data.
         """
         print("Export transport mode sheet")
+        file_name = "Transport Mode Characterization.xlsx"
+        full_path = os.path.join(path, file_name)
 
-        columns = msd.shape[1]
-
-        file_name = os.path.join(path, "Transport Mode Characterization.xlsx")
-
-        writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
+        writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
         msd.to_excel(writer, sheet_name='Data', startrow=1)
         workbook = writer.book
@@ -356,6 +353,7 @@ class Result:
                                           'valign': 'vcenter',
                                           'num_format': 1})
 
+        columns = len(msd.columns)
         data_sheet = writer.sheets['Data']
         data_sheet.set_row(1, 21, header_format)
         data_sheet.set_row(len(msd)+4, 21, header_format)
@@ -473,7 +471,21 @@ class Result:
         data_sheet.write_formula('E9', '=COUNT(A:A)')
         data_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        # TODO: Add save dialog
+        app = wx.App()
+        # TODO: Move save dialog to function
+        with wx.FileDialog(None, "Save Transport Mode Characterization Report",
+                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE) as saveDialog:
+
+            saveDialog.SetDirectory(path)
+            saveDialog.SetFilename(file_name)
+            save_path = saveDialog.GetDirectory()
+            # TODO: Add save path to app_config table
+            if saveDialog.ShowModal() == wx.ID_CANCEL:
+                print("Saving to user folder...")
+
+            workbook.filename = saveDialog.GetPath()
+
         workbook.close()
         writer.save()
 
