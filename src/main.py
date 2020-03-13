@@ -30,9 +30,28 @@ def main():
     # frame.Show()
     # app.MainLoop()
 
-    db = Database(DB_PATH)
-    db.persist(BASE_PATH)
+    db = Database(BASE_PATH)
+    db.persist()
 
+    # Update examples
+    # new_analysis_config = (201, 60, 575, 320, 160, 560)
+    # db.update_analysis_config(new_analysis_config)
+
+    # new_diffusivity = (0.1, 0.799, 'immobile')
+    # db.update_diffusivity_config(new_diffusivity)
+
+    # new_diffusivity = (0.8, 0.999, 'sub-diffusive')
+    # db.update_diffusivity_config(new_diffusivity)
+
+    # new_diffusivity = (1.0, 1.099, 'diffusive')
+    # db.update_diffusivity_config(new_diffusivity)
+
+    # new_diffusivity = (1.1, None, 'active')
+    # db.update_diffusivity_config(new_diffusivity)
+
+    # new_app_config = ('D:\\Desktop', 'D:\\')
+    # db.update_app_config(new_app_config)
+    # --------------------------
     # TODO: Code below must go to GUI
     analysis = Analysis(OUT_PATH)
     analysis.load_config(db)
