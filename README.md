@@ -100,46 +100,56 @@ There are currently 2 reports available:
 #### 4.1. Individual Particle Analysis
 
 This report contains 5 sheets, described bellow:
-**TODO: Add image (sheet names)**
+
+![mode_sheets](./src/img/Individual_Particle_Analysis-sheets.png "Individual Particle Analysis report sheets")
 
 ##### 4.1.1. Data
 
 This sheet contains the data from each valid trajectory Mean-squared Displacement (MSD) and Diffusivity efficiency coefficient (Deff).
 
+![mode_data](./src/img/Individual_Particle_Analysis-data.png "Individual Particle Analysis report data")
+
 ##### 4.1.2. \<MSD> vs Time
 
 This sheet contains the Ensemble Mean-squared Displacement (\<MSD>) plot.
-**TODO: Add image (print)**
+
+![ensemble_msd](./src/img/Ensemble_MSD_plot.png "Ensemble MSD plot")
 
 ##### 4.1.3. MSD vs Time
 
 This sheet contains the Mean-squared Displacement (MSD) plot with all trajectories.
-**TODO: Add image (print)**
+
+![individual_msd_plot](./src/img/Individual_MSD_plot.png "Individual MSD plot")
 
 ##### 4.1.4. \<Deff> vs Time
 
 This sheet contains the Ensemble Mean-squared Displacement (\<MSD>) chart.
-**TODO: Add image (print)**
+
+![ensemble_deff](./src/img/Ensemble_Deff_plot.png "Ensemble Deff plot")
 
 ##### 4.1.5. Deff vs Time
 
 This sheet contains the Mean-squared Displacement (MSD) plot with all trajectories.
-**TODO: Add image (print)**
+
+![individual_deff_plot](./src/img/Individual_Deff_plot.png "Individual Deff plot")
 
 #### 4.2. Transport Mode Characterization
 
 This report have 3 sheets, described bellow:
-**TODO: Add image (sheet names)**
+
+![mode_sheets](./src/img/Transport_Mode_Characterization-sheets.png "Transport Mode Characterization report sheets")
 
 ##### 4.2.1. Data
 
 This sheet contains the data from each valid trajectory Mean-squared Displacement (MSD) in logarithm scale.
-**TODO: Add image (print)**
+
+![mode_data](./src/img/Transport_Mode_Characterization-data.png "Transport Mode Characterization report data")
 
 ##### 4.2.2. MSD vs Time
 
 This sheet contains the Mean-squared Displacement (MSD) log-log plot with all trajectories.
-**TODO: Add image (print)**
+
+![mode_msd](./src/img/Transport_Mode_Characterization-plot.png "Transport Mode Characterization report MSD plot (log-log)")
 
 ##### 4.2.3. Characterization
 
@@ -152,7 +162,7 @@ This sheet contains:
     -   **N**: Number of slopes (equal number of valid trajectories);
     -   **STD**: Standard Deviation.
 
-**TODO: Add image (print)**
+![mode_chararcterization](./src/img/Transport_Mode_Characterization-chararcterization.png "Transport Mode Characterization report sheets")
 
 #### 4.3. Einstein-Stokes Calculation - D0_Dw-Microviscosity
 
