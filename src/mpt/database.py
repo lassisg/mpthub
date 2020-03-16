@@ -12,6 +12,7 @@ class Database:
         self.cur = self.conn.cursor()
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS app_config (
+            id INT PRIMARY KEY,
             open_folder VARCHAR,
             save_folder VARCHAR);""")
 
@@ -32,8 +33,8 @@ class Database:
 
     def persist(self) -> None:
         app_config = f"""INSERT OR IGNORE 
-                           INTO 'app_config' (open_folder, save_folder)
-                         VALUES ('{self.db_path}', '{self.report_path}');"""
+                           INTO 'app_config' (id, open_folder, save_folder)
+                         VALUES (1, '{self.db_path}', '{self.report_path}');"""
         self.cur.execute(app_config)
 
         diffusivity = """INSERT OR IGNORE 
@@ -69,7 +70,8 @@ class Database:
     def update_app_config(self, path_data: tuple) -> None:
         app_config = """UPDATE app_config 
                            SET open_folder = ?,
-                               save_folder = ?;"""
+                               save_folder = ?
+                         WHERE id = 1;"""
         self.cur.execute(app_config, path_data)
         self.conn.commit()
 

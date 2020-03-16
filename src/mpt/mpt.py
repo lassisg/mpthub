@@ -517,6 +517,7 @@ class Analysis:
         """
         self.analysis_config = pd.DataFrame(db.fetch('analysis_config'),
                                             columns=['id',
+                                                     'size',
                                                      'fps',
                                                      'total_frames',
                                                      'width_px',
