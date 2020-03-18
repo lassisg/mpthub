@@ -495,13 +495,9 @@ class Result:
 
 class Analysis:
 
-    def __init__(self, out_path: str) -> None:
+    def __init__(self) -> None:
         """Initialize core variables with empty values.
-
-        Arguments:
-            out_path {str} -- Path to export reports.
         """
-        self.out_path = out_path
         self.report_list = []
         self.msd = pd.DataFrame()
         self.deff = pd.DataFrame()
@@ -515,6 +511,12 @@ class Analysis:
         Arguments:
             db {Database} -- Database object to get data from.
         """
+        app_config = pd.DataFrame(db.fetch('app_config'),
+                                  columns=['id',
+                                           'open_folder',
+                                           'save_folder'])
+        self.open_path = app_config.open_folder[0]
+        self.out_path = app_config.save_folder[0]
         self.analysis_config = pd.DataFrame(db.fetch('analysis_config'),
                                             columns=['id',
                                                      'size',
@@ -562,6 +564,7 @@ class Analysis:
                 self.report_list.append(new_report)
 
                 del new_report
+        app.Destroy()
 
     def rename_columns(self, data: pd.DataFrame) -> pd.DataFrame:
         """Rename Pandas DataFrame columns to meaningfull names according \
