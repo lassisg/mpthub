@@ -7,38 +7,6 @@ import numpy as np
 from mpt.database import Database
 
 
-class Utils:
-    @staticmethod
-    def save_report(path: str, file_name: str) -> str:
-        """Shows Save dialog for each report and saves the path for the future.
-
-        Arguments:
-            path {str} -- Path to save the report.
-            file_name {str} -- Report file name, without extension (because \
-                it is used on the dialog title).
-
-        Returns:
-            str -- Full path for report save (path + file_name), after user \
-                confirmation or edit.
-        """
-        app = wx.App()
-        report_name = os.path.join(path, file_name+".xlsx")
-        with wx.FileDialog(None, f"Save {file_name} Report",
-                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
-                           style=wx.FD_SAVE) as saveDialog:
-
-            saveDialog.SetDirectory(path)
-            saveDialog.SetFilename(file_name)
-            save_path = saveDialog.GetDirectory()
-            # TODO: Add save path to app_config table
-            if saveDialog.ShowModal() == wx.ID_CANCEL:
-                print("Saving to user folder...")
-
-            report_name = saveDialog.GetPath()
-
-        return report_name
-
-
 class Report:
 
     def __init__(self) -> None:
@@ -80,7 +48,8 @@ class Report:
             pd.DataFrame -- Cleaned DataFrame containing only the useful \
                 columns.
         """
-        if all([item in data.columns for item in ['Trajectory', 'Frame', 'x', 'y']]):
+        if all([item in data.columns for item in
+                ['Trajectory', 'Frame', 'x', 'y']]):
             return data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
         else:
             return pd.DataFrame()
@@ -104,7 +73,8 @@ class Report:
         # if not self.raw_data.empty:
         if not self.raw_data.empty and min_frames > 0:
             grouped_trajectories = self.raw_data.groupby(
-                'Trajectory').filter(lambda x: len(x['Trajectory']) > min_frames)
+                'Trajectory').filter(lambda x:
+                                     len(x['Trajectory']) > min_frames)
 
             self.valid_trajectories_number = list(
                 grouped_trajectories.iloc[:, :1].
@@ -124,8 +94,10 @@ class Report:
         for trajectory_nr, trajectory in zip(
                 self.valid_trajectories_number,
                 self.valid_trajectories_list):
-            print(
-                f"Trajectory {trajectory_nr} lenght: {len(trajectory.loc[trajectory['Trajectory'] == trajectory_nr])}")
+            t_nr = trajectory_nr
+            t_len = len(trajectory.loc[trajectory['Trajectory'] ==
+                                       trajectory_nr])
+            print(f"Trajectory {t_nr} lenght: {t_len}")
 
 
 class Result:
@@ -151,7 +123,7 @@ class Result:
     def make_chart(self, workbook: xls.book,
                    data: pd.DataFrame,
                    start_row: int) -> None:
-        # TODO: Improve function to be more generic so it can be used for any chart
+        # TODO: Make function generic so it can be used for any chart
         """Create a chart for individual particle analysis.
 
         Arguments:
@@ -172,15 +144,19 @@ class Result:
         for i in range(1, columns + 1):
             chart.add_series({
                 'name': ['Data', start_row, i],
-                'categories': ['Data', start_row + 1, 0, start_row + len(data), 0],
-                'values': ['Data', start_row + 1, i, start_row + len(data), i],
+                'categories': ['Data', start_row + 1, 0,
+                               start_row + len(data), 0],
+                'values': ['Data', start_row + 1, i,
+                           start_row + len(data), i],
                 'trendline': False,
             })
 
         mean_chart.add_series({
             'name': ['Data', start_row, columns],
-            'categories': ['Data', start_row+1, 0, start_row+len(data), 0],
-            'values': ['Data', start_row+1, columns, start_row+len(data), columns],
+            'categories': ['Data', start_row+1, 0,
+                           start_row+len(data), 0],
+            'values': ['Data', start_row+1, columns,
+                       start_row+len(data), columns],
         })
 
         # Add a chart title, style and some axis labels.
@@ -254,7 +230,7 @@ class Result:
         self.make_chart(workbook, msd, 1)
         self.make_chart(workbook, deff, len(msd)+4)
 
-        workbook.filename = Utils.save_report(path, file_name)
+        workbook.filename = self.save_report(path, file_name)
         workbook.close()
         writer.save()
 
@@ -288,8 +264,10 @@ class Result:
         for i in range(1, columns):
             chart.add_series({
                 'name': ['Data', start_row, i],
-                'categories': ['Data', start_row + 1, 0, start_row + len(data), 0],
-                'values': ['Data', start_row + 1, i, start_row + len(data), i],
+                'categories': ['Data', start_row + 1, 0,
+                               start_row + len(data), 0],
+                'values': ['Data', start_row + 1, i,
+                           start_row + len(data), i],
                 'trendline': trendLine,
             })
 
@@ -488,9 +466,38 @@ class Result:
         data_sheet.write_formula('E9', '=COUNT(A:A)')
         data_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        workbook.filename = Utils.save_report(path, file_name)
+        workbook.filename = self.save_report(path, file_name)
         workbook.close()
         writer.save()
+
+    def save_report(self, path: str, file_name: str) -> str:
+        """Shows Save dialog for each report and saves the path for the future.
+
+        Arguments:
+            path {str} -- Path to save the report.
+            file_name {str} -- Report file name, without extension (because \
+                it is used on the dialog title).
+
+        Returns:
+            str -- Full path for report save (path + file_name), after user \
+                confirmation or edit.
+        """
+        # app = wx.App()
+        report_name = os.path.join(path, file_name+".xlsx")
+        with wx.FileDialog(None, f"Save {file_name} Report",
+                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
+                           style=wx.FD_SAVE) as saveDialog:
+
+            saveDialog.SetDirectory(path)
+            saveDialog.SetFilename(file_name)
+            # save_path = saveDialog.GetDirectory()
+            # TODO: Add save path to app_config table
+            if saveDialog.ShowModal() == wx.ID_CANCEL:
+                print("Saving to user folder...")
+
+            report_name = saveDialog.GetPath()
+
+        return report_name
 
 
 class Analysis:
@@ -549,7 +556,7 @@ class Analysis:
                 return None
 
             file_list = fileDialog.GetPaths()
-            open_path = fileDialog.GetDirectory()
+            # open_path = fileDialog.GetDirectory()
             # TODO: Add open path to app_config table
             for file in file_list:
                 new_report = Report()

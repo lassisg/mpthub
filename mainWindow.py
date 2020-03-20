@@ -1,22 +1,19 @@
 #!/home/leandro/.cache/pypoetry/virtualenvs/mpt-XiopSbUN-py3.7/bin/python
 # from transportModeSetupWindow import ModeConfig
 # import views.transportModeSetupWindow as tm
-from mpt.mpt import Analysis, Report, Result, Utils
-from mpt.database import Database
+from mpt.mpt import Analysis, Report
+from mpt import database as mptDB
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_wx import NavigationToolbar2Wx
+# from matplotlib.backends.backend_wx import NavigationToolbar2Wx
 from matplotlib.backends.backend_wxagg import FigureCanvasWxAgg as FigureCanvas
-import sys
+# import sys
 import wx
 import os
 from pathlib import Path, PurePath
-import time
-from numpy import arange, sin, pi
+# import time
+# from numpy import arange, sin, pi
 import matplotlib
 matplotlib.use('WXAgg')
-
-# sys.path.append("D:/Cloud/Onedrive/Pessoal/Acadêmico/FEUP/2019-2020-PDISS_DISS/App/src/res/")
-# from ic import ic
 
 
 class LeftPanel(wx.Panel):
@@ -57,11 +54,18 @@ class Main(wx.Frame):
     # def __init__(self, parent, title):
 
     def __init__(self):
-        # super(MyFrame, self).__init__(parent, title=title, size=(960, 600),style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
-        super(Main, self).__init__(parent=None, title="Multiple Particle Tracking Analysis", size=(
-            848, 594), style=wx.DEFAULT_FRAME_STYLE & ~(wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        # super(MyFrame, self).__init__(parent,
+        #                               title=title,
+        #                               size=(960, 600),
+        #                               style=wx.DEFAULT_FRAME_STYLE & ~(
+        #                                 wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
+        super(Main, self).__init__(parent=None,
+                                   title="Multiple Particle Tracking Analysis",
+                                   size=(848, 594),
+                                   style=wx.DEFAULT_FRAME_STYLE & ~(
+                                       wx.RESIZE_BORDER | wx.MAXIMIZE_BOX))
         self.SetIcon(wx.Icon(os.path.join(
-            os.getcwd(), "src", "img", "icon.png")))
+            os.getcwd(), "mpt", "assets", "icon.png")))
 
         splitter = wx.SplitterWindow(self)
         setup_panel = LeftPanel(splitter)
@@ -97,7 +101,7 @@ class Main(wx.Frame):
         else:
             BASE_PATH = str(PurePath.joinpath(Path.home(), '.mpt'))
 
-        self.db = Database(BASE_PATH)
+        self.db = mptDB.Database(BASE_PATH)
         self.db.persist()
         self.analysis = Analysis()
         self.analysis.load_config(self.db)
@@ -219,7 +223,7 @@ class Main(wx.Frame):
             del new_report
         return report_list
 
-    def AddReports(self, db: Database) -> None:
+    def AddReports(self, db: mptDB.Database) -> None:
         """Adds one or more 'ImageJ Full Report' file (in .csv format) to a \
             list of reports to be analyzed.
         If the user cancels the operation, nothing is done.
@@ -254,12 +258,17 @@ class MyPanel(wx.Panel):
         # self.text_ctrl.SetValue('OnOpen')
 
         # if self.contentNotSaved:
-        #     if wx.MessageBox("Current content has not been saved! Proceed?", "Please confirm", wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
+        #     if wx.MessageBox("Current content has not been saved! Proceed?",
+        #                      "Please confirm",
+        #                      wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
         #         return
 
-        # otherwise ask the user what new file to open
-        # with wx.FileDialog(self, "Open XYZ file", wildcard="XYZ files (*.xyz)|*.xyz",
-        #                    style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as fileDialog:
+        #     otherwise ask the user what new file to open
+
+        # with wx.FileDialog(self, "Open XYZ file",
+        #                    wildcard="XYZ files (*.xyz)|*.xyz",
+        #                    style=wx.FD_OPEN |
+        #                          wx.FD_FILE_MUST_EXIST) as fileDialog:
 
         #     if fileDialog.ShowModal() == wx.ID_CANCEL:
         #         return     # the user changed their mind
@@ -275,12 +284,15 @@ class MyPanel(wx.Panel):
     # def OnOpenFolder(self, event):
         # self.text_ctrl.SetValue('OnOpenFolder')
         # if self.contentNotSaved:
-        #     if wx.MessageBox("Current content has not been saved! Proceed?", "Please confirm", wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
+        #     if wx.MessageBox("Current content has not been saved! Proceed?",
+        #                      "Please confirm",
+        #                      wx.ICON_QUESTION | wx.YES_NO, self) == wx.NO:
         #         return
 
-        # otherwise ask the user what new file to open
+        # # otherwise ask the user what new file to open
         # with wx.DirDialog(None, "Choose input directory", "",
-        #                   wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST) as dirDialog:
+        #                   wx.DD_DEFAULT_STYLE |
+        #                   wx.DD_DIR_MUST_EXIST) as dirDialog:
         #     if dirDialog.ShowModal() == wx.ID_CANCEL:
         #         return
 
@@ -291,30 +303,31 @@ class MyPanel(wx.Panel):
 
         #     entries = os.scandir(videoPath)
         #     imageList = []
-        #     # try:
-        #     #     with os.scandir(videoPath) as entries:
-        #     #         for entry in entries:
-        #     #             extension = os.path.splitext(entry.name)[1]
-        #     #             if entry.is_file() and extension == ".tif":
-        #     #                 # print(f"{entry.name} -> {extension}")
-        #     #                 fileName = os.path.splitext(entry.name)[0]
-        #     #                 imageList.append(fileName)
+        #     try:
+        #         with os.scandir(videoPath) as entries:
+        #             for entry in entries:
+        #                 extension = os.path.splitext(entry.name)[1]
+        #                 if entry.is_file() and extension == ".tif":
+        #                     # print(f"{entry.name} -> {extension}")
+        #                     fileName = os.path.splitext(entry.name)[0]
+        #                     imageList.append(fileName)
 
-        #     #     # doAnalysis = wx.MessageBox("Would you like to start the video analysis on ImageJ?",
-        #     #     #                            "Image Analysis", wx.YES_NO | wx.CENTRE)
+        #         doAnalysis = wx.MessageBox(
+        #             "Would you like to start the video analysis on ImageJ?",
+        #             "Image Analysis", wx.YES_NO | wx.CENTRE)
 
-        #     #     # if doAnalysis == wx.YES:
-        #     #     #     print("Let's do it!")
-        #     #         # reportPath = f"{videoPath}/reports"
-        #     #     #     if not os.path.exists(reportPath):
-        #     #     #         os.mkdir(reportPath)
-        #     #         # fiji = ic()
-        #     #         # fiji.startAnalysis(imageList, videoPath, reportPath)
-        #     #     # else:
-        #     #     #     print("No worries, we'll do it another time!")
+        #         if doAnalysis == wx.YES:
+        #             print("Let's do it!")
+        #         reportPath = f"{videoPath}/reports"
+        #         if not os.path.exists(reportPath):
+        #             os.mkdir(reportPath)
+        #         fiji = ic()
+        #         fiji.startAnalysis(imageList, videoPath, reportPath)
+        #         else:
+        #             print("No worries, we'll do it another time!")
 
-        #     # except IOError:
-        #     #     wx.LogError("Cannot read folder")
+        #     except IOError:
+        #         wx.LogError("Cannot read folder")
 
     # def OnSave(self, event):
         # self.text_ctrl.SetValue('OnSave')
@@ -335,158 +348,170 @@ class MyPanel(wx.Panel):
         # end = time.time()
         # print(f"Elapsed time: {end-start}")
 
-
-# class ModeConfig(wx.Dialog):
-    # _CFG_PATH = os.getcwd() + '/src/res/'
+        # class ModeConfig(wx.Dialog):
+        # _CFG_PATH = os.getcwd() + '/src/res/'
 
     # def __init__(self):
-    #     wx.Dialog.__init__(
-    #         self, None, -1, "Characterization mode setup", size=(356, 224))
+        # wx.Dialog.__init__(self, None, -1,
+        #                    "Characterization mode setup", size=(356, 224))
 
-    #     self.save = False
-    #     # self.transport_mode_values = self.GetTransportMode()
+        # self.save = False
+        # # self.transport_mode_values = self.GetTransportMode()
 
-    #     # TODO: Bind OnChange event for fields
-    #     x_pos = 65
-    #     y_pos = 16
-    #     self.active_values = self.transport_mode_values["active_range"]
-    #     self.active_range = wx.StaticText(
-    #         self, label="Active", pos=(x_pos, y_pos+4))
-    #     self.active_from = wx.NumCtrl(
-    #         self, value=self.active_values[0], fractionWidth=1, pos=(
-    #             x_pos+100, y_pos), size=(30, -1), autoSize=False)
-    #     self.active_signal = wx.StaticText(
-    #         self, label="+", pos=(x_pos+130, y_pos+3))
+        # # TODO: Bind OnChange event for fields
+        # x_pos = 65
+        # y_pos = 16
+        # self.active_values = self.transport_mode_values["active_range"]
+        # self.active_range = wx.StaticText(
+        #     self, label="Active", pos=(x_pos, y_pos+4))
+        # self.active_from = wx.NumCtrl(
+        #     self, value=self.active_values[0], fractionWidth=1, pos=(
+        #         x_pos+100, y_pos), size=(30, -1), autoSize=False)
+        # self.active_signal = wx.StaticText(
+        #     self, label="+", pos=(x_pos+130, y_pos+3))
 
-    #     y_pos += 30
-    #     self.dif_values = self.transport_mode_values["diffusive_range"]
-    #     self.dif_range = wx.StaticText(
-    #         self, label="Diffusive", pos=(x_pos, y_pos+4))
-    #     self.dif_from = wx.NumCtrl(
-    #         self, value=self.dif_values[0], fractionWidth=1, pos=(
-    #             x_pos+100, y_pos), size=(30, -1), autoSize=False)
-    #     self.dif_signal = wx.StaticText(
-    #         self, label="->", pos=(x_pos+135, y_pos+4))
-    #     self.dif_to = wx.NumCtrl(
-    #         self, value=self.dif_values[1], fractionWidth=3, pos=(
-    #             x_pos+150, y_pos), size=(40, -1), autoSize=False)
-    #     self.dif_to.Disable()
+        # y_pos += 30
+        # self.dif_values = self.transport_mode_values["diffusive_range"]
+        # self.dif_range = wx.StaticText(
+        #     self, label="Diffusive", pos=(x_pos, y_pos+4))
+        # self.dif_from = wx.NumCtrl(
+        #     self, value=self.dif_values[0], fractionWidth=1, pos=(
+        #         x_pos+100, y_pos), size=(30, -1), autoSize=False)
+        # self.dif_signal = wx.StaticText(
+        #     self, label="->", pos=(x_pos+135, y_pos+4))
+        # self.dif_to = wx.NumCtrl(
+        #     self, value=self.dif_values[1], fractionWidth=3, pos=(
+        #         x_pos+150, y_pos), size=(40, -1), autoSize=False)
+        # self.dif_to.Disable()
 
-    #     y_pos += 30
-    #     self.subdif_values = self.transport_mode_values["sub-diffusive_range"]
-    #     self.subdif_range = wx.StaticText(
-    #         self, label="Subdiffusive", pos=(x_pos, y_pos+4))
-    #     self.subdif_from = wx.NumCtrl(
-    #         self, value=self.subdif_values[0], fractionWidth=1, pos=(
-    #             x_pos+100, y_pos), size=(30, -1), autoSize=False)
-    #     self.subdif_signal = wx.StaticText(
-    #         self, label="->", pos=(x_pos+135, y_pos+4))
-    #     self.subdif_to = wx.NumCtrl(
-    #         self, value=self.subdif_values[1], fractionWidth=3, pos=(
-    #             x_pos+150, y_pos), size=(40, -1), autoSize=False)
-    #     # self.subdif_to = wx.TextCtrl(self, value=f'{self.subdif_values[1]}', style=wx.TE_CENTRE, pos=(x_pos+150, y_pos), size=(50, -1))
-    #     self.subdif_to.Disable()
+        # y_pos += 30
+        # self.subdif_values = self.transport_mode_values["sub-diffusive_range"]
+        # self.subdif_range = wx.StaticText(
+        #     self, label="Subdiffusive", pos=(x_pos, y_pos+4))
+        # self.subdif_from = wx.NumCtrl(
+        #     self, value=self.subdif_values[0], fractionWidth=1, pos=(
+        #         x_pos+100, y_pos), size=(30, -1), autoSize=False)
+        # self.subdif_signal = wx.StaticText(
+        #     self, label="->", pos=(x_pos+135, y_pos+4))
+        # self.subdif_to = wx.NumCtrl(
+        #     self, value=self.subdif_values[1], fractionWidth=3, pos=(
+        #         x_pos+150, y_pos), size=(40, -1), autoSize=False)
+        # # self.subdif_to = wx.TextCtrl(self, value=f'{self.subdif_values[1]}',
+        # #                              style=wx.TE_CENTRE,
+        # #                              pos=(x_pos+150, y_pos), size=(50, -1))
+        # self.subdif_to.Disable()
 
-    #     y_pos += 30
-    #     self.immobile_values = self.transport_mode_values["immobile_range"]
-    #     self.immobile_range = wx.StaticText(
-    #         self, label="Immobile", pos=(x_pos, y_pos+4))
-    #     self.immobile_from = wx.NumCtrl(self, value=self.immobile_values[0], fractionWidth=1, pos=(
-    #         x_pos+100, y_pos), size=(30, -1), autoSize=False)
-    #     self.immobile_signal = wx.StaticText(
-    #         self, label="->", pos=(x_pos+135, y_pos+4))
-    #     self.immobile_to = wx.NumCtrl(self, value=self.immobile_values[1], fractionWidth=3, pos=(
-    #         x_pos+150, y_pos), size=(40, -1), autoSize=False)
-    #     # self.immobile_to = wx.TextCtrl(self, value=f'{self.immobile_values[1]}', style=wx.TE_CENTRE, pos=(x_pos+150, y_pos), size=(50, -1))
-    #     self.immobile_from.Disable()
-    #     self.immobile_to.Disable()
+        # y_pos += 30
+        # self.immobile_values = self.transport_mode_values["immobile_range"]
+        # self.immobile_range = wx.StaticText(
+        #     self, label="Immobile", pos=(x_pos, y_pos+4))
+        # self.immobile_from = wx.NumCtrl(self,
+        #                                 value=self.immobile_values[0],
+        #                                 fractionWidth=1,
+        #                                 pos=(x_pos+100, y_pos),
+        #                                 size=(30, -1),
+        #                                 autoSize=False)
+        # self.immobile_signal = wx.StaticText(self, label="->",
+        #                                      pos=(x_pos+135, y_pos+4))
+        # self.immobile_to = wx.NumCtrl(self, value=self.immobile_values[1],
+        #                               fractionWidth=3,
+        #                               pos=(x_pos+150, y_pos),
+        #                               size=(40, -1),
+        #                               autoSize=False)
+        # self.immobile_to = wx.TextCtrl(self,
+        #                                value=f'{self.immobile_values[1]}',
+        #                                style=wx.TE_CENTRE,
+        #                                pos=(x_pos+150, y_pos),
+        #                                size=(50, -1))
+        # self.immobile_from.Disable()
+        # self.immobile_to.Disable()
 
-    #     y_pos += 25
-    #     self.saveButton = wx.Button(self, label="Save", pos=(135, y_pos+13))
-    #     self.saveButton.Bind(wx.EVT_BUTTON, self.SaveConnString)
+        # y_pos += 25
+        # self.saveButton = wx.Button(self, label="Save", pos=(135, y_pos+13))
+        # self.saveButton.Bind(wx.EVT_BUTTON, self.SaveConnString)
 
-    #     self.closeButton = wx.Button(self, label="Cancel", pos=(237, y_pos+13))
-    #     self.closeButton.Bind(wx.EVT_BUTTON, self.OnQuit)
+        # self.closeButton = wx.Button(self, label="Cancel", pos=(237, y_pos+13))
+        # self.closeButton.Bind(wx.EVT_BUTTON, self.OnQuit)
 
-    #     self.Bind(wx.EVT_CLOSE, self.OnQuit)
-    #     self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
-    #     self.Centre()
-    #     self.Show()
+        # self.Bind(wx.EVT_CLOSE, self.OnQuit)
+        # self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
+        # self.Centre()
+        # self.Show()
 
     # def OnQuit(self, event):
-    #     print("Closing without saving changes.")
-    #     self.Destroy()
+        # print("Closing without saving changes.")
+        # self.Destroy()
 
     # def OnKeyUp(self, event):
 
-    #     key_code = event.GetKeyCode()
-    #     if key_code == wx.WXK_ESCAPE:
-    #         self.OnQuit(wx.EVT_BUTTON)
-    #         self.Destroy()
-    #     elif key_code == wx.WXK_RETURN:
-    #         self.SaveConnString(wx.EVT_BUTTON)
-    #         self.Destroy()
+        # key_code = event.GetKeyCode()
+        # if key_code == wx.WXK_ESCAPE:
+        #     self.OnQuit(wx.EVT_BUTTON)
+        #     self.Destroy()
+        # elif key_code == wx.WXK_RETURN:
+        #     self.SaveConnString(wx.EVT_BUTTON)
+        #     self.Destroy()
 
-    #     self.dif_to.SetValue(self.GetLimitValue(self.active_from.GetValue()))
-    #     self.subdif_to.SetValue(self.GetLimitValue(self.dif_from.GetValue()))
-    #     self.immobile_to.SetValue(
-    #         self.GetLimitValue(self.subdif_from.GetValue()))
+        # self.dif_to.SetValue(self.GetLimitValue(self.active_from.GetValue()))
+        # self.subdif_to.SetValue(self.GetLimitValue(self.dif_from.GetValue()))
+        # self.immobile_to.SetValue(
+        #     self.GetLimitValue(self.subdif_from.GetValue()))
 
-    #     event.Skip()
+        # event.Skip()
 
     # def GetTransportMode(self, full: bool = False, *part: dict) -> dict:
 
-    #     with open(self._CFG_PATH + 'mpt-config.json') as fh:
-    #         config = json.load(fh)
-    #         if full and part:
-    #             new_config = {}
-    #             print(f"\nUsing for Set!\n")
-    #             for config_group in config:
-    #                 if config_group not in "transport_mode":
-    #                     new_config[config_group] = config[config_group]
-    #                     print(config[config_group])
-    #                     print(new_config[config_group])
+        # with open(self._CFG_PATH + 'mpt-config.json') as fh:
+        #     config = json.load(fh)
+        #     if full and part:
+        #         new_config = {}
+        #         print(f"\nUsing for Set!\n")
+        #         for config_group in config:
+        #             if config_group not in "transport_mode":
+        #                 new_config[config_group] = config[config_group]
+        #                 print(config[config_group])
+        #                 print(new_config[config_group])
 
-    #             print(part)
-    #         else:
-    #             if ("transport_mode" in config):
-    #                 return config["transport_mode"]
+        #         print(part)
+        #     else:
+        #         if ("transport_mode" in config):
+        #             return config["transport_mode"]
 
-    #     return config
+        # return config
 
     # def SetTransportMode(self, json_string: dict):
-    #     self.GetTransportMode(True, self.transport_mode_values)
-    #     print("Set transport mode!")
+        # self.GetTransportMode(True, self.transport_mode_values)
+        # print("Set transport mode!")
 
-    #     return None
+        # return None
 
     # def GetLimitValue(self, value: float) -> str:
-    #     limit_value = value - 0.001
-    #     return limit_value
+        # limit_value = value - 0.001
+        # return limit_value
 
     # def SaveConnString(self, event):
-    #     print("Save changes!")
-    #     self.save = True
-    #     # self.GetLimitValue(self.active_from.GetValue())
-    #     # new_active_from = self.active_from.GetValue()
+        # print("Save changes!")
+        # self.save = True
+        # self.GetLimitValue(self.active_from.GetValue())
+        # new_active_from = self.active_from.GetValue()
 
-    #     # new_dif_from = self.dif_from.GetValue()
-    #     # new_dif_to = float(f'{new_active_from - 0.001:.3f}')
+        # new_dif_from = self.dif_from.GetValue()
+        # new_dif_to = float(f'{new_active_from - 0.001:.3f}')
 
-    #     # new_subdif_from = self.subdif_from.GetValue()
-    #     # new_subdif_to = float(f'{new_dif_from - 0.001:.3f}')
+        # new_subdif_from = self.subdif_from.GetValue()
+        # new_subdif_to = float(f'{new_dif_from - 0.001:.3f}')
 
-    #     # new_immobile_from = self.immobile_from.GetValue()
-    #     # new_immobile_to = float(f'{new_subdif_from - 0.001:.3f}')
+        # new_immobile_from = self.immobile_from.GetValue()
+        # new_immobile_to = float(f'{new_subdif_from - 0.001:.3f}')
 
-    #     # transport_mode = {
-    #     #     "immobile_range": [new_immobile_from, new_immobile_to],
-    #     #     "sub-diffusive_range": [new_subdif_from, new_subdif_to],
-    #     #     "diffusive_range": [new_dif_from, new_dif_to],
-    #     #     "active_range": [new_active_from]
-    #     # }
-    #     # self.SetTransportMode(self.transport_mode_values)
-    #     self.Destroy()
+        # transport_mode = {
+        #     "immobile_range": [new_immobile_from, new_immobile_to],
+        #     "sub-diffusive_range": [new_subdif_from, new_subdif_to],
+        #     "diffusive_range": [new_dif_from, new_dif_to],
+        #     "active_range": [new_active_from]
+        # }
+        # self.SetTransportMode(self.transport_mode_values)
+        # self.Destroy()
 
 
 if __name__ == '__main__':
