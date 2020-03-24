@@ -11,6 +11,7 @@ import wx
 import wx.xrc
 import wx.dataview
 from .diffusivityWindow import diffusivityWindow
+from .analysisWindow import analysisWindow
 ###########################################################################
 # Class mainWindow
 ###########################################################################
@@ -117,13 +118,12 @@ class mainWindow (wx.Frame):
 
     def on_mnuDiffusivity(self, event):
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
-        # dialog = diffusivityWindow.diffusivityWindow()
-        # dlg = wx.Dialog()
-        a = diffusivityWindow(self).ShowModal()
+        diffusivityWindow(self).ShowModal()
         event.Skip()
 
     def on_mnuGeneral(self, event):
         self.statusBar.SetStatusText("Open dialog for general setup...")
+        analysisWindow(self).ShowModal()
         event.Skip()
 
     def __del__(self):
