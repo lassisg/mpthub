@@ -9,6 +9,7 @@
 
 import wx
 import wx.xrc
+from mpt.model import Diffusivity
 
 ###########################################################################
 # Class diffusivityWindow
@@ -23,6 +24,9 @@ class diffusivityWindow (wx.Dialog):
             title=u"Transport mode diffusivity ranges configuration",
             pos=wx.DefaultPosition, size=wx.Size(353, 255),
             style=wx.DEFAULT_DIALOG_STYLE)
+
+        self.model = Diffusivity()
+        self.config = self.model.load_config()
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -41,7 +45,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_immobile, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_immobile_min = wx.TextCtrl(
-            self, wx.ID_ANY, u"0.000",
+            self, wx.ID_ANY, f"{self.config['immobile']['min']}",
             wx.DefaultPosition, wx.Size(43, -1),
             wx.TE_CENTER | wx.TE_READONLY)
         sz_immobile.Add(
@@ -55,7 +59,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_immobile_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_immobile_max = wx.TextCtrl(
-            self, wx.ID_ANY, u"0.199",
+            self, wx.ID_ANY, f"{self.config['immobile']['max']}",
             wx.DefaultPosition, wx.Size(43, -1),
             wx.TE_CENTER | wx.TE_READONLY)
         sz_immobile.Add(
@@ -76,7 +80,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_subdiffusive, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_subdiffusive_min = wx.TextCtrl(
-            self, wx.ID_ANY, u"0.200",
+            self, wx.ID_ANY, f"{self.config['sub_diffusive']['min']}",
             wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
         sz_subdiffusive.Add(
             self.txt_subdiffusive_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -89,7 +93,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_subdiffusive_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_subdiffusive_max = wx.TextCtrl(
-            self, wx.ID_ANY, u"0.899",
+            self, wx.ID_ANY, f"{self.config['sub_diffusive']['max']}",
             wx.DefaultPosition, wx.Size(43, -1),
             wx.TE_CENTER | wx.TE_READONLY)
         sz_subdiffusive.Add(
@@ -110,7 +114,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_diffusive, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_diffusive_min = wx.TextCtrl(
-            self, wx.ID_ANY, u"0.900",
+            self, wx.ID_ANY, f"{self.config['diffusive']['min']}",
             wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
         sz_diffusive.Add(
             self.txt_diffusive_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -123,7 +127,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_diffusive_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_diffusive_max = wx.TextCtrl(
-            self, wx.ID_ANY, u"1.199",
+            self, wx.ID_ANY, f"{self.config['diffusive']['max']}",
             wx.DefaultPosition, wx.Size(43, -1),
             wx.TE_CENTER | wx.TE_READONLY)
         sz_diffusive.Add(
@@ -143,7 +147,7 @@ class diffusivityWindow (wx.Dialog):
         sz_active.Add(self.lbl_active, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_active_min = wx.TextCtrl(
-            self, wx.ID_ANY, u"1.200",
+            self, wx.ID_ANY, f"{self.config['active']['min']}",
             wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
         sz_active.Add(
             self.txt_active_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -156,7 +160,7 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_active_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_active_max = wx.TextCtrl(
-            self, wx.ID_ANY, u"1.2 +",
+            self, wx.ID_ANY, f"{self.config['active']['min']}+",
             wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER | wx.TE_READONLY)
         sz_active.Add(
             self.txt_active_max, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -198,19 +202,46 @@ class diffusivityWindow (wx.Dialog):
 
     # Virtual event handlers, overide them in your derived class
     def on_subdiffusive_range_change(self, event):
-        print("Sub-diffusive range changed...")
+        self.config['sub_diffusive']['min'] = float(
+            self.txt_subdiffusive_min.Value)
+
+        self.config['immobile']['max'] = float(
+            self.txt_subdiffusive_min.Value)-.001
+
+        self.txt_immobile_max.SetValue(
+            f"{self.config['immobile']['max']}")
+
         event.Skip()
 
     def on_diffusive_range_change(self, event):
-        print("Diffusive range changed...")
+        self.config['diffusive']['min'] = float(
+            self.txt_diffusive_min.Value)
+
+        self.config['sub_diffusive']['max'] = float(
+            self.txt_diffusive_min.Value)-.001
+
+        self.txt_subdiffusive_max.SetValue(
+            f"{self.config['sub_diffusive']['max']}")
+
         event.Skip()
 
     def on_active_range_change(self, event):
-        print("Active range changed...")
+        self.config['active']['min'] = float(
+            self.txt_active_min.Value)
+
+        self.config['diffusive']['max'] = float(
+            self.txt_active_min.Value)-.001
+
+        self.txt_diffusive_max.SetValue(
+            f"{self.config['diffusive']['max']}")
+
+        self.txt_active_max.SetValue(
+            f"{self.config['active']['min']}+")
+
         event.Skip()
 
     def on_save_diffusivity(self, event):
-        print("Saving changes...")
+        self.model.update(self.config)
         self.Destroy()
         event.Skip()
 
