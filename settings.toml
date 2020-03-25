@@ -1,0 +1,23 @@
+[default]
+DB_NAME = 'config.db'
+BASE_PATH = "@format {env[HOME]}\\.mpt"
+EXPORT_PATH = "@format {this.BASE_PATH}\\export"
+
+default_open_folder = "."
+default_save_folder = "."
+
+default_immobile = {min = 0, max = 0.199}
+default_sub-diffusive = {min = 0.200, max = 0.899}
+default_diffusive = {min = 0.900, max = 1.199}
+default_active = {min = 1.200, max = 1.200}
+
+default_size = 200
+default_fps = 30
+default_total_frames = 606
+default_width_px = 512
+default_width_um = 160
+default_min_frames = 590
+
+[development]
+BASE_PATH = "@format {env[ROOT_PATH]}\\data"
+EXPORT_PATH = "@format {this.BASE_PATH}\\export"
