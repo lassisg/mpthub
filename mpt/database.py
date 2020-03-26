@@ -1,6 +1,12 @@
 import sqlite3
+from sqlalchemy import create_engine
 from pathlib import Path
 from dynaconf import settings
+import pandas as pd
+
+
+def connect():
+    return create_engine(f"sqlite:///{settings.DB_PATH}")
 
 
 class Database:
@@ -39,7 +45,7 @@ class Database:
 
         self.cur.execute("""CREATE TABLE IF NOT EXISTS analysis_config(
             id INT PRIMARY KEY,
-            size INT,
+            p_size INT,
             min_frames INT,
             fps INT,
             total_frames INT,
@@ -74,7 +80,7 @@ class Database:
         self.cur.execute(diffusivity)
 
         analysis = f""" INSERT OR IGNORE
-                          INTO 'analysis_config' (id, size, min_frames,
+                          INTO 'analysis_config' (id, p_size, min_frames,
                                                   fps, total_frames,
                                                   width_px, width_si)
                         VALUES (1, {settings.SIZE}, {settings.MIN_FRAMES},

@@ -1,5 +1,5 @@
-from mpt.database import Database
-from dynaconf import settings
+import mpt.database as db
+import pandas as pd
 
 
 class Diffusivity:
@@ -28,19 +28,16 @@ class Analysis():
 
     def __init__(self) -> None:
         self.config = self.load_config()
+        print("OK")
 
-    def load_config(self) -> dict:
-        # TODO: Load config from db
-        return {
-            "size": 201,
-            "min_frames": 592,
-            "fps": 60,
-            "total_frames": 600,
-            "width_px": 480,
-            "width_si": 140
-        }
+    def load_config(self) -> pd.Series:
+        conn = db.connect()
+        config_df = pd.read_sql_table("analysis_config", con=conn)
+        config = config_df.iloc[0]
+        return config
 
-    def update(self, new_config: dict) -> None:
-        # TODO: Update table in db
-        for key, config in new_config.items():
-            print(f"{key}: {config}")
+    def update(self, new_config: pd.Series) -> None:
+        conn = db.connect()
+        test = new_config.to_frame(0).T
+        test.to_sql('analysis_config', con=conn,
+                    index=False, if_exists='replace')
