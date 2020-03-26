@@ -9,7 +9,8 @@ def connect():
 
 
 def persist():
-    """Perform table creation for the app, based on default data. If tables already exists, nothing is done.
+    """Perform table creation for the app, based on default data. If tables \
+        already exists, nothing is done.
     """
     app_config_df = pd.DataFrame.from_dict({
         'open_folder': [settings.DEFAULT_OPEN_FOLDER],
