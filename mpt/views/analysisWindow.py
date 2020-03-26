@@ -46,9 +46,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_size, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_size = wx.TextCtrl(
-            self, id=wx.ID_ANY, value=f"{self.config['size']}",
+            self, id=wx.ID_ANY, value=f"{self.config['p_size']}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
-            style=wx.TE_CENTER, name="size")
+            style=wx.TE_CENTER, name="p_size")
         sz_config_1.Add(self.txt_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
