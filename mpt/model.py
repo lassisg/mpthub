@@ -8,7 +8,7 @@ class Diffusivity:
         print("Initializing Diffusivity configuration object...")
 
     def load_config(self) -> pd.DataFrame:
-        """Loads configuration and return DataFrame with data from database.
+        """Loads configuration and returns DataFrame with data from database.
 
         Returns:
             pd.DataFrame -- Data from diffusivity table.
@@ -35,7 +35,7 @@ class Analysis():
         print("Initializing Analysis configuration object...")
 
     def load_config(self) -> pd.Series:
-        """Loads configuration and return DataFrame with data from database.
+        """Loads configuration and returns a DataFrame with data from database.
 
         Returns:
             pd.Series -- Data from analysis_config table.
