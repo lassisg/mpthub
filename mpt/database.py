@@ -1,12 +1,50 @@
 import sqlite3
 from sqlalchemy import create_engine
-from pathlib import Path
 from dynaconf import settings
 import pandas as pd
 
 
 def connect():
     return create_engine(f"sqlite:///{settings.DB_PATH}")
+
+
+def persist():
+    app_config_df = pd.DataFrame.from_dict({
+        'open_folder': [settings.DEFAULT_OPEN_FOLDER],
+        'save_folder': [settings.DEFAULT_SAVE_FOLDER]
+    })
+
+    diffusivity_df = pd.DataFrame({
+        'immobile': [settings.DEFAULT_IMMOBILE_MIN,
+                     settings.DEFAULT_IMMOBILE_MAX],
+        'sub_diffusive': [settings.DEFAULT_SUB_DIFFUSIVE_MIN,
+                          settings.DEFAULT_SUB_DIFFUSIVE_MAX],
+        'diffusive': [settings.DEFAULT_DIFFUSIVE_MIN,
+                      settings.DEFAULT_DIFFUSIVE_MAX],
+        'active': [settings.DEFAULT_ACTIVE_MIN,
+                   None]
+    })
+
+    analysis_config_df = pd.DataFrame({
+        'p_size': [settings.DEFAULT_P_SIZE],
+        'min_frames': [settings.DEFAULT_MIN_FRAMES],
+        'fps': [settings.DEFAULT_FPS],
+        'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
+        'width_px': [settings.DEFAULT_WIDTH_PX],
+        'width_si': [settings.DEFAULT_WIDTH_SI]
+    })
+
+    create_table('app_config', app_config_df)
+    create_table('diffusivity', diffusivity_df)
+    create_table('analysis_config', analysis_config_df)
+
+
+def create_table(table_name: str, data: pd.DataFrame):
+    conn = connect()
+    try:
+        data.to_sql(table_name, con=conn, index=False, if_exists='fail')
+    except ValueError:
+        print("Table not created.")
 
 
 class Database:
@@ -64,7 +102,7 @@ class Database:
         self.cur.execute(app_config)
 
         diffusivity = f"""INSERT OR IGNORE
-                            INTO 'diffusivity' (min, max, name)
+                            INTO 'diffusivity' (name, min, max)
                           VALUES ('immobile',
                                   {settings.DEFAULT_IMMOBILE.min},
                                   {settings.DEFAULT_IMMOBILE.max}),

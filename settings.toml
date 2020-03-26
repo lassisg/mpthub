@@ -4,20 +4,24 @@ BASE_PATH = "@format {env[HOME]}\\.mpt"
 DB_PATH = "@format {this.BASE_PATH}\\{this.DB_NAME}"
 EXPORT_PATH = "@format {this.BASE_PATH}\\export"
 
-default_open_folder = "."
-default_save_folder = "."
+default_open_folder = "@format {env[HOME]}"
+default_save_folder = "@format {env[HOME]}"
 
-default_immobile = {min = 0, max = 0.199}
-default_sub_diffusive = {min = 0.200, max = 0.899}
-default_diffusive = {min = 0.900, max = 1.199}
-default_active = {min = 1.200}
+default_immobile_min = 0.000
+default_sub_diffusive_min = 0.200
+default_diffusive_min = 0.900
+default_active_min = 1.200
 
-default_size = 200
-default_fps = 30
-default_total_frames = 606
-default_width_px = 512
-default_width_si = 160
-default_min_frames = 590
+default_immobile_max=0.199
+default_sub_diffusive_max=0.899
+default_diffusive_max=1.199
+
+default_p_size = [201]
+default_min_frames = [592]
+default_fps = [29]
+default_total_frames = [605]
+default_width_px = [480]
+default_width_si = [140]
 
 [development]
 BASE_PATH = "@format {env[ROOT_PATH]}\\data"
