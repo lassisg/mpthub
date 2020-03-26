@@ -9,6 +9,7 @@
 
 import wx
 import wx.xrc
+from mpt.model import Analysis
 
 ###########################################################################
 # Class analysisWindow
@@ -22,6 +23,9 @@ class analysisWindow (wx.Dialog):
                            title=u"Analysis configuration",
                            pos=wx.DefaultPosition, size=wx.Size(378, 235),
                            style=wx.DEFAULT_DIALOG_STYLE)
+
+        self.model = Analysis()
+        self.config = self.model.load_config()
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -42,8 +46,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_size, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_size = wx.TextCtrl(
-            self, wx.ID_ANY, u"200",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['size']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="size")
         sz_config_1.Add(self.txt_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
@@ -57,8 +62,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_filter, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_filter = wx.TextCtrl(
-            self, wx.ID_ANY, u"590",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['min_frames']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="min_frames")
         sz_config_1.Add(
             self.txt_filter, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -79,8 +85,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_fps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_fps = wx.TextCtrl(
-            self, wx.ID_ANY, u"30",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['fps']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="fps")
         sz_config_2.Add(
             self.txt_fps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -95,8 +102,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_frames, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_frames = wx.TextCtrl(
-            self, wx.ID_ANY, u"606",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['total_frames']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="total_frames")
         sz_config_2.Add(
             self.txt_frames, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -117,8 +125,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_width_px, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_width_px = wx.TextCtrl(
-            self, wx.ID_ANY, u"512",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['width_px']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="width_px")
         sz_config_3.Add(
             self.txt_width_px, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -133,8 +142,9 @@ class analysisWindow (wx.Dialog):
             self.lbl_width_si, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_width_si = wx.TextCtrl(
-            self, wx.ID_ANY, u"160",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['width_si']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="width_si")
         sz_config_3.Add(
             self.txt_width_si, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -159,6 +169,12 @@ class analysisWindow (wx.Dialog):
         self.Centre(wx.BOTH)
 
         # Connect Events
+        self.txt_size.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_filter.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_width_si.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         self.ctrl_buttonSave.Bind(wx.EVT_BUTTON, self.on_save_analysis)
         self.ctrl_buttonCancel.Bind(wx.EVT_BUTTON, self.on_cancel_analysis)
 
@@ -166,8 +182,13 @@ class analysisWindow (wx.Dialog):
         pass
 
     # Virtual event handlers, overide them in your derived class
+    def config_update(self, event):
+        print("Updating config...")
+        self.config[event.EventObject.Name] = event.EventObject.Value
+
     def on_save_analysis(self, event):
         print("Saving changes...")
+        self.model.update(self.config)
         self.Destroy()
         event.Skip()
 
