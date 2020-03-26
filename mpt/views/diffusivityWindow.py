@@ -80,8 +80,9 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_subdiffusive, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_subdiffusive_min = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['sub_diffusive']['min']}",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['sub_diffusive']['min']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="sub_diffusive-min")
         sz_subdiffusive.Add(
             self.txt_subdiffusive_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -93,9 +94,9 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_subdiffusive_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_subdiffusive_max = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['sub_diffusive']['max']}",
-            wx.DefaultPosition, wx.Size(43, -1),
-            wx.TE_CENTER | wx.TE_READONLY)
+            self, id=wx.ID_ANY, value=f"{self.config['sub_diffusive']['max']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER | wx.TE_READONLY, name="sub_diffusive-max")
         sz_subdiffusive.Add(
             self.txt_subdiffusive_max, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -114,8 +115,9 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_diffusive, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_diffusive_min = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['diffusive']['min']}",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['diffusive']['min']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="diffusive-min")
         sz_diffusive.Add(
             self.txt_diffusive_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -127,9 +129,9 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_diffusive_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_diffusive_max = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['diffusive']['max']}",
-            wx.DefaultPosition, wx.Size(43, -1),
-            wx.TE_CENTER | wx.TE_READONLY)
+            self, id=wx.ID_ANY, value=f"{self.config['diffusive']['max']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER | wx.TE_READONLY, name="diffusive-max")
         sz_diffusive.Add(
             self.txt_diffusive_max, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -147,8 +149,9 @@ class diffusivityWindow (wx.Dialog):
         sz_active.Add(self.lbl_active, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_active_min = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['active']['min']}",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER)
+            self, id=wx.ID_ANY, value=f"{self.config['active']['min']}",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER, name="active-min")
         sz_active.Add(
             self.txt_active_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -160,8 +163,9 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_active_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_active_max = wx.TextCtrl(
-            self, wx.ID_ANY, f"{self.config['active']['min']}+",
-            wx.DefaultPosition, wx.Size(43, -1), wx.TE_CENTER | wx.TE_READONLY)
+            self, id=wx.ID_ANY, value=f"{self.config['active']['min']}+",
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER | wx.TE_READONLY, name="active-max")
         sz_active.Add(
             self.txt_active_max, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -187,11 +191,11 @@ class diffusivityWindow (wx.Dialog):
 
         # Connect Events
         self.txt_subdiffusive_min.Bind(
-            wx.EVT_TEXT, self.on_subdiffusive_range_change)
+            wx.EVT_KILL_FOCUS, self.on_subdiffusive_range_change)
         self.txt_diffusive_min.Bind(
-            wx.EVT_TEXT, self.on_diffusive_range_change)
+            wx.EVT_KILL_FOCUS, self.on_diffusive_range_change)
         self.txt_active_min.Bind(
-            wx.EVT_TEXT, self.on_active_range_change)
+            wx.EVT_KILL_FOCUS, self.on_active_range_change)
         self.ctrl_buttonSave.Bind(
             wx.EVT_BUTTON, self.on_save_diffusivity)
         self.ctrl_buttonCancel.Bind(
@@ -241,6 +245,7 @@ class diffusivityWindow (wx.Dialog):
         event.Skip()
 
     def on_save_diffusivity(self, event):
+        print("Saving changes...")
         self.model.update(self.config)
         self.Destroy()
         event.Skip()
