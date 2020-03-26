@@ -9,6 +9,8 @@ def connect():
 
 
 def persist():
+    """Perform table creation for the app, based on default data. If tables already exists, nothing is done.
+    """
     app_config_df = pd.DataFrame.from_dict({
         'open_folder': [settings.DEFAULT_OPEN_FOLDER],
         'save_folder': [settings.DEFAULT_SAVE_FOLDER]
@@ -40,6 +42,13 @@ def persist():
 
 
 def create_table(table_name: str, data: pd.DataFrame):
+    """Creates table based on received DataFrame. Forces fail if pandas \
+        detect that the table already exists.
+
+    Arguments:
+        table_name {str} -- Name of the table to be created.
+        data {pd.DataFrame} -- Data to be inserted.
+    """
     conn = connect()
     try:
         data.to_sql(table_name, con=conn, index=False, if_exists='fail')
