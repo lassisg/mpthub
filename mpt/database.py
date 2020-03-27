@@ -8,7 +8,7 @@ def connect():
     return create_engine(f"sqlite:///{settings.DB_PATH}")
 
 
-def persist():
+def persist() -> str:
     """Perform table creation for the app, based on default data. If tables \
         already exists, nothing is done.
     """
@@ -29,20 +29,29 @@ def persist():
     })
 
     analysis_config_df = pd.DataFrame({
-        'p_size': [settings.DEFAULT_P_SIZE],
-        'min_frames': [settings.DEFAULT_MIN_FRAMES],
-        'fps': [settings.DEFAULT_FPS],
-        'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
-        'width_px': [settings.DEFAULT_WIDTH_PX],
-        'width_si': [settings.DEFAULT_WIDTH_SI]
+        'p_size': settings.DEFAULT_P_SIZE,
+        'min_frames': settings.DEFAULT_MIN_FRAMES,
+        'fps': settings.DEFAULT_FPS,
+        'total_frames': settings.DEFAULT_TOTAL_FRAMES,
+        'width_px': settings.DEFAULT_WIDTH_PX,
+        'width_si': settings.DEFAULT_WIDTH_SI
     })
 
-    create_table('app_config', app_config_df)
-    create_table('diffusivity', diffusivity_df)
-    create_table('analysis_config', analysis_config_df)
+    trajectories_df = pd.DataFrame(
+        columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
+
+    summary_df = pd.DataFrame(
+        columns=['full_path', 'file_name', 'trajectories', 'valid'])
+
+    msg = create_table('app_config', app_config_df)
+    msg += f"\n{create_table('diffusivity', diffusivity_df)}"
+    msg += f"\n{create_table('analysis_config', analysis_config_df)}"
+    msg += f"\n{create_table('trajectories', trajectories_df)}"
+    msg += f"\n{create_table('summary', summary_df)}"
+    return msg
 
 
-def create_table(table_name: str, data: pd.DataFrame):
+def create_table(table_name: str, data: pd.DataFrame) -> str:
     """Creates table based on received DataFrame. Forces fail if pandas \
         detect that the table already exists.
 
@@ -53,8 +62,11 @@ def create_table(table_name: str, data: pd.DataFrame):
     conn = connect()
     try:
         data.to_sql(table_name, con=conn, index=False, if_exists='fail')
+        msg = f"Table '{table_name}' created."
     except ValueError:
-        print("Table not created.")
+        msg = f"Table '{table_name}' already exists. Aborting."
+    finally:
+        return msg
 
 
 class Database:

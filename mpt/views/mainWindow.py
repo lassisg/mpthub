@@ -12,6 +12,10 @@ import wx.xrc
 import wx.dataview
 from .diffusivityWindow import diffusivityWindow
 from .analysisWindow import analysisWindow
+import mpt.database as db
+from mpt.model import Analysis, Diffusivity, General
+from mpt.imagej_results import Results
+
 ###########################################################################
 # Class mainWindow
 ###########################################################################
@@ -76,10 +80,13 @@ class mainWindow (wx.Frame):
             wx.dataview.DV_HORIZ_RULES | wx.dataview.DV_ROW_LINES |
             wx.dataview.DV_VARIABLE_LINE_HEIGHT | wx.BORDER_NONE)
         self.col_name = self.dataListView.AppendTextColumn(
-            u"File name", wx.dataview.DATAVIEW_CELL_INERT, 520,
+            "File name", wx.dataview.DATAVIEW_CELL_INERT, 466,
             wx.ALIGN_LEFT, 0)
         self.col_trajectories = self.dataListView.AppendTextColumn(
-            u"Valid trajectories", wx.dataview.DATAVIEW_CELL_INERT, 120,
+            "Total trajectories", wx.dataview.DATAVIEW_CELL_INERT, 102,
+            wx.ALIGN_RIGHT, 0)
+        self.col_trajectories = self.dataListView.AppendTextColumn(
+            "Valid trajectories", wx.dataview.DATAVIEW_CELL_INERT, 102,
             wx.ALIGN_RIGHT, 0)
 
         mainBoxSizer.Add(self.dataListView, 1, wx.EXPAND, 1)
@@ -102,11 +109,53 @@ class mainWindow (wx.Frame):
         self.Bind(wx.EVT_MENU, self.on_mnuGeneral,
                   id=self.mnuGeneral.GetId())
 
-    # Virtual event handlers, overide them in your derived class
+        # Load project configurations~
+        db.persist()
+        self.analysis = Analysis()
+        self.analysis.load_config()
+        self.diffusivity = Diffusivity()
+        self.diffusivity.load_config()
+        self.general = General()
+        self.general.load_config()
 
     def on_mnuImport(self, event):
-        self.statusBar.SetStatusText("Open file dialog to import files...")
+        self.get_summary()
+
+        total_trajectories = 0
+        total_valid_trajectories = 0
+
+        self.dataListView.DeleteAllItems()
+        for index, report in self.analysis.summary.iterrows():
+            total_trajectories += report.trajectories
+            total_valid_trajectories += report.valid
+            self.dataListView.AppendItem([report.full_path,
+                                          report.trajectories,
+                                          report.valid])
+
+        self.dataListView.AppendItem(["Total",
+                                      total_trajectories,
+                                      total_valid_trajectories])
+
+        self.statusBar.SetStatusText("Data fetched!")
+
         event.Skip()
+
+    def get_summary(self):
+        with wx.FileDialog(None, "Open ImageJ Full report file(s)",
+                           wildcard="ImageJ full report files (*.csv)|*.csv",
+                           style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
+
+            fileDialog.SetDirectory(self.general.config.open_folder)
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                print("No file selected...")
+                return None
+
+            print("File selected...")
+            file_list = fileDialog.GetPaths()
+            self.analysis.load_reports(file_list)
+
+            self.general.config.open_folder = fileDialog.GetDirectory()
+            self.general.update(self.general.config)
 
     def on_mnuExport(self, event):
         self.statusBar.SetStatusText("Open dialog to set export folder...")
