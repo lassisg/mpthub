@@ -40,15 +40,15 @@ _**The values are saved each time the user uses the App.**_
 
 #### 1.2. Analysis configuration
 
-This configurations relate to the video acquisition parameters. The default values are:
+This configurations relate to the video acquisition parameters (except for the particle size). The particle size comes from known particle size provided by manufacturer. The default values are:
 | Configuration | Description | Default value |
 | ------------- | ----------- | :-----------: |
 | Size | Particle size (in SI unit $nm$) | 200 |
+| Filter | Minimum number of consecutive frames a trajectory must have to be considered valid for analysis. | 590 |
 | FPS | Frames per second used during video acquisition. | 30 |
 | Total frames | Total number of frames in video. | 606 |
 | Width ($px$) | Width of the acquired video, in pixels. | 512 |
 | Width ($\mu m$) | Width of the acquired video, in SI unit $\mu m$. | 160 |
-| Filter | Minimum number of consecutive frames a trajectory must have to be considered valid for analysis. | 590 |
 
 Those values are pre-defined based on previous experiment and can be changed in the App.
 _**The values can be changed.**_
@@ -62,7 +62,7 @@ The default values are:
 | Immobile | 0.0 | 0.199 |
 | Sub-diffusive | 0.2 | 0.899 |
 | Diffusive | 0.9 | 1.199 |
-| Active | 1.2 | - |
+| Active | 1.2 | 1.2+ |
 _**The values can be changed.**_
 
 ---
@@ -73,7 +73,7 @@ By clicking on the 'Open file' sub-menu, under 'File' menu, a dialog appears. Th
 
 **TODO: Add image (open file menu)**
 
-After reading the files, a summary table will show at the main window.
+After reading the files, a summary table will show at the main window. This table shows the file name, total trajectories and valid trajectories is displayed on screen. At the bottom of the list, a total is displayed. For statistical purposes, approximately 100 valid trajectories must exist.
 
 **TODO: Add image (table view image)**
 
@@ -82,9 +82,16 @@ After reading the files, a summary table will show at the main window.
 ### 3. Start analysis
 
 Configuration reviewed, reports loaded to app, it is time to make some math.
-Under 'Tools' menu, 'Analyse' sub-menu starts analysis. This sub-menu is disable at startup and only becomes enabled if the previous step occurs with no errors.
+Under 'Tools' menu, 'Analyze' sub-menu starts analysis. This sub-menu is disable at startup and only becomes enabled if the previous step occurs with no errors.
 
 **TODO: Add image (before/after menu)**
+
+The app must process the data from those files and do a series of calculations, described bellow:
+
+-   Keep only those trajectories longer than the minimum frame number defined by the filter configuration.
+-   Compute MSD (Mean-squared Displacement) for the group of results (near 100 trajectories)
+-   Compute Deff (Diffusivity efficiency coefficient) for the group of results (near 100 trajectories)
+-   Compute Diffusivity for each trajectory
 
 Along the process, the statusbar shows info about the overall process.
 When it's done, a dialog informs the user.
