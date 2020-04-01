@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################################
+#
 # Python code generated with wxFormBuilder (version Oct 26 2018)
 # http://www.wxformbuilder.org/
-##
-# PLEASE DO *NOT* EDIT THIS FILE!
+#
 ###########################################################################
 
 import wx
 import wx.xrc
-
-###########################################################################
-# Class diffusivityWindow
-###########################################################################
 
 
 class diffusivityWindow (wx.Dialog):
@@ -27,7 +23,6 @@ class diffusivityWindow (wx.Dialog):
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
         main_diff_sizer = wx.BoxSizer(wx.VERTICAL)
-
         main_diff_sizer.Add((0, 0), 1, wx.EXPAND, 5)
 
         sz_immobile = wx.BoxSizer(wx.HORIZONTAL)

@@ -3,7 +3,6 @@ import wx
 import pandas as pd
 from pandas import ExcelWriter as xls
 import numpy as np
-# import sqlite3
 from mpt.database import Database
 
 

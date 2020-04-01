@@ -1,18 +1,14 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################################
+#
 # Python code generated with wxFormBuilder (version Oct 26 2018)
 # http://www.wxformbuilder.org/
-##
-# PLEASE DO *NOT* EDIT THIS FILE!
+#
 ###########################################################################
 
 import wx
 import wx.xrc
-
-###########################################################################
-# Class analysisWindow
-###########################################################################
 
 
 class analysisWindow (wx.Dialog):
@@ -34,7 +30,7 @@ class analysisWindow (wx.Dialog):
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_size = wx.StaticText(
-            self, wx.ID_ANY, u"Size",
+            self, wx.ID_ANY, "Size (nm)",
             wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
         self.lbl_size.Wrap(-1)
 
@@ -135,7 +131,7 @@ class analysisWindow (wx.Dialog):
         sz_config_3.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_width_si = wx.StaticText(
-            self, wx.ID_ANY, u"Width (um)",
+            self, wx.ID_ANY, f"Width ({chr(956)}m)",
             wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
         self.lbl_width_si.Wrap(-1)
 
