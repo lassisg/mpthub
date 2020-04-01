@@ -7,6 +7,7 @@ class General():
 
     def __init__(self) -> None:
         print("Initializing General app configuration object...")
+        self.load_config()
 
     def load_config(self) -> None:
         """Loads configuration into a Series with data from database.
@@ -32,6 +33,7 @@ class Diffusivity:
 
     def __init__(self) -> None:
         print("Initializing Diffusivity configuration object...")
+        self.load_config()
 
     def load_config(self) -> None:
         """Loads configuration into a DataFrame with data from database.
@@ -56,6 +58,7 @@ class Analysis():
     def __init__(self) -> None:
         print("Initializing Analysis configuration object...")
         self.summary = pd.DataFrame()
+        self.load_config()
 
     def load_config(self) -> None:
         """Loads configuration into a Series with data from database.
@@ -76,14 +79,15 @@ class Analysis():
         new_config_df.to_sql('analysis_config', con=conn,
                              index=False, if_exists='replace')
 
-    def load_reports(self, file_list: list) -> None:
+    def load_reports(self, parent, file_list: list) -> None:
         """Loads '.csv' files into DB table 'trajectories' after filtering \
             by valid trajectories.
 
         Arguments:
             file_list {list} -- File path list to be imported.
         """
-        self.trajectories = pd.DataFrame()
+        self.trajectories = pd.DataFrame(
+            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
         print("Loading reports")
         for file in file_list:
             # TODO: Check if new data exists before add
@@ -99,10 +103,13 @@ class Analysis():
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
 
                 full_path = file
+
                 file_name, _ = os.path.splitext(os.path.basename(file))
+                parent.statusBar.SetStatusText(
+                    f"Importing file {file_name}...")
                 trajectories = len(
                     raw_data.iloc[:, :1].groupby('Trajectory').nunique())
-                valid = self.get_valid_trajectories(raw_data)
+                valid = self.get_valid_trajectories(file_name, raw_data)
 
                 self.summary = self.summary.append({
                     'full_path': full_path, 'file_name': file_name,
@@ -111,11 +118,24 @@ class Analysis():
             else:
                 print(f"Wrong file format. Aborting import of file: '{file}'")
 
-            # report_list.append(new_report)
+        if not self.trajectories.empty:
+            self.add_trajectories(self.trajectories)
 
-            # del new_report
+    def add_trajectories(self, data):
+        conn = db.connect()
+        data.to_sql('trajectories', con=conn,
+                    index=False, if_exists='replace')
 
-    def get_valid_trajectories(self, data_in: pd.DataFrame) -> int:
+    def clear_trajectories(self) -> None:
+        conn = db.connect()
+        empty_data = pd.DataFrame(
+            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
+        empty_data.to_sql('trajectories', con=conn,
+                          index=False, if_exists='replace')
+
+    def get_valid_trajectories(self,
+                               file_name: str,
+                               data_in: pd.DataFrame) -> int:
         print("Filter valid trajectories")
         grouped_trajectories = data_in.groupby('Trajectory').filter(
             lambda x: len(x['Trajectory']) > self.config.min_frames)
@@ -123,13 +143,12 @@ class Analysis():
         valid_trajectories = grouped_trajectories.iloc[:, :1].groupby(
             'Trajectory').nunique()
 
-        # for trajectory in self.valid_trajectories_number:
-        #     self.valid_trajectories_list.append(
-        #         grouped_trajectories.
-        #         loc[grouped_trajectories['Trajectory'] == trajectory].
-        #         reset_index(drop=True))
+        valid_trajectories_data = data_in[data_in['Trajectory'].isin(
+            valid_trajectories.iloc[:, 0].index.values)]
+        valid_trajectories_data.insert(0, 'file_name', file_name)
+        self.trajectories = self.trajectories.append(
+            valid_trajectories_data, ignore_index=True)
 
-        # self.valid_trajectories = len(self.valid_trajectories_number)
         return len(valid_trajectories)
 
 

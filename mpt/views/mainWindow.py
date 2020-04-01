@@ -1,24 +1,17 @@
 # -*- coding: utf-8 -*-
 
 ###########################################################################
+#
 # Python code generated with wxFormBuilder (version Oct 26 2018)
 # http://www.wxformbuilder.org/
-##
-# PLEASE DO *NOT* EDIT THIS FILE!
+#
 ###########################################################################
 
 import wx
 import wx.xrc
 import wx.dataview
-from .diffusivityWindow import diffusivityWindow
-from .analysisWindow import analysisWindow
-import mpt.database as db
-from mpt.model import Analysis, Diffusivity, General
-from mpt.imagej_results import Results
-
-###########################################################################
-# Class mainWindow
-###########################################################################
+import mpt
+from . import analysisWindow, diffusivityWindow
 
 
 class mainWindow (wx.Frame):
@@ -30,49 +23,68 @@ class mainWindow (wx.Frame):
                           style=wx.SYSTEM_MENU | wx.CAPTION |
                           wx.MINIMIZE_BOX | wx.CLOSE_BOX)
 
-        # self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
         self.SetSizeHints(wx.Size(688, 480), wx.Size(688, 480))
+        self.create_menu_bar()
+        self.create_layout()
+        self.create_status_bar()
+        self.load_project_setup()
+        self.Bind(wx.EVT_CLOSE, self.on_close)
+        self.Centre(wx.BOTH)
 
-        self.mnuBar = wx.MenuBar(0)
-        self.mnuFile = wx.Menu()
-        self.mnuImport = wx.MenuItem(self.mnuFile, wx.ID_ANY,
-                                     u"Import files",
-                                     wx.EmptyString, wx.ITEM_NORMAL)
-        self.mnuFile.Append(self.mnuImport)
+    def create_menu_bar(self):
+        menu_bar = wx.MenuBar()
+        for data in self.menu_data():
+            menu_label = data[0]
+            menu_items = data[1]
+            menu_bar.Append(self.create_menu(menu_items), menu_label)
+            self.SetMenuBar(menu_bar)
 
-        self.mnuExport = wx.MenuItem(self.mnuFile, wx.ID_ANY,
-                                     u"Export reports",
-                                     wx.EmptyString, wx.ITEM_NORMAL)
-        self.mnuFile.Append(self.mnuExport)
+    def create_menu(self, menu_data):
+        menu = wx.Menu()
+        for item in menu_data:
+            if len(item) == 2:
+                label = item[0]
+                sub_menu = self.create_menu(item[1])
+                menu.AppendMenu(wx.NewId(), label, sub_menu)
+            else:
+                self.create_menu_item(menu, *item)
+        return menu
 
-        self.mnuBar.Append(self.mnuFile, u"File")
+    def create_menu_item(self, menu, label, status, handler,
+                         kind=wx.ITEM_NORMAL):
 
-        self.mnuTools = wx.Menu()
-        self.mnuAnalysis = wx.MenuItem(self.mnuTools, wx.ID_ANY,
-                                       u"Start analysis",
-                                       wx.EmptyString, wx.ITEM_NORMAL)
-        self.mnuTools.Append(self.mnuAnalysis)
+        if not label:
+            menu.AppendSeparator()
+            return
+        menu_item = menu.Append(-1, label, status, kind)
+        self.Bind(wx.EVT_MENU, handler, menu_item)
 
-        self.mnuConfig = wx.Menu()
-        self.mnuDiffusivity = wx.MenuItem(self.mnuConfig, wx.ID_ANY,
-                                          u"Diffisivity ranges",
-                                          wx.EmptyString, wx.ITEM_NORMAL)
-        self.mnuConfig.Append(self.mnuDiffusivity)
+    def menu_data(self):
+        # TODO: Get from db or settings file
+        return [("&File", (("&Open files",
+                            "Open ImageJ result file(s)",
+                            self.on_mnuImport),
+                           ("&Save reports",
+                            "Save analysis report files",
+                            self.on_mnuExport))),
+                ("&Tools", (("App configuration",
+                             "General configuration",
+                             self.on_mnuGeneral),
+                            ("Diffusivity configuration",
+                             "Diffusivity ranges configuration",
+                             self.on_mnuDiffusivity),
+                            ("", "", ""),
+                            ("Start analysis",
+                             "Starts MPT analysis",
+                             self.on_mnuAnalysis))),
+                ("&Help", (("&Documentation",
+                            "Application documentation",
+                            self.on_mnuHelp),
+                           ("&About",
+                            "About this program",
+                            self.on_mnuAbout)))]
 
-        self.mnuGeneral = wx.MenuItem(self.mnuConfig, wx.ID_ANY,
-                                      u"Analysis configuration",
-                                      wx.EmptyString, wx.ITEM_NORMAL)
-        self.mnuConfig.Append(self.mnuGeneral)
-
-        self.mnuTools.AppendSubMenu(self.mnuConfig, u"Configurations")
-
-        self.mnuBar.Append(self.mnuTools, u"Tools")
-
-        self.mnuHelp = wx.Menu()
-        self.mnuBar.Append(self.mnuHelp, u"Help")
-
-        self.SetMenuBar(self.mnuBar)
-
+    def create_layout(self):
         mainBoxSizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.dataListView = wx.dataview.DataViewListCtrl(
@@ -93,34 +105,38 @@ class mainWindow (wx.Frame):
 
         self.SetSizer(mainBoxSizer)
         self.Layout()
+
+    def create_status_bar(self):
         self.statusBar = self.CreateStatusBar(1, wx.STB_SIZEGRIP, wx.ID_ANY)
 
-        self.Centre(wx.BOTH)
-
-        # Connect Events
-        self.Bind(wx.EVT_MENU, self.on_mnuImport,
-                  id=self.mnuImport.GetId())
-        self.Bind(wx.EVT_MENU, self.on_mnuExport,
-                  id=self.mnuExport.GetId())
-        self.Bind(wx.EVT_MENU, self.on_mnuAnalysis,
-                  id=self.mnuAnalysis.GetId())
-        self.Bind(wx.EVT_MENU, self.on_mnuDiffusivity,
-                  id=self.mnuDiffusivity.GetId())
-        self.Bind(wx.EVT_MENU, self.on_mnuGeneral,
-                  id=self.mnuGeneral.GetId())
-
-        # Load project configurations~
-        db.persist()
-        self.analysis = Analysis()
-        self.analysis.load_config()
-        self.diffusivity = Diffusivity()
-        self.diffusivity.load_config()
-        self.general = General()
-        self.general.load_config()
+    def load_project_setup(self):
+        self.analysis = mpt.analysis
+        self.diffusivity = mpt.diffusivity
+        self.general = mpt.general
 
     def on_mnuImport(self, event):
         self.get_summary()
+        self.update_list_view()
+        self.statusBar.SetStatusText("Data fetched!")
 
+    def get_summary(self):
+        with wx.FileDialog(None, "Open ImageJ Full report file(s)",
+                           wildcard="ImageJ full report files (*.csv)|*.csv",
+                           style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
+
+            fileDialog.SetDirectory(self.general.config.open_folder)
+            if fileDialog.ShowModal() == wx.ID_CANCEL:
+                print("No file selected...")
+                return None
+
+            print("File selected...")
+            file_list = fileDialog.GetPaths()
+            self.analysis.load_reports(self, file_list)
+
+            self.general.config.open_folder = fileDialog.GetDirectory()
+            self.general.update(self.general.config)
+
+    def update_list_view(self):
         total_trajectories = 0
         total_valid_trajectories = 0
 
@@ -135,27 +151,6 @@ class mainWindow (wx.Frame):
         self.dataListView.AppendItem(["Total",
                                       total_trajectories,
                                       total_valid_trajectories])
-
-        self.statusBar.SetStatusText("Data fetched!")
-
-        event.Skip()
-
-    def get_summary(self):
-        with wx.FileDialog(None, "Open ImageJ Full report file(s)",
-                           wildcard="ImageJ full report files (*.csv)|*.csv",
-                           style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
-
-            fileDialog.SetDirectory(self.general.config.open_folder)
-            if fileDialog.ShowModal() == wx.ID_CANCEL:
-                print("No file selected...")
-                return None
-
-            print("File selected...")
-            file_list = fileDialog.GetPaths()
-            self.analysis.load_reports(file_list)
-
-            self.general.config.open_folder = fileDialog.GetDirectory()
-            self.general.update(self.general.config)
 
     def on_mnuExport(self, event):
         self.statusBar.SetStatusText("Open dialog to set export folder...")
@@ -175,5 +170,14 @@ class mainWindow (wx.Frame):
         analysisWindow(self).ShowModal()
         event.Skip()
 
-    def __del__(self):
-        pass
+    def on_mnuHelp(self, event):
+        self.statusBar.SetStatusText("Open Help window...")
+        event.Skip()
+
+    def on_mnuAbout(self, event):
+        self.statusBar.SetStatusText("Open About window...")
+        event.Skip()
+
+    def on_close(self, event):
+        self.analysis.clear_trajectories()
+        self.Destroy()
