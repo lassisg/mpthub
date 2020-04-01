@@ -167,31 +167,28 @@ class analysisWindow (wx.Dialog):
         self.Centre(wx.BOTH)
 
         # Connect Events
-        self.txt_size.Bind(wx.EVT_KILL_FOCUS, self.config_update)
-        self.txt_filter.Bind(wx.EVT_KILL_FOCUS, self.config_update)
-        self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
-        self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
-        self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
-        self.txt_width_si.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        # self.txt_size.Bind(wx.FOCUS, self.config_update)
+        # self.txt_filter.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        # self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        # self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        # self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        # self.txt_width_si.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         self.ctrl_buttonSave.Bind(wx.EVT_BUTTON, self.on_save_analysis)
         self.ctrl_buttonCancel.Bind(wx.EVT_BUTTON, self.on_cancel_analysis)
 
-    def __del__(self):
-        pass
-
     # Virtual event handlers, overide them in your derived class
-    def config_update(self, event):
-        print("Updating config...")
-        self.Parent.analysis.config[
-            event.EventObject.Name] = event.EventObject.Value
+
+    def config_update(self):
+        for widget in self.GetChildren():
+            if widget.ClassName == 'wxTextCtrl':
+                self.Parent.analysis.config[widget.Name] = widget.Value
 
     def on_save_analysis(self, event):
-        print("Saving changes...")
+        self.Parent.statusBar.SetStatusText("Saving changes...")
+        self.config_update()
         self.Parent.analysis.update(self.Parent.analysis.config)
         self.Destroy()
-        event.Skip()
 
     def on_cancel_analysis(self, event):
-        print("Aborting changes...")
+        self.Parent.statusBar.SetStatusText("Canceling changes...")
         self.Destroy()
-        event.Skip()

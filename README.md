@@ -98,9 +98,9 @@ Under 'Tools' menu, 'Analyze' sub-menu starts analysis. This sub-menu is disable
 The app must process the data from those files and do a series of calculations, described bellow:
 
 -   Keep only those trajectories longer than the minimum frame number defined by the filter configuration.
--   Compute MSD (Mean-squared Displacement) for the group of results (near 100 trajectories)
--   Compute Deff (Diffusivity efficiency coefficient) for the group of results (near 100 trajectories)
--   Compute Diffusivity for each trajectory
+-   Compute MSD (mean squared displacement) for the group of results (near 100 trajectories)
+-   Compute $D_{eff}$ (effective diffusivity) for the group of results (near 100 trajectories)
+-   Compute the slope ($\alpha$) for each trajectory
 
 Along the process, the statusbar shows info about the overall process.
 When it's done, a dialog informs the user.
@@ -133,19 +133,19 @@ This sheet contains the Ensemble Mean-squared Displacement (\<MSD>) plot.
 
 ##### 4.1.3. MSD vs Time
 
-This sheet contains the Mean-squared Displacement (MSD) plot with all trajectories.
+This sheet contains the MSD (mean squared displacement) plot with all trajectories.
 
 ![individual_msd_plot](./mpt/assets/Individual_MSD_plot.png "Individual MSD plot")
 
 ##### 4.1.4. \<Deff> vs Time
 
-This sheet contains the Ensemble Mean-squared Displacement (\<MSD>) chart.
+This sheet contains the Ensemble effective diffusivity (\<$D_{eff}$>) chart.
 
 ![ensemble_deff](./mpt/assets/Ensemble_Deff_plot.png "Ensemble Deff plot")
 
 ##### 4.1.5. Deff vs Time
 
-This sheet contains the Mean-squared Displacement (MSD) plot with all trajectories.
+This sheet contains the effective diffusivity ($D_{eff}$) plot with all trajectories.
 
 ![individual_deff_plot](./mpt/assets/Individual_Deff_plot.png "Individual Deff plot")
 

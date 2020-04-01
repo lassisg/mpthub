@@ -160,7 +160,7 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_active_max = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.active[0]}+",
+            value=f"{chr(8734)}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER | wx.TE_READONLY, name="active-max")
         sz_active.Add(
@@ -212,8 +212,6 @@ class diffusivityWindow (wx.Dialog):
         self.txt_immobile_max.SetValue(
             f"{self.Parent.diffusivity.config.immobile[1]}")
 
-        event.Skip()
-
     def on_diffusive_range_change(self, event):
         self.Parent.diffusivity.config.diffusive[0] = float(
             self.txt_diffusive_min.Value)
@@ -223,8 +221,6 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_subdiffusive_max.SetValue(
             f"{self.Parent.diffusivity.config.sub_diffusive[1]}")
-
-        event.Skip()
 
     def on_active_range_change(self, event):
         self.Parent.diffusivity.config.active[0] = float(
@@ -236,18 +232,11 @@ class diffusivityWindow (wx.Dialog):
         self.txt_diffusive_max.SetValue(
             f"{self.Parent.diffusivity.config.diffusive[1]}")
 
-        self.txt_active_max.SetValue(
-            f"{self.Parent.diffusivity.config.active[0]}+")
-
-        event.Skip()
-
     def on_save_diffusivity(self, event):
-        print("Saving changes...")
+        self.Parent.statusBar.SetStatusText("Saving changes...")
         self.Parent.diffusivity.update(self.Parent.diffusivity.config)
         self.Destroy()
-        event.Skip()
 
     def on_cancel_diffusivity(self, event):
-        print("Aborting changes...")
+        self.Parent.statusBar.SetStatusText("Canceling changes...")
         self.Destroy()
-        event.Skip()
