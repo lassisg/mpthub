@@ -6,7 +6,7 @@ import os
 class General():
 
     def __init__(self) -> None:
-        print("Initializing General app configuration object...")
+        # print("Initializing General app configuration object...")
         self.load_config()
 
     def load_config(self) -> None:
@@ -32,7 +32,7 @@ class General():
 class Diffusivity:
 
     def __init__(self) -> None:
-        print("Initializing Diffusivity configuration object...")
+        # print("Initializing Diffusivity configuration object...")
         self.load_config()
 
     def load_config(self) -> None:
@@ -56,7 +56,7 @@ class Diffusivity:
 class Analysis():
 
     def __init__(self) -> None:
-        print("Initializing Analysis configuration object...")
+        # print("Initializing Analysis configuration object...")
         self.summary = pd.DataFrame()
         self.load_config()
 
@@ -88,35 +88,37 @@ class Analysis():
         """
         self.trajectories = pd.DataFrame(
             columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
-        print("Loading reports")
+        parent.statusBar.SetStatusText("Loading report(s)...")
         for file in file_list:
-            # TODO: Check if new data exists before add
             if not self.summary.empty:
                 masked_df = self.summary.full_path == file
                 if masked_df.any():
                     continue
 
             full_data = pd.read_csv(file)
+            file_name, _ = os.path.splitext(os.path.basename(file))
             if set(['Trajectory', 'Frame', 'x', 'y']).issubset(
                     full_data.columns):
-                print("File ok!")
+                parent.statusBar.SetStatusText(f"File {file_name} ok!")
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
 
                 full_path = file
 
-                file_name, _ = os.path.splitext(os.path.basename(file))
                 parent.statusBar.SetStatusText(
                     f"Importing file {file_name}...")
                 trajectories = len(
                     raw_data.iloc[:, :1].groupby('Trajectory').nunique())
-                valid = self.get_valid_trajectories(file_name, raw_data)
+                valid = self.get_valid_trajectories(
+                    parent, file_name, raw_data)
 
                 self.summary = self.summary.append({
                     'full_path': full_path, 'file_name': file_name,
                     'trajectories': trajectories, 'valid': valid},
                     ignore_index=True)
             else:
-                print(f"Wrong file format. Aborting import of file: '{file}'")
+                parent.statusBar.SetStatusText(f"Wrong file format.")
+                parent.statusBar.SetStatusText(
+                    f"Aborting import of file: '{file_name}'")
 
         if not self.trajectories.empty:
             self.add_trajectories(self.trajectories)
@@ -133,10 +135,11 @@ class Analysis():
         empty_data.to_sql('trajectories', con=conn,
                           index=False, if_exists='replace')
 
-    def get_valid_trajectories(self,
+    def get_valid_trajectories(self, parent,
                                file_name: str,
                                data_in: pd.DataFrame) -> int:
-        print("Filter valid trajectories")
+        parent.statusBar.SetStatusText(
+            f"Filtering valid trajectories on {file_name}...")
         grouped_trajectories = data_in.groupby('Trajectory').filter(
             lambda x: len(x['Trajectory']) > self.config.min_frames)
 

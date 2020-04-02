@@ -1,7 +1,18 @@
 import sqlite3
 from sqlalchemy import create_engine
-from dynaconf import settings
 import pandas as pd
+from .settings import Settings
+from pathlib import Path
+
+settings = Settings()
+
+
+def resolve_paths() -> None:
+    if not Path(settings.BASE_PATH).exists():
+        Path.mkdir(Path(settings.BASE_PATH))
+
+    if not Path(settings.EXPORT_PATH).exists():
+        Path.mkdir(Path(settings.EXPORT_PATH))
 
 
 def connect():
@@ -12,6 +23,8 @@ def persist() -> str:
     """Perform table creation for the app, based on default data. If tables \
         already exists, nothing is done.
     """
+    resolve_paths()
+
     app_config_df = pd.DataFrame.from_dict({
         'open_folder': [settings.DEFAULT_OPEN_FOLDER],
         'save_folder': [settings.DEFAULT_SAVE_FOLDER]
@@ -29,12 +42,12 @@ def persist() -> str:
     })
 
     analysis_config_df = pd.DataFrame({
-        'p_size': settings.DEFAULT_P_SIZE,
-        'min_frames': settings.DEFAULT_MIN_FRAMES,
-        'fps': settings.DEFAULT_FPS,
-        'total_frames': settings.DEFAULT_TOTAL_FRAMES,
-        'width_px': settings.DEFAULT_WIDTH_PX,
-        'width_si': settings.DEFAULT_WIDTH_SI
+        'p_size': [settings.DEFAULT_P_SIZE],
+        'min_frames': [settings.DEFAULT_MIN_FRAMES],
+        'fps': [settings.DEFAULT_FPS],
+        'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
+        'width_px': [settings.DEFAULT_WIDTH_PX],
+        'width_si': [settings.DEFAULT_WIDTH_SI]
     })
 
     trajectories_df = pd.DataFrame(
@@ -65,6 +78,8 @@ def create_table(table_name: str, data: pd.DataFrame) -> str:
         msg = f"Table '{table_name}' created."
     except ValueError:
         msg = f"Table '{table_name}' already exists. Aborting."
+    except Exception:
+        msg = "Exception."
     finally:
         return msg
 

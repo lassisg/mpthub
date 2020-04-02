@@ -12,6 +12,8 @@ import wx.xrc
 import wx.dataview
 import mpt
 from . import analysisWindow, diffusivityWindow
+from mpt.settings import Settings
+import os
 
 
 class mainWindow (wx.Frame):
@@ -23,6 +25,8 @@ class mainWindow (wx.Frame):
                           style=wx.SYSTEM_MENU | wx.CAPTION |
                           wx.MINIMIZE_BOX | wx.CLOSE_BOX)
 
+        settings = Settings()
+        self.SetIcon(wx.Icon(os.path.join(settings.ICON_PATH, "icon.ico")))
         self.SetSizeHints(wx.Size(688, 480), wx.Size(688, 480))
         self.create_menu_bar()
         self.create_layout()
@@ -116,8 +120,8 @@ class mainWindow (wx.Frame):
 
     def on_mnuImport(self, event):
         self.get_summary()
-        self.update_list_view()
-        self.statusBar.SetStatusText("Data fetched!")
+        if not self.analysis.summary.empty:
+            self.update_list_view()
 
     def get_summary(self):
         with wx.FileDialog(None, "Open ImageJ Full report file(s)",
@@ -126,15 +130,16 @@ class mainWindow (wx.Frame):
 
             fileDialog.SetDirectory(self.general.config.open_folder)
             if fileDialog.ShowModal() == wx.ID_CANCEL:
-                print("No file selected...")
+                self.statusBar.SetStatusText("No file selected...")
                 return None
 
-            print("File selected...")
+            self.statusBar.SetStatusText("File(s) selected...")
             file_list = fileDialog.GetPaths()
             self.analysis.load_reports(self, file_list)
 
             self.general.config.open_folder = fileDialog.GetDirectory()
             self.general.update(self.general.config)
+            self.statusBar.SetStatusText("Data fetched!")
 
     def update_list_view(self):
         total_trajectories = 0
