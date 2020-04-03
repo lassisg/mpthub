@@ -177,14 +177,17 @@ class mainWindow (wx.Frame):
 
         with wx.DirDialog(
                 None, message=f"Chose folder to save report files",
-                defaultPath=self.analysis.config.save_path) as saveDialog:
+                defaultPath=self.general.config.save_folder) as saveDialog:
 
             # TODO: Add save path to app_config table
             if saveDialog.ShowModal() == wx.ID_CANCEL:
                 self.statusBar.SetStatusText("Canceling report saving...")
 
-            new_path = saveDialog.GetPath()
-            self.statusBar.SetStatusText(f"Saving reports to {new_path}...")
+            self.general.config.save_folder = saveDialog.GetPath()
+            self.general.update(self.general.config)
+            self.statusBar.SetStatusText(
+                f"Saving reports to {self.general.config.save_folder}...")
+            self.analysis.export(self)
 
     def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
