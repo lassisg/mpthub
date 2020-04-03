@@ -167,9 +167,24 @@ class mainWindow (wx.Frame):
     def on_mnuAnalysis(self, event):
         self.statusBar.SetStatusText("Starts analysis...")
         self.analysis.start(self)
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("File", "Save reports"),
+            not self.analysis.msd.empty)
+        self.statusBar.SetStatusText("Analysis complete...")
 
     def on_mnuExport(self, event):
         self.statusBar.SetStatusText("Open dialog to set export folder...")
+
+        with wx.DirDialog(
+                None, message=f"Chose folder to save report files",
+                defaultPath=self.analysis.config.save_path) as saveDialog:
+
+            # TODO: Add save path to app_config table
+            if saveDialog.ShowModal() == wx.ID_CANCEL:
+                self.statusBar.SetStatusText("Canceling report saving...")
+
+            new_path = saveDialog.GetPath()
+            self.statusBar.SetStatusText(f"Saving reports to {new_path}...")
 
     def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
