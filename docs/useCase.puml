@@ -1,0 +1,21 @@
+@startuml
+
+' skinparam Monochrome true
+skinparam linetype ortho
+
+left to right direction
+:user: --> (View summary)
+:user: --> (Import files)
+:user: --> (Start analysis)
+:user: --> (Export reports)
+
+(View summary) ..> (Import files) : <<includes>>
+(Start analysis) ..> (Import files) : <<includes>>
+(Export reports) ..> (Import files) : <<includes>>
+
+note top of (View summary) : On screen information\nabout each imported\nfile.
+note right of (Import files) : ImageJ result files,\nin '.csv' format.
+note bottom of (Start analysis) : Starts the data analysis\nfor the imported files,\ncomputing MSD, <MSD>,\nDeff, <Deff> and diffusivity\n of the valid trajectories.
+note bottom of (Export reports) : Export analysis reports in\n'.xlsx' format.
+
+@enduml
