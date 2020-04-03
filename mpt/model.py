@@ -159,17 +159,22 @@ class Analysis():
 
     def start(self, parent):
         parent.statusBar.SetStatusText(
-            f"Starting multiple particle analysis...")
+            f"Computing MSD (mean squared displacement)...")
 
-        self.msd = self.compute_msd()
+        self.msd = self.compute_msd(parent)
         self.msd_log = self.compute_msd_log(self.msd)
+
+        parent.statusBar.SetStatusText(
+            f"Computing Deff (diffusivity coefficient)...")
         self.deff = self.compute_deff(self.msd)
 
+        parent.statusBar.SetStatusText(
+            f"Adjusting data labels...")
         self.msd = self.rename_columns(self.msd)
         self.msd_log = self.rename_columns(self.msd_log)
         self.deff = self.rename_columns(self.deff)
 
-    def compute_msd(self) -> pd.DataFrame:
+    def compute_msd(self, parent) -> pd.DataFrame:
         """Computes the Mean-squared Displacement (MSD).
         It is mandatory to have configuration data previously loaded.
 
@@ -186,6 +191,7 @@ class Analysis():
             ['file_name', 'Trajectory'])
 
         for i, trajectory in trajectories_group:
+            # parent.statusBar.SetStatusText("Computing MSD for trajectory ")
             frames = len(trajectory)
             t = tau[:frames]
             xy = trajectory.values
@@ -293,20 +299,27 @@ class Analysis():
         parent.statusBar.SetStatusText(
             f"Exporting 'Individual Particle Analysis' report...")
         report.export_individual_particle_analysis(
-            self.config.save_path, self.msd, self.deff)
+            parent.general.config.save_folder, self.msd, self.deff)
 
         parent.statusBar.SetStatusText(
-            f"Export transport mode sheet...")
+            f"Exporting transport mode sheet...")
         report.export_transport_mode(
-            self.config.save_path, self.config, self.msd_log)
+            parent.general.config.save_folder, self.msd_log)
 
 
 class Report():
+
     def __init__(self) -> None:
         """Inform user that the result is being exported.
         """
-        # print("Exporting results...")
-        pass
+        self.load_config()
+
+    def load_config(self) -> None:
+        """Loads configuration into a Series with data from database.
+        """
+        conn = db.connect()
+        self.config = pd.read_sql_table("diffusivity", con=conn)
+        self.config.rename(index={0: 'min', 1: 'max'}, inplace=True)
 
     def get_slopes(self, dataIn: pd.DataFrame) -> pd.Series:
         """Return the slope (alfa) from each trajectory's MSD.
@@ -394,7 +407,6 @@ class Report():
             msd {pd.DataFrame} -- DataFrame containing MSD Data.
             deff {pd.DataFrame} -- DataFrame containing Deff data.
         """
-        print("Exporting 'Individual Particle Analysis' report...")
         file_name = "Individual Particle Analysis"
         full_path = os.path.join(path, file_name+'.xlsx')
 
@@ -432,7 +444,6 @@ class Report():
         self.make_chart(workbook, msd, 1)
         self.make_chart(workbook, deff, len(msd)+4)
 
-        workbook.filename = self.save_report(path, file_name)
         workbook.close()
         writer.save()
 
@@ -523,17 +534,13 @@ class Report():
         time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart.set_chart(chart)
 
-    def export_transport_mode(self, path: str,
-                              config: pd.DataFrame,
-                              msd: pd.DataFrame):
+    def export_transport_mode(self, path: str, msd: pd.DataFrame):
         """Export 'Transport Mode Characterization' report.
 
         Arguments:
             path {str} -- Path to the report file.
-            config {pd.DataFrame} -- DataFrame with diffusivity configuration.
             msd {pd.DataFrame} -- DataFrame containing MSD data.
         """
-        print("Export transport mode sheet")
         file_name = "Transport Mode Characterization"
         full_path = os.path.join(path, file_name+".xlsx")
 
@@ -627,13 +634,13 @@ class Report():
         data_sheet.write('D4', 'Diffusive')
         data_sheet.write('D5', 'Active')
 
-        immobile_low = config.iloc[0, 1]
-        immobile_high = config.iloc[0, 2]
-        subdiffusive_low = config.iloc[1, 1]
-        subdiffusive_high = config.iloc[1, 2]
-        diffusive_low = config.iloc[2, 1]
-        diffusive_high = config.iloc[2, 2]
-        active_low = config.iloc[3, 1]
+        immobile_low = self.config.immobile['min']
+        immobile_high = self.config.immobile['max']
+        subdiffusive_low = self.config.sub_diffusive['min']
+        subdiffusive_high = self.config.sub_diffusive['max']
+        diffusive_low = self.config.diffusive['min']
+        diffusive_high = self.config.diffusive['max']
+        active_low = self.config.active['min']
 
         data_sheet.write('E2', f'{str(immobile_low)}-{str(immobile_high)}')
         data_sheet.write(
@@ -668,35 +675,5 @@ class Report():
         data_sheet.write_formula('E9', '=COUNT(A:A)')
         data_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        workbook.filename = self.save_report(path, file_name)
         workbook.close()
         writer.save()
-
-    def save_report(self, path: str, file_name: str) -> str:
-        """Shows Save dialog for each report and saves the path for the future.
-
-        Arguments:
-            path {str} -- Path to save the report.
-            file_name {str} -- Report file name, without extension (because \
-                it is used on the dialog title).
-
-        Returns:
-            str -- Full path for report save (path + file_name), after user \
-                confirmation or edit.
-        """
-        # app = wx.App()
-        report_name = os.path.join(path, file_name+".xlsx")
-        with wx.FileDialog(None, f"Save {file_name} Report",
-                           wildcard="Microsoft Excel (*.xlsx)|*.xlsx",
-                           style=wx.FD_SAVE) as saveDialog:
-
-            saveDialog.SetDirectory(path)
-            saveDialog.SetFilename(file_name)
-            # save_path = saveDialog.GetDirectory()
-            # TODO: Add save path to app_config table
-            if saveDialog.ShowModal() == wx.ID_CANCEL:
-                print("Saving to user folder...")
-
-            report_name = saveDialog.GetPath()
-
-        return report_name

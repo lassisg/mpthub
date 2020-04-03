@@ -165,7 +165,8 @@ class mainWindow (wx.Frame):
         self.MenuBar.FindItem(menu_item_id)[0].Enable(enable)
 
     def on_mnuAnalysis(self, event):
-        self.statusBar.SetStatusText("Starts analysis...")
+        self.statusBar.SetStatusText(
+            f"Starting multiple particle analysis...")
         self.analysis.start(self)
         self.toggle_menu_item(
             self.MenuBar.FindMenuItem("File", "Save reports"),
@@ -173,7 +174,6 @@ class mainWindow (wx.Frame):
         self.statusBar.SetStatusText("Analysis complete...")
 
     def on_mnuExport(self, event):
-        self.statusBar.SetStatusText("Open dialog to set export folder...")
 
         with wx.DirDialog(
                 None, message=f"Chose folder to save report files",
@@ -188,6 +188,8 @@ class mainWindow (wx.Frame):
             self.statusBar.SetStatusText(
                 f"Saving reports to {self.general.config.save_folder}...")
             self.analysis.export(self)
+
+            self.statusBar.SetStatusText("Reports saved.")
 
     def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")

@@ -553,8 +553,16 @@ six = "*"
 python = ">=3.0"
 version = "*"
 
+[[package]]
+category = "main"
+description = "A Python module for creating Excel XLSX files."
+name = "xlsxwriter"
+optional = false
+python-versions = "*"
+version = "1.2.8"
+
 [metadata]
-content-hash = "6470f43cbd86ee38e4a7d7920e77c4c56eb2e7b7f721917e1dad535580ea4654"
+content-hash = "f96dfb102736e85585b8ce1a7a1c61e3f8ac441a6758f00e7a943a4ff0b1c1ba"
 python-versions = ">=3.7"
 
 [metadata.files]
@@ -920,4 +928,8 @@ wxpython = [
     {file = "wxPython-4.0.7.post2-cp38-cp38-win32.whl", hash = "sha256:aa6d0097a58096ea40b2d6d1307f60259ba108674a68329690a664910c7b6743"},
     {file = "wxPython-4.0.7.post2-cp38-cp38-win_amd64.whl", hash = "sha256:ab72ca3a3550e132cb2eef67c978bbb702591a334dfdb37853aeb702ce7071af"},
     {file = "wxPython-4.0.7.post2.tar.gz", hash = "sha256:5a229e695b64f9864d30a5315e0c1e4ff5e02effede0a07f16e8d856737a0c4e"},
+]
+xlsxwriter = [
+    {file = "XlsxWriter-1.2.8-py2.py3-none-any.whl", hash = "sha256:97ab487b81534415c5313154203f3e8a637d792b1e6a8201e8f7f71da0203c2a"},
+    {file = "XlsxWriter-1.2.8.tar.gz", hash = "sha256:488e1988ab16ff3a9cd58c7656d0a58f8abe46ee58b98eecea78c022db28656b"},
 ]
