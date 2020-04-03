@@ -18,7 +18,7 @@ import os
 
 class mainWindow (wx.Frame):
 
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         wx.Frame.__init__(self, parent, id=wx.ID_ANY,
                           title=u"Multiple Particle Tracking",
                           pos=wx.DefaultPosition, size=wx.Size(688, 480),
@@ -35,7 +35,7 @@ class mainWindow (wx.Frame):
         self.Bind(wx.EVT_CLOSE, self.on_close)
         self.Centre(wx.BOTH)
 
-    def create_menu_bar(self):
+    def create_menu_bar(self) -> None:
         menu_bar = wx.MenuBar()
         for data in self.menu_data():
             menu_label = data[0]
@@ -43,7 +43,7 @@ class mainWindow (wx.Frame):
             menu_bar.Append(self.create_menu(menu_items), menu_label)
             self.SetMenuBar(menu_bar)
 
-    def create_menu(self, menu_data):
+    def create_menu(self, menu_data) -> wx.Menu:
         menu = wx.Menu()
         for item in menu_data:
             if len(item) == 2:
@@ -54,41 +54,42 @@ class mainWindow (wx.Frame):
                 self.create_menu_item(menu, *item)
         return menu
 
-    def create_menu_item(self, menu, label, status, handler,
-                         kind=wx.ITEM_NORMAL):
+    def create_menu_item(self, menu, label, status, handler, is_enabled,
+                         kind=wx.ITEM_NORMAL) -> None:
 
         if not label:
             menu.AppendSeparator()
             return
         menu_item = menu.Append(-1, label, status, kind)
         self.Bind(wx.EVT_MENU, handler, menu_item)
+        menu_item.Enable(is_enabled)
 
-    def menu_data(self):
+    def menu_data(self) -> list:
         # TODO: Get from db or settings file
         return [("&File", (("&Open files",
                             "Open ImageJ result file(s)",
-                            self.on_mnuImport),
+                            self.on_mnuImport, True),
                            ("&Save reports",
                             "Save analysis report files",
-                            self.on_mnuExport))),
+                            self.on_mnuExport, False))),
                 ("&Tools", (("App configuration",
                              "General configuration",
-                             self.on_mnuGeneral),
+                             self.on_mnuGeneral, True),
                             ("Diffusivity configuration",
                              "Diffusivity ranges configuration",
-                             self.on_mnuDiffusivity),
-                            ("", "", ""),
+                             self.on_mnuDiffusivity, True),
+                            ("", "", "", True),
                             ("Start analysis",
                              "Starts MPT analysis",
-                             self.on_mnuAnalysis))),
+                             self.on_mnuAnalysis, False))),
                 ("&Help", (("&Documentation",
                             "Application documentation",
-                            self.on_mnuHelp),
+                            self.on_mnuHelp, False),
                            ("&About",
                             "About this program",
-                            self.on_mnuAbout)))]
+                            self.on_mnuAbout, False)))]
 
-    def create_layout(self):
+    def create_layout(self) -> None:
         mainBoxSizer = wx.BoxSizer(wx.HORIZONTAL)
 
         self.dataListView = wx.dataview.DataViewListCtrl(
@@ -110,20 +111,23 @@ class mainWindow (wx.Frame):
         self.SetSizer(mainBoxSizer)
         self.Layout()
 
-    def create_status_bar(self):
+    def create_status_bar(self) -> None:
         self.statusBar = self.CreateStatusBar(1, wx.STB_SIZEGRIP, wx.ID_ANY)
 
-    def load_project_setup(self):
+    def load_project_setup(self) -> None:
         self.analysis = mpt.analysis
         self.diffusivity = mpt.diffusivity
         self.general = mpt.general
 
-    def on_mnuImport(self, event):
+    def on_mnuImport(self, event) -> None:
         self.get_summary()
-        if not self.analysis.summary.empty:
-            self.update_list_view()
+        self.update_list_view()
+        # TODO: Find a way to avoid using text as parameters
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("Tools", "Start analysis"),
+            not self.analysis.summary.empty)
 
-    def get_summary(self):
+    def get_summary(self) -> None:
         with wx.FileDialog(None, "Open ImageJ Full report file(s)",
                            wildcard="ImageJ full report files (*.csv)|*.csv",
                            style=wx.FD_OPEN | wx.FD_MULTIPLE) as fileDialog:
@@ -141,7 +145,7 @@ class mainWindow (wx.Frame):
             self.general.update(self.general.config)
             self.statusBar.SetStatusText("Data fetched!")
 
-    def update_list_view(self):
+    def update_list_view(self) -> None:
         total_trajectories = 0
         total_valid_trajectories = 0
 
@@ -157,32 +161,30 @@ class mainWindow (wx.Frame):
                                       total_trajectories,
                                       total_valid_trajectories])
 
-    def on_mnuExport(self, event):
-        self.statusBar.SetStatusText("Open dialog to set export folder...")
-        event.Skip()
+    def toggle_menu_item(self, menu_item_id: int, enable: bool) -> None:
+        self.MenuBar.FindItem(menu_item_id)[0].Enable(enable)
 
     def on_mnuAnalysis(self, event):
         self.statusBar.SetStatusText("Starts analysis...")
-        event.Skip()
+        self.analysis.start(self)
 
-    def on_mnuDiffusivity(self, event):
+    def on_mnuExport(self, event):
+        self.statusBar.SetStatusText("Open dialog to set export folder...")
+
+    def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
         diffusivityWindow(self).ShowModal()
-        event.Skip()
 
-    def on_mnuGeneral(self, event):
+    def on_mnuGeneral(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for general setup...")
         analysisWindow(self).ShowModal()
-        event.Skip()
 
     def on_mnuHelp(self, event):
         self.statusBar.SetStatusText("Open Help window...")
-        event.Skip()
 
     def on_mnuAbout(self, event):
         self.statusBar.SetStatusText("Open About window...")
-        event.Skip()
 
-    def on_close(self, event):
+    def on_close(self, event) -> None:
         self.analysis.clear_trajectories()
         self.Destroy()
