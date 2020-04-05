@@ -190,25 +190,28 @@ class Analysis():
         trajectories_group = self.trajectories.groupby(
             ['file_name', 'Trajectory'])
 
-        for i, trajectory in trajectories_group:
-            # parent.statusBar.SetStatusText("Computing MSD for trajectory ")
-            frames = len(trajectory)
+        i = 0
+        for (file, trajectory), trajectory_data in trajectories_group:
+            parent.statusBar.SetStatusText(
+                f"Computing MSD for trajectory {trajectory} of file {file}...")
+
+            frames = len(trajectory_data)
             t = tau[:frames]
-            xy = trajectory.values
+            xy = trajectory_data.values
 
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
             shifts = position["t"].index.values + 1
-
-            msdp = np.zeros(shifts.size)
-            for k, shift in enumerate(shifts):
-                diffs_x = position['x'] - position['x'].shift(-shift)
-                diffs_y = position['y'] - position['y'].shift(-shift)
-                square_sum = np.square(diffs_x) + np.square(diffs_y)
-                msdp[k] = square_sum.mean()
+            msdp = self.compute_msdp(position, shifts)
+            # for k, shift in enumerate(shifts):
+            #     diffs_x = position['x'] - position['x'].shift(-shift)
+            #     diffs_y = position['y'] - position['y'].shift(-shift)
+            #     square_sum = np.square(diffs_x) + np.square(diffs_y)
+            #     msdp[k] = square_sum.mean()
 
             msdm = msdp * (1 / (self.config.pixel_size ** 2))
             msdm = msdm[:int(self.config.min_frames)]
             msd[i] = msdm
+            i += 1
 
         tau = tau[:int(self.config.min_frames)]
 
@@ -221,6 +224,16 @@ class Analysis():
         msd['mean'] = msd.mean(axis=1)
 
         return msd
+
+    def compute_msdp(self, position, shifts):
+        msdp = np.zeros(shifts.size)
+        for k, shift in enumerate(shifts):
+            diffs_x = position['x'] - position['x'].shift(-shift)
+            diffs_y = position['y'] - position['y'].shift(-shift)
+            square_sum = np.square(diffs_x) + np.square(diffs_y)
+            msdp[k] = square_sum.mean()
+
+        return msdp
 
     def compute_msd_log(self, msd: pd.DataFrame) -> pd.DataFrame:
         """Computes the log version of Mean-squared Displacement.
