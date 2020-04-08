@@ -72,16 +72,16 @@ class mainWindow (wx.Frame):
                            ("&Save reports",
                             "Save analysis report files",
                             self.on_mnuExport, False))),
-                ("&Tools", (("App configuration",
-                             "General configuration",
-                             self.on_mnuGeneral, True),
-                            ("Diffusivity configuration",
-                             "Diffusivity ranges configuration",
-                             self.on_mnuDiffusivity, True),
-                            ("", "", "", True),
-                            ("Start analysis",
-                             "Starts MPT analysis",
-                             self.on_mnuAnalysis, False))),
+                ("&Edit", (("App configuration",
+                            "General configuration",
+                            self.on_mnuGeneral, True),
+                           ("Diffusivity configuration",
+                            "Diffusivity ranges configuration",
+                            self.on_mnuDiffusivity, True),
+                           ("", "", "", True),
+                           ("Start analysis",
+                            "Starts MPT analysis",
+                            self.on_mnuAnalysis, False))),
                 ("&Help", (("&Documentation",
                             "Application documentation",
                             self.on_mnuHelp, False),
@@ -124,7 +124,7 @@ class mainWindow (wx.Frame):
         self.update_list_view()
         # TODO: Find a way to avoid using text as parameters
         self.toggle_menu_item(
-            self.MenuBar.FindMenuItem("Tools", "Start analysis"),
+            self.MenuBar.FindMenuItem("Edit", "Start analysis"),
             not self.analysis.summary.empty)
 
     def get_summary(self) -> None:
