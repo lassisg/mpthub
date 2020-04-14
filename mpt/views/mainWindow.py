@@ -193,11 +193,11 @@ class mainWindow (wx.Frame):
 
     def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
-        diffusivityWindow(self).ShowModal()
+        self.diffusivityWindow(self).ShowModal()
 
     def on_mnuGeneral(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for general setup...")
-        analysisWindow(self).ShowModal()
+        self.analysisWindow(self).ShowModal()
 
     def on_mnuHelp(self, event):
         self.statusBar.SetStatusText("Open Help window...")
