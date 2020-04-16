@@ -81,7 +81,11 @@ class mainWindow (wx.Frame):
                            ("", "", "", True),
                            ("Start analysis",
                             "Starts MPT analysis",
-                            self.on_mnuAnalysis, False))),
+                            self.on_mnuAnalysis, False),
+                           ("", "", "", True),
+                           ("Clear summary",
+                            "Clear current summary list",
+                            self.on_mnuClear, False))),
                 ("&Help", (("&Documentation",
                             "Application documentation",
                             self.on_mnuHelp, False),
@@ -125,6 +129,9 @@ class mainWindow (wx.Frame):
         # TODO: Find a way to avoid using text as parameters
         self.toggle_menu_item(
             self.MenuBar.FindMenuItem("Edit", "Start analysis"),
+            not self.analysis.summary.empty)
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("Edit", "Clear summary"),
             not self.analysis.summary.empty)
 
     def get_summary(self) -> None:
@@ -191,13 +198,28 @@ class mainWindow (wx.Frame):
 
             self.statusBar.SetStatusText("Reports saved.")
 
+    def on_mnuClear(self, event):
+        self.statusBar.SetStatusText(
+            f"Starting summary clear...")
+        self.clear_summary()
+        self.analysis.clear_summary()
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("Edit", "Start analysis"),
+            not self.analysis.summary.empty)
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("Edit", "Clear summary"),
+            not self.analysis.summary.empty)
+
+    def clear_summary(self):
+        self.dataListView.DeleteAllItems()
+
     def on_mnuDiffusivity(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
-        self.diffusivityWindow(self).ShowModal()
+        diffusivityWindow(self).ShowModal()
 
     def on_mnuGeneral(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for general setup...")
-        self.analysisWindow(self).ShowModal()
+        analysisWindow(self).ShowModal()
 
     def on_mnuHelp(self, event):
         self.statusBar.SetStatusText("Open Help window...")

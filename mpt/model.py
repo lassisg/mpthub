@@ -131,6 +131,10 @@ class Analysis():
         data.to_sql('trajectories', con=conn,
                     index=False, if_exists='replace')
 
+    def clear_summary(self):
+        self.summary.drop(
+            self.summary.index, inplace=True)
+
     def clear_trajectories(self) -> None:
         conn = db.connect()
         empty_data = pd.DataFrame(
