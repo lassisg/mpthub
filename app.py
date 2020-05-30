@@ -1,6 +1,5 @@
 import wx
-from mpt.views.mainWindow import mainWindow
-
+from mpt.views import mainWindow
 
 if __name__ == "__main__":
 
