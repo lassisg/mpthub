@@ -86,7 +86,10 @@ class mainWindow (wx.Frame):
                            ("", "", "", True),
                            ("Clear summary",
                             "Clear current summary list",
-                            self.on_mnuClear, False))),
+                            self.on_mnuClear, False),
+                           ("Remove selected",
+                            "Remove selected files from summary list",
+                            self.on_mnuRemove, False))),
                 ("&Help", (("&Documentation",
                             "Application documentation",
                             self.on_mnuHelp, False),
@@ -136,6 +139,9 @@ class mainWindow (wx.Frame):
             not self.analysis.summary.empty)
         self.toggle_menu_item(
             self.MenuBar.FindMenuItem("Edit", "Clear summary"),
+            not self.analysis.summary.empty)
+        self.toggle_menu_item(
+            self.MenuBar.FindMenuItem("Edit", "Remove selected"),
             not self.analysis.summary.empty)
 
     def get_summary(self) -> None:
@@ -210,6 +216,19 @@ class mainWindow (wx.Frame):
             self.analysis.export(self)
 
             self.statusBar.SetStatusText("Reports saved.")
+
+    def on_mnuRemove(self, event):
+
+        row = 0
+        while row < self.dataListView.ItemCount - 1:
+            if self.dataListView.GetToggleValue(row, 0):
+                self.dataListView.DeleteItem(row)
+                row -= 1
+
+            row += 1
+
+        if self.dataListView.ItemCount == 1:
+            self.clear_summary()
 
     def on_mnuClear(self, event):
         self.statusBar.SetStatusText(f"Starting summary clear...")
