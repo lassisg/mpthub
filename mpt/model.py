@@ -701,7 +701,7 @@ class Report():
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
-        file_name = "Einstein-Stokes"
+        file_name = "Einstein-Stokes Calculations (D0_Dw & microviscosity)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
