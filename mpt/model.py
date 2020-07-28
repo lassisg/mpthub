@@ -323,6 +323,11 @@ class Analysis():
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
+        parent.statusBar.SetStatusText(
+            f"Exporting Einstein-Stokes sheet...")
+        report.export_einstein_stokes(
+            parent.general.config.save_folder, self.msd_log)
+
 
 class Report():
 
@@ -694,3 +699,7 @@ class Report():
 
         workbook.close()
         writer.save()
+
+    def export_einstein_stokes(self, path: str, data):
+        print("DONE")
+        pass
