@@ -713,7 +713,8 @@ class Report():
         # --------------------------------------------------------------------
         worksheet = workbook.add_worksheet('Microviscosity calculation')
         worksheet.hide_gridlines(2)
-        worksheet.insert_image('B2', 'einstein-stokes_equation.png')
+        worksheet.merge_range('A1:B3', '')
+        worksheet.insert_image('A1', 'einstein-stokes_equation.png')
         # --------------------------------------------------------------------
 
         workbook.close()
