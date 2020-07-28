@@ -701,5 +701,15 @@ class Report():
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
-        print("DONE")
-        pass
+        file_name = "Einstein-Stokes"
+        full_path = os.path.join(path, file_name+'.xlsx')
+
+        writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
+
+        # data.to_excel(writer, sheet_name='Data', startrow=1)
+        # workbook = writer.book(sheet_name='Data')
+
+        # workbook = writer.add_worksheet()
+
+        # workbook.close()
+        writer.save()
