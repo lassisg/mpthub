@@ -706,10 +706,15 @@ class Report():
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        # data.to_excel(writer, sheet_name='Data', startrow=1)
-        # workbook = writer.book(sheet_name='Data')
+        # msd.to_excel(writer, sheet_name='Data', startrow=1)
+        # deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
+        workbook = writer.book
 
-        # workbook = writer.add_worksheet()
+        # --------------------------------------------------------------------
+        worksheet = workbook.add_worksheet('Microviscosity calculation')
+        worksheet.hide_gridlines(2)
+        worksheet.insert_image('B2', 'einstein-stokes_equation.png')
+        # --------------------------------------------------------------------
 
-        # workbook.close()
+        workbook.close()
         writer.save()
