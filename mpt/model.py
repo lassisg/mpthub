@@ -713,8 +713,83 @@ class Report():
         # --------------------------------------------------------------------
         worksheet = workbook.add_worksheet('Microviscosity calculation')
         worksheet.hide_gridlines(2)
-        worksheet.merge_range('A1:B3', '')
-        worksheet.insert_image('A1', 'einstein-stokes_equation.png')
+
+        sheet_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter'})
+        left_format = workbook.add_format(
+            {'align': 'left', 'valign': 'vcenter'})
+        equation_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'border': 1})
+        variable_format = workbook.add_format(
+            {'align': 'left', 'valign': 'vcenter', 'border': 1})
+        variable_value_format = workbook.add_format(
+            {'align': 'right', 'valign': 'vcenter', 'border': 1})
+        caption_format = workbook.add_format(
+            {'align': 'left', 'bold': True, 'valign': 'vcenter'})
+        bold_format = workbook.add_format({'bold': True, 'valign': 'vcenter'})
+
+        worksheet.set_column('A:A', 16, sheet_format)
+        worksheet.set_column('B:Z', 12, sheet_format)
+        worksheet.set_column('C:C', 7)
+        worksheet.set_column('E:E', 7)
+
+        worksheet.set_default_row(21)
+
+        worksheet.write('A5', 'DW (m2 s-1)', variable_format)
+        worksheet.write('A6', 'KB (m2 kg s-2)', variable_format)
+        worksheet.write('A7', 'T (K)', variable_format)
+        worksheet.write('A8', 'Pi', variable_format)
+        worksheet.write('A9', 'H2O viscosity (Pa.s)', variable_format)
+        worksheet.write('A10', 'Radius (m)', variable_format)
+
+        worksheet.write_formula('B5', '=($B$6*$B$7)/(6*$B$8*B9*$B$10)',
+                                variable_value_format)
+        worksheet.write_formula('B8', '=PI()',
+                                variable_value_format)
+        worksheet.write_formula('B6', '=1.3806488E-23',
+                                variable_value_format)
+        worksheet.write_formula('B7', '=$E$7+273.15',
+                                variable_value_format)
+        worksheet.write_formula('B9', '=0.0006913',
+                                variable_value_format)
+        worksheet.write_formula('B10', '=($E$10*0.000000001)/2',
+                                variable_value_format)
+
+        worksheet.merge_range('A11:B11', 'NOTA: Pa.s = kg m-1 s-1',
+                              equation_format)
+
+        worksheet.write('A13', 'Input cells', sheet_format)
+        worksheet.write('A14', 'Info cells', sheet_format)
+        worksheet.write('A15', 'Intermediate cells', sheet_format)
+        worksheet.write('A16', 'Output cells', sheet_format)
+
+        B13_text = 'These cells are used to input know values'
+        B14_text = 'Informative cells to help understand the formula'
+        B15_text = 'These are cells used for the calculation.'
+        B15_text += ' Must not be changed!'
+        B16_text = 'Desired results are in these cells.'
+        worksheet.write('B13', B13_text, caption_format)
+        worksheet.write('B14', B14_text, caption_format)
+        worksheet.write('B15', B15_text, caption_format)
+        worksheet.write('B16', B16_text, caption_format)
+
+        worksheet.write('C5', "'=>")
+        worksheet.write('C7', "'<=")
+        worksheet.write('C10', "'<=")
+
+        worksheet.write('D5', "DW (mm2 s-1)", left_format)
+        worksheet.write('D7', "T (ºC)", left_format)
+        worksheet.write('D10', "Diameter (nm)", left_format)
+
+        worksheet.write('E5', "=$B$5*10^12",)
+        worksheet.write('E7', "37",)
+        worksheet.write('E10', "200",)
+
+        worksheet.merge_range('A1:B3', '', equation_format)
+        worksheet.insert_image('A1',
+                               'einstein-stokes_equation.png',
+                               {'x_offset': 52, 'y_offset': 21,
+                                'x_scale': 1.2, 'y_scale': 1.2})
         # --------------------------------------------------------------------
 
         workbook.close()
