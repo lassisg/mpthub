@@ -720,13 +720,83 @@ class Report():
             {'align': 'left', 'valign': 'vcenter'})
         equation_format = workbook.add_format(
             {'align': 'center', 'valign': 'vcenter', 'border': 1})
-        variable_format = workbook.add_format(
-            {'align': 'left', 'valign': 'vcenter', 'border': 1})
-        variable_value_format = workbook.add_format(
-            {'align': 'right', 'valign': 'vcenter', 'border': 1})
         caption_format = workbook.add_format(
             {'align': 'left', 'bold': True, 'valign': 'vcenter'})
         bold_format = workbook.add_format({'bold': True, 'valign': 'vcenter'})
+
+        variable_format = workbook.add_format(
+            {'align': 'left', 'valign': 'vcenter', 'border': 1})
+        intermediate_val_E_format = workbook.add_format({'align': 'right',
+                                                         'valign': 'vcenter',
+                                                         'bg_color': '#e6b8b7',
+                                                         'num_format': '##0.00000E+0',
+                                                         'border': 1})
+        intermediate_val_2d_format = workbook.add_format({'align': 'right',
+                                                          'valign': 'vcenter',
+                                                          'bg_color': '#e6b8b7',
+                                                          'num_format': '0.00',
+                                                          'border': 1})
+        intermediate_val_7d_format = workbook.add_format({'align': 'right',
+                                                          'valign': 'vcenter',
+                                                          'bg_color': '#e6b8b7',
+                                                          'num_format': '0.0000000',
+                                                          'border': 1})
+        note_format = workbook.add_format({'align': 'center',
+                                           'valign': 'vcenter',
+                                           'bg_color': 'yellow',
+                                           'border': 1})
+        input_lbl_format = workbook.add_format({'align': 'center',
+                                                'valign': 'vcenter',
+                                                'bold': True,
+                                                'bg_color': '#b8cce4'})
+        info_lbl_format = workbook.add_format({'align': 'center',
+                                               'valign': 'vcenter',
+                                               'bold': True,
+                                               'bg_color': '#ffff66'})
+        intermediate_lbl_format = workbook.add_format({'align': 'center',
+                                                       'valign': 'vcenter',
+                                                       'bold': True,
+                                                       'bg_color': '#e6b8b7'})
+        output_lbl_format = workbook.add_format({'align': 'center',
+                                                 'valign': 'vcenter',
+                                                 'bold': True,
+                                                 'bg_color': '#d8e4bc'})
+        dw_format = workbook.add_format({'align': 'left',
+                                         'valign': 'vcenter',
+                                         'bg_color': '#d8e4bc'})
+        output_val_format = workbook.add_format({'align': 'center',
+                                                 'valign': 'vcenter',
+                                                 'bold': True,
+                                                 'bg_color': '#d8e4bc'})
+        input_val_format = workbook.add_format({'align': 'center',
+                                                'valign': 'vcenter',
+                                                'bg_color': '#b8cce4'})
+        subscript_format = workbook.add_format({'font_script': 2})
+        superscript_format = workbook.add_format({'font_script': 1})
+        summary_format = workbook.add_format({'align': 'center',
+                                              'valign': 'vcenter',
+                                              'bold': True,
+                                              'border': 1,
+                                              'text_wrap': True})
+        summary_file_format = workbook.add_format({'align': 'left',
+                                                   'valign': 'vcenter',
+                                                   'border': 1})
+        summary_val_1d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.0'})
+        summary_val_4d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.0000'})
+        summary_val_E_format = workbook.add_format({'align': 'center',
+                                                    'valign': 'vcenter',
+                                                    'border': 1,
+                                                    'num_format': '##0.00000E+0'})
+        summary_val_9d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.000000000'})
 
         worksheet.set_column('A:A', 16, sheet_format)
         worksheet.set_column('B:Z', 12, sheet_format)
@@ -735,35 +805,62 @@ class Report():
 
         worksheet.set_default_row(21)
 
-        worksheet.write('A5', 'DW (m2 s-1)', variable_format)
-        worksheet.write('A6', 'KB (m2 kg s-2)', variable_format)
+        worksheet.merge_range('A1:B3', '', equation_format)
+        formula_image = 'einstein-stokes_equation.png'
+        worksheet.insert_image('A1',
+                               formula_image,
+                               {'x_offset': 52, 'y_offset': 21,
+                                'x_scale': 1.2, 'y_scale': 1.2})
+
+        worksheet.write_rich_string('A5',
+                                    variable_format, 'D',
+                                    subscript_format, 'W',
+                                    variable_format, ' (m',
+                                    superscript_format, '2',
+                                    variable_format, ' s',
+                                    superscript_format, '-1',
+                                    variable_format, ')', variable_format)
+        worksheet.write_rich_string('A6',
+                                    variable_format, 'K',
+                                    subscript_format, 'B',
+                                    variable_format, ' (m',
+                                    superscript_format, '2',
+                                    variable_format, ' kg s',
+                                    superscript_format, '-2',
+                                    variable_format, ')', variable_format)
         worksheet.write('A7', 'T (K)', variable_format)
         worksheet.write('A8', 'Pi', variable_format)
-        worksheet.write('A9', 'H2O viscosity (Pa.s)', variable_format)
+        worksheet.write_rich_string('A9',
+                                    variable_format, 'H',
+                                    subscript_format, '2',
+                                    variable_format, 'O viscosity (Pa.s)',
+                                    variable_format)
         worksheet.write('A10', 'Radius (m)', variable_format)
 
         worksheet.write_formula('B5', '=($B$6*$B$7)/(6*$B$8*B9*$B$10)',
-                                variable_value_format)
-        worksheet.write_formula('B8', '=PI()',
-                                variable_value_format)
+                                intermediate_val_E_format)
         worksheet.write_formula('B6', '=1.3806488E-23',
-                                variable_value_format)
+                                intermediate_val_E_format)
         worksheet.write_formula('B7', '=$E$7+273.15',
-                                variable_value_format)
+                                intermediate_val_2d_format)
+        worksheet.write_formula('B8', '=PI()',
+                                intermediate_val_7d_format)
         worksheet.write_formula('B9', '=0.0006913',
-                                variable_value_format)
+                                intermediate_val_7d_format)
         worksheet.write_formula('B10', '=($E$10*0.000000001)/2',
-                                variable_value_format)
+                                intermediate_val_7d_format)
+        worksheet.merge_range('A11:B11', '', note_format)
+        worksheet.write_rich_string('A11', 'NOTE: Pa.s = kg m',
+                                    superscript_format, '-1', ' s',
+                                    superscript_format, '-1',
+                                    note_format)
 
-        worksheet.merge_range('A11:B11', 'NOTA: Pa.s = kg m-1 s-1',
-                              equation_format)
+        worksheet.write('A13', 'Input cells', input_lbl_format)
+        worksheet.write('A14', 'Info cells', info_lbl_format)
+        worksheet.write('A15', 'Intermediate cells', intermediate_lbl_format)
+        worksheet.write('A16', 'Output cells', output_lbl_format)
 
-        worksheet.write('A13', 'Input cells', sheet_format)
-        worksheet.write('A14', 'Info cells', sheet_format)
-        worksheet.write('A15', 'Intermediate cells', sheet_format)
-        worksheet.write('A16', 'Output cells', sheet_format)
-
-        B13_text = 'These cells are used to input know values'
+        B13_text = 'These cells are used to input known values'
         B14_text = 'Informative cells to help understand the formula'
         B15_text = 'These are cells used for the calculation.'
         B15_text += ' Must not be changed!'
@@ -773,23 +870,100 @@ class Report():
         worksheet.write('B15', B15_text, caption_format)
         worksheet.write('B16', B16_text, caption_format)
 
-        worksheet.write('C5', "'=>")
-        worksheet.write('C7', "'<=")
-        worksheet.write('C10', "'<=")
+        worksheet.write_string('C5', "=>")
+        worksheet.write_string('C7', "<=")
+        worksheet.write_string('C10', "<=")
 
-        worksheet.write('D5', "DW (mm2 s-1)", left_format)
+        worksheet.write('D5', '')
+        worksheet.write_rich_string('D5',
+                                    dw_format, 'D',
+                                    subscript_format, 'W',
+                                    dw_format, f' ({chr(956)}m',
+                                    superscript_format, '2',
+                                    dw_format, ' s',
+                                    superscript_format, '-1',
+                                    dw_format, ')', dw_format)
         worksheet.write('D7', "T (ºC)", left_format)
         worksheet.write('D10', "Diameter (nm)", left_format)
 
-        worksheet.write('E5', "=$B$5*10^12",)
-        worksheet.write('E7', "37",)
-        worksheet.write('E10', "200",)
+        worksheet.write('E5', "=$B$5*10^12", output_val_format)
+        worksheet.write('E7', 37, input_val_format)
 
-        worksheet.merge_range('A1:B3', '', equation_format)
-        worksheet.insert_image('A1',
-                               'einstein-stokes_equation.png',
-                               {'x_offset': 52, 'y_offset': 21,
-                                'x_scale': 1.2, 'y_scale': 1.2})
+        # TODO: Get nanoparticle size from config
+        worksheet.write('E10', 200, input_val_format)
+
+        worksheet.merge_range('I1:I2', '', summary_format)
+        worksheet.write_rich_string('I1',
+                                    summary_format, 'D',
+                                    subscript_format, '0\n',
+                                    summary_format, f'({chr(956)}m',
+                                    superscript_format, '2',
+                                    summary_format, '-s',
+                                    superscript_format, '-1',
+                                    summary_format, ')',
+                                    summary_format)
+
+        worksheet.merge_range('J1:J2', '', summary_format)
+        worksheet.write_rich_string('J1',
+                                    summary_format, 'D',
+                                    subscript_format, '0\n',
+                                    summary_format, '(m',
+                                    superscript_format, '2',
+                                    summary_format, '-s',
+                                    superscript_format, '-1',
+                                    summary_format, ')',
+                                    summary_format)
+
+        worksheet.merge_range('K1:K2', '', summary_format)
+        worksheet.write_rich_string('K1',
+                                    summary_format, 'D',
+                                    subscript_format, '0',
+                                    summary_format, ' / D',
+                                    subscript_format, 'W',
+                                    summary_format)
+
+        worksheet.merge_range('L1:L2', '', summary_format)
+        worksheet.write_rich_string('L1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(Pa.s)',
+                                    summary_format)
+
+        worksheet.merge_range('M1:M2', '', summary_format)
+        worksheet.write_rich_string('M1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(Po)',
+                                    summary_format)
+
+        worksheet.merge_range('N1:N2', '', summary_format)
+        worksheet.write_rich_string('N1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(cPo)',
+                                    summary_format)
+
+        # TODO: Get I column data from analysis result
+        # For each file, write the next 8 lines
+
+        worksheet.merge_range('G3:H3',
+                              'Filename only (no path)',
+                              summary_file_format)
+        worksheet.write_formula('I3',
+                                '=1.13243513404696',
+                                summary_val_4d_format)
+        worksheet.write_formula('J3',
+                                '=$I3/10^12',
+                                summary_val_E_format)
+        worksheet.write_formula('K3',
+                                '=I3/$E$5',
+                                summary_val_4d_format)
+        worksheet.write_formula('L3',
+                                '=($B$6*$B$7)/(6*$B$8*J3*$B$10)',
+                                summary_val_9d_format)
+        worksheet.write_formula('M3',
+                                '=$L3*10',
+                                summary_val_9d_format)
+        worksheet.write_formula('N3',
+                                '=$M3*100',
+                                summary_val_1d_format)
         # --------------------------------------------------------------------
 
         workbook.close()
