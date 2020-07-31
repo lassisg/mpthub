@@ -321,8 +321,7 @@ class Analysis():
         parent.statusBar.SetStatusText(
             f"Exporting Einstein-Stokes sheet...")
 
-        #    'deff': self.deff.iloc[:, -1].mean(),
-        report_data = {'summary': self.summary[['file_name', 'valid']],
+        report_data = {'deff': self.deff.iloc[:, -1].mean(),
                        'p_size': self.config.p_size,
                        'temperature_C': self.config.temperature_C}
         report.export_einstein_stokes(
@@ -888,7 +887,7 @@ class Report():
         worksheet.write('E7', data['temperature_C'], input_val_format)
         worksheet.write('E10', data['p_size'], input_val_format)
 
-        worksheet.merge_range('G1:I2', 'ImageJ report file', summary_format)
+        # worksheet.merge_range('G1:I2', 'ImageJ report file', summary_format)
         worksheet.merge_range('J1:J2', '', summary_format)
         worksheet.write_rich_string('J1',
                                     summary_format, 'D',
@@ -937,31 +936,48 @@ class Report():
                                     summary_format, '(cPo)',
                                     summary_format)
 
+        worksheet.write('J3',
+                        data['deff'],
+                        summary_val_4d_format)
+        worksheet.write_formula('K3',
+                                '=$J3/10^12',
+                                summary_val_E_format)
+        worksheet.write_formula('L3',
+                                '=$J3/$E$5',
+                                summary_val_4d_format)
+        worksheet.write_formula('M3',
+                                '=($B$6*$B$7)/(6*$B$8*$K3*$B$10)',
+                                summary_val_9d_format)
+        worksheet.write_formula('N3',
+                                '=$M3*10',
+                                summary_val_9d_format)
+        worksheet.write_formula('O3',
+                                '=$N3*100',
+                                summary_val_1d_format)
         # TODO: For each file, write the next lines
-
-        for key, item in enumerate(data['summary'].values):
-            i = key+3
-            worksheet.merge_range(f'G{i}:I{i}',
-                                  item[0],
-                                  summary_file_format)
-            worksheet.write(f'J{i}',
-                            item[1],
-                            summary_val_4d_format)
-            worksheet.write_formula(f'K{i}',
-                                    f'=$J{i}/10^12',
-                                    summary_val_E_format)
-            worksheet.write_formula(f'L{i}',
-                                    f'=$J{i}/$E$5',
-                                    summary_val_4d_format)
-            worksheet.write_formula(f'M{i}',
-                                    f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
-                                    summary_val_9d_format)
-            worksheet.write_formula(f'N{i}',
-                                    f'=$M{i}*10',
-                                    summary_val_9d_format)
-            worksheet.write_formula(f'O{i}',
-                                    f'=$N{i}*100',
-                                    summary_val_1d_format)
+        # for key, item in enumerate(data['summary'].values):
+        #     i = key+3
+        #     worksheet.merge_range(f'G{i}:I{i}',
+        #                           item[0],
+        #                           summary_file_format)
+        #     worksheet.write(f'J{i}',
+        #                     item[1],
+        #                     summary_val_4d_format)
+        #     worksheet.write_formula(f'K{i}',
+        #                             f'=$J{i}/10^12',
+        #                             summary_val_E_format)
+        #     worksheet.write_formula(f'L{i}',
+        #                             f'=$J{i}/$E$5',
+        #                             summary_val_4d_format)
+        #     worksheet.write_formula(f'M{i}',
+        #                             f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
+        #                             summary_val_9d_format)
+        #     worksheet.write_formula(f'N{i}',
+        #                             f'=$M{i}*10',
+        #                             summary_val_9d_format)
+        #     worksheet.write_formula(f'O{i}',
+        #                             f'=$N{i}*100',
+        #                             summary_val_1d_format)
         # --------------------------------------------------------------------
 
         workbook.close()

@@ -40,7 +40,7 @@ def persist() -> str:
         'active': [settings.DEFAULT_ACTIVE_MIN,
                    None]
     })
-
+    # TODO: Create an update query to add temperature_c to DB
     analysis_config_df = pd.DataFrame({
         'p_size': [settings.DEFAULT_P_SIZE],
         'min_frames': [settings.DEFAULT_MIN_FRAMES],
@@ -54,6 +54,7 @@ def persist() -> str:
     trajectories_df = pd.DataFrame(
         columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
 
+    # TODO: Create an update query to add deff to DB
     summary_df = pd.DataFrame(
         columns=['full_path', 'file_name', 'trajectories', 'valid', 'deff'])
 
