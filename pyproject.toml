@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "MPT"
-version = "0.2.0"
+version = "0.5.0"
 description = "Reads ImageJ results file, in CSV. Exports Multiple Particle Tracking Analysis in xlsx format."
 authors = ["Leandro Gabriel <lassisg@gmail.com>"]
 license = "MIT"
