@@ -47,14 +47,15 @@ def persist() -> str:
         'fps': [settings.DEFAULT_FPS],
         'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
         'width_px': [settings.DEFAULT_WIDTH_PX],
-        'width_si': [settings.DEFAULT_WIDTH_SI]
+        'width_si': [settings.DEFAULT_WIDTH_SI],
+        'temperature_C': [settings.DEFAULT_TEMPERATURE_C]
     })
 
     trajectories_df = pd.DataFrame(
         columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
 
     summary_df = pd.DataFrame(
-        columns=['full_path', 'file_name', 'trajectories', 'valid'])
+        columns=['full_path', 'file_name', 'trajectories', 'valid', 'deff'])
 
     msg = create_table('app_config', app_config_df)
     msg += f"\n{create_table('diffusivity', diffusivity_df)}"

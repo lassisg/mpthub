@@ -206,15 +206,10 @@ class Analysis():
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
             shifts = position["t"].index.values + 1
             msdp = self.compute_msdp(position, shifts)
-            # for k, shift in enumerate(shifts):
-            #     diffs_x = position['x'] - position['x'].shift(-shift)
-            #     diffs_y = position['y'] - position['y'].shift(-shift)
-            #     square_sum = np.square(diffs_x) + np.square(diffs_y)
-            #     msdp[k] = square_sum.mean()
-
             msdm = msdp * (1 / (self.config.pixel_size ** 2))
             msdm = msdm[:int(self.config.min_frames)]
             msd[i] = msdm
+
             i += 1
 
         tau = tau[:int(self.config.min_frames)]
@@ -325,8 +320,13 @@ class Analysis():
 
         parent.statusBar.SetStatusText(
             f"Exporting Einstein-Stokes sheet...")
+
+        #    'deff': self.deff.iloc[:, -1].mean(),
+        report_data = {'summary': self.summary[['file_name', 'valid']],
+                       'p_size': self.config.p_size,
+                       'temperature_C': self.config.temperature_C}
         report.export_einstein_stokes(
-            parent.general.config.save_folder, self.msd_log)
+            parent.general.config.save_folder, report_data)
 
 
 class Report():
@@ -701,13 +701,12 @@ class Report():
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
+
         file_name = "Einstein-Stokes Calculations (D0_Dw & microviscosity)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        # msd.to_excel(writer, sheet_name='Data', startrow=1)
-        # deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
         workbook = writer.book
 
         # --------------------------------------------------------------------
@@ -722,7 +721,6 @@ class Report():
             {'align': 'center', 'valign': 'vcenter', 'border': 1})
         caption_format = workbook.add_format(
             {'align': 'left', 'bold': True, 'valign': 'vcenter'})
-        bold_format = workbook.add_format({'bold': True, 'valign': 'vcenter'})
 
         variable_format = workbook.add_format(
             {'align': 'left', 'valign': 'vcenter', 'border': 1})
@@ -887,13 +885,12 @@ class Report():
         worksheet.write('D10', "Diameter (nm)", left_format)
 
         worksheet.write('E5', "=$B$5*10^12", output_val_format)
-        worksheet.write('E7', 37, input_val_format)
+        worksheet.write('E7', data['temperature_C'], input_val_format)
+        worksheet.write('E10', data['p_size'], input_val_format)
 
-        # TODO: Get nanoparticle size from config
-        worksheet.write('E10', 200, input_val_format)
-
-        worksheet.merge_range('I1:I2', '', summary_format)
-        worksheet.write_rich_string('I1',
+        worksheet.merge_range('G1:I2', 'ImageJ report file', summary_format)
+        worksheet.merge_range('J1:J2', '', summary_format)
+        worksheet.write_rich_string('J1',
                                     summary_format, 'D',
                                     subscript_format, '0\n',
                                     summary_format, f'({chr(956)}m',
@@ -903,8 +900,8 @@ class Report():
                                     summary_format, ')',
                                     summary_format)
 
-        worksheet.merge_range('J1:J2', '', summary_format)
-        worksheet.write_rich_string('J1',
+        worksheet.merge_range('K1:K2', '', summary_format)
+        worksheet.write_rich_string('K1',
                                     summary_format, 'D',
                                     subscript_format, '0\n',
                                     summary_format, '(m',
@@ -914,56 +911,57 @@ class Report():
                                     summary_format, ')',
                                     summary_format)
 
-        worksheet.merge_range('K1:K2', '', summary_format)
-        worksheet.write_rich_string('K1',
+        worksheet.merge_range('L1:L2', '', summary_format)
+        worksheet.write_rich_string('L1',
                                     summary_format, 'D',
                                     subscript_format, '0',
                                     summary_format, ' / D',
                                     subscript_format, 'W',
                                     summary_format)
 
-        worksheet.merge_range('L1:L2', '', summary_format)
-        worksheet.write_rich_string('L1',
-                                    summary_format, 'Viscosity\n',
-                                    summary_format, '(Pa.s)',
-                                    summary_format)
-
         worksheet.merge_range('M1:M2', '', summary_format)
         worksheet.write_rich_string('M1',
                                     summary_format, 'Viscosity\n',
-                                    summary_format, '(Po)',
+                                    summary_format, '(Pa.s)',
                                     summary_format)
 
         worksheet.merge_range('N1:N2', '', summary_format)
         worksheet.write_rich_string('N1',
                                     summary_format, 'Viscosity\n',
+                                    summary_format, '(Po)',
+                                    summary_format)
+
+        worksheet.merge_range('O1:O2', '', summary_format)
+        worksheet.write_rich_string('O1',
+                                    summary_format, 'Viscosity\n',
                                     summary_format, '(cPo)',
                                     summary_format)
 
-        # TODO: Get I column data from analysis result
-        # For each file, write the next 8 lines
+        # TODO: For each file, write the next lines
 
-        worksheet.merge_range('G3:H3',
-                              'Filename only (no path)',
-                              summary_file_format)
-        worksheet.write_formula('I3',
-                                '=1.13243513404696',
-                                summary_val_4d_format)
-        worksheet.write_formula('J3',
-                                '=$I3/10^12',
-                                summary_val_E_format)
-        worksheet.write_formula('K3',
-                                '=I3/$E$5',
-                                summary_val_4d_format)
-        worksheet.write_formula('L3',
-                                '=($B$6*$B$7)/(6*$B$8*J3*$B$10)',
-                                summary_val_9d_format)
-        worksheet.write_formula('M3',
-                                '=$L3*10',
-                                summary_val_9d_format)
-        worksheet.write_formula('N3',
-                                '=$M3*100',
-                                summary_val_1d_format)
+        for key, item in enumerate(data['summary'].values):
+            i = key+3
+            worksheet.merge_range(f'G{i}:I{i}',
+                                  item[0],
+                                  summary_file_format)
+            worksheet.write(f'J{i}',
+                            item[1],
+                            summary_val_4d_format)
+            worksheet.write_formula(f'K{i}',
+                                    f'=$J{i}/10^12',
+                                    summary_val_E_format)
+            worksheet.write_formula(f'L{i}',
+                                    f'=$J{i}/$E$5',
+                                    summary_val_4d_format)
+            worksheet.write_formula(f'M{i}',
+                                    f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
+                                    summary_val_9d_format)
+            worksheet.write_formula(f'N{i}',
+                                    f'=$M{i}*10',
+                                    summary_val_9d_format)
+            worksheet.write_formula(f'O{i}',
+                                    f'=$N{i}*100',
+                                    summary_val_1d_format)
         # --------------------------------------------------------------------
 
         workbook.close()
