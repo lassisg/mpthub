@@ -803,7 +803,7 @@ class Report():
         worksheet.set_default_row(21)
 
         worksheet.merge_range('A1:B3', '', equation_format)
-        formula_image = 'einstein-stokes_equation.png'
+        formula_image = './mpt/assets/einstein-stokes_equation.png'
         worksheet.insert_image('A1',
                                formula_image,
                                {'x_offset': 52, 'y_offset': 21,

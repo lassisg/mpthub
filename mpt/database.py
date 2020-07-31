@@ -40,7 +40,6 @@ def persist() -> str:
         'active': [settings.DEFAULT_ACTIVE_MIN,
                    None]
     })
-    # TODO: Create an update query to add temperature_c to DB
     analysis_config_df = pd.DataFrame({
         'p_size': [settings.DEFAULT_P_SIZE],
         'min_frames': [settings.DEFAULT_MIN_FRAMES],
@@ -54,7 +53,6 @@ def persist() -> str:
     trajectories_df = pd.DataFrame(
         columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
 
-    # TODO: Create an update query to add deff to DB
     summary_df = pd.DataFrame(
         columns=['full_path', 'file_name', 'trajectories', 'valid', 'deff'])
 
@@ -63,7 +61,43 @@ def persist() -> str:
     msg += f"\n{create_table('analysis_config', analysis_config_df)}"
     msg += f"\n{create_table('trajectories', trajectories_df)}"
     msg += f"\n{create_table('summary', summary_df)}"
+    msg += f"\n{update_table('analysis_config', analysis_config_df)}"
+    msg += f"\n{update_table('summary', summary_df)}"
     return msg
+
+
+def update_table(table_name: str, data: pd.DataFrame) -> str:
+    """Updates a table based on received DataFrame. Ignores update if pandas \
+        detect that the table is already updated.
+
+    Arguments:
+        table_name {str} -- Name of the table to be updated.
+        data {pd.DataFrame} -- Data to be inserted.
+    """
+
+    conn = connect()
+    current_table_df = None
+    current_table_df = pd.read_sql_table(table_name, con=conn)
+    msg = ""
+    try:
+        if current_table_df.columns.size != data.columns.size:
+            for (column_name, column_data) in data.iteritems():
+                if data[column_name].any() and current_table_df[column_name].any():
+                    data[column_name] = column_data
+
+            data.to_sql(table_name, con=conn,
+                        index=False, if_exists='replace')
+
+            msg = f"Table '{table_name}' updated."
+    except KeyError:
+        data.to_sql(table_name, con=conn,
+                    index=False, if_exists='replace')
+        msg = f"Table '{table_name}' updated."
+    except Exception:
+        msg = "Exception."
+    finally:
+        current_table_df = None
+        return msg
 
 
 def create_table(table_name: str, data: pd.DataFrame) -> str:
