@@ -15,6 +15,7 @@ import mpt
 from .settings import Settings
 import os
 import time
+import locale
 
 
 class mainWindow (wx.Frame):
@@ -471,9 +472,11 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_immobile, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_immobile_min = wx.TextCtrl(
-            self, wx.ID_ANY, f"{parent.diffusivity.config.immobile[0]}",
-            wx.DefaultPosition, wx.Size(43, -1),
-            wx.TE_CENTER | wx.TE_READONLY)
+            self, wx.ID_ANY,
+            value=locale.format_string(
+                '%.1f', parent.diffusivity.config.immobile[0]),
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER | wx.TE_READONLY)
         sz_immobile.Add(
             self.txt_immobile_min, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -485,9 +488,11 @@ class diffusivityWindow (wx.Dialog):
             self.lbl_immobile_sep, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_immobile_max = wx.TextCtrl(
-            self, wx.ID_ANY, f"{parent.diffusivity.config.immobile[1]}",
-            wx.DefaultPosition, wx.Size(43, -1),
-            wx.TE_CENTER | wx.TE_READONLY)
+            self, wx.ID_ANY,
+            value=locale.format_string(
+                '%.3f', parent.diffusivity.config.immobile[1]),
+            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            style=wx.TE_CENTER | wx.TE_READONLY)
         sz_immobile.Add(
             self.txt_immobile_max, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -507,7 +512,8 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_subdiffusive_min = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.sub_diffusive[0]}",
+            value=locale.format_string(
+                '%.1f', parent.diffusivity.config.sub_diffusive[0]),
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="sub_diffusive-min")
         sz_subdiffusive.Add(
@@ -522,7 +528,8 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_subdiffusive_max = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.sub_diffusive[1]}",
+            value=locale.format_string(
+                '%.3f', parent.diffusivity.config.sub_diffusive[1]),
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER | wx.TE_READONLY, name="sub_diffusive-max")
         sz_subdiffusive.Add(
@@ -544,7 +551,8 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_diffusive_min = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.diffusive[0]}",
+            value=locale.format_string(
+                '%.1f', parent.diffusivity.config.diffusive[0]),
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="diffusive-min")
         sz_diffusive.Add(
@@ -559,7 +567,8 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_diffusive_max = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.diffusive[1]}",
+            value=locale.format_string(
+                '%.3f', parent.diffusivity.config.diffusive[1]),
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER | wx.TE_READONLY, name="diffusive-max")
         sz_diffusive.Add(
@@ -580,7 +589,8 @@ class diffusivityWindow (wx.Dialog):
 
         self.txt_active_min = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.diffusivity.config.active[0]}",
+            value=locale.format_string(
+                '%.1f', parent.diffusivity.config.active[0]),
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="active-min")
         sz_active.Add(
@@ -639,33 +649,36 @@ class diffusivityWindow (wx.Dialog):
     # Virtual event handlers, overide them in your derived class
     def on_subdiffusive_range_change(self, event):
         self.Parent.diffusivity.config.sub_diffusive[0] = float(
-            self.txt_subdiffusive_min.Value)
+            self.txt_subdiffusive_min.Value.replace(',', '.'))
 
         self.Parent.diffusivity.config.immobile[1] = float(
-            self.txt_subdiffusive_min.Value)-.001
+            self.txt_subdiffusive_min.Value.replace(',', '.'))-.001
 
         self.txt_immobile_max.SetValue(
-            f"{self.Parent.diffusivity.config.immobile[1]}")
+            locale.format_string(
+                '%.3f', self.Parent.diffusivity.config.immobile[1]))
 
     def on_diffusive_range_change(self, event):
         self.Parent.diffusivity.config.diffusive[0] = float(
-            self.txt_diffusive_min.Value)
+            self.txt_diffusive_min.Value.replace(',', '.'))
 
         self.Parent.diffusivity.config.sub_diffusive[1] = float(
-            self.txt_diffusive_min.Value)-.001
+            self.txt_diffusive_min.Value.replace(',', '.'))-.001
 
         self.txt_subdiffusive_max.SetValue(
-            f"{self.Parent.diffusivity.config.sub_diffusive[1]}")
+            locale.format_string(
+                '%.3f', self.Parent.diffusivity.config.sub_diffusive[1]))
 
     def on_active_range_change(self, event):
         self.Parent.diffusivity.config.active[0] = float(
-            self.txt_active_min.Value)
+            self.txt_active_min.Value.replace(',', '.'))
 
         self.Parent.diffusivity.config.diffusive[1] = float(
-            self.txt_active_min.Value)-.001
+            self.txt_active_min.Value.replace(',', '.'))-.001
 
         self.txt_diffusive_max.SetValue(
-            f"{self.Parent.diffusivity.config.diffusive[1]}")
+            locale.format_string(
+                '%.3f', self.Parent.diffusivity.config.diffusive[1]))
 
     def on_save_diffusivity(self, event):
         self.Parent.statusBar.SetStatusText("Saving changes...")

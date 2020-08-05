@@ -3,6 +3,7 @@ import pandas as pd
 from pandas import ExcelWriter as xls
 import numpy as np
 import os
+import locale
 
 
 class General():
@@ -68,7 +69,7 @@ class Analysis():
         conn = db.connect()
         config_df = pd.read_sql_table("analysis_config", con=conn)
         self.config = config_df.iloc[0]
-        self.config['pixel_size'] = self.config.width_px / self.config.width_si
+        # self.config['pixel_size'] = self.config.width_px / self.config.width_si
 
     def update(self, new_config: pd.Series) -> None:
         """Updates analysis_config ranges data on database.
@@ -199,6 +200,7 @@ class Analysis():
             parent.statusBar.SetStatusText(
                 f"Computing MSD for trajectory {trajectory} of file {file}...")
 
+            pixel_size = self.config.width_px / self.config.width_si
             frames = len(trajectory_data)
             t = tau[:frames]
             xy = trajectory_data.values
@@ -206,7 +208,7 @@ class Analysis():
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
             shifts = position["t"].index.values + 1
             msdp = self.compute_msdp(position, shifts)
-            msdm = msdp * (1 / (self.config.pixel_size ** 2))
+            msdm = msdp * (1 / (pixel_size ** 2))
             msdm = msdm[:int(self.config.min_frames)]
             msd[i] = msdm
 
@@ -433,8 +435,10 @@ class Report():
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        msd.to_excel(writer, sheet_name='Data', startrow=1)
-        deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
+        msd.to_excel(writer, sheet_name='Data',
+                     float_format='%.9f', startrow=1)
+        deff.to_excel(writer, sheet_name='Data',
+                      float_format='%.9f', startrow=len(msd)+4)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
@@ -567,11 +571,13 @@ class Report():
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        msd.to_excel(writer, sheet_name='Data', startrow=1)
+        msd.to_excel(writer, sheet_name='Data',
+                     float_format="%.9f", startrow=1)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
-                                            'valign': 'vcenter'})
+                                            'valign': 'vcenter',
+                                            'num_format': '0.000000000'})
         header_format = workbook.add_format({'align': 'center',
                                              'valign': 'vcenter',
                                              'bold': 1})
@@ -596,37 +602,57 @@ class Report():
         slope_data = self.get_slopes(msd)
         _, intercept = slope_data.mean().tolist()
 
-        data_sheet.merge_range(1, columns+2, 1, columns +
-                               5, 'Guides', header_format)
-        data_sheet.merge_range(2, columns+2, 3, columns+2, 'x', header_format)
-        data_sheet.merge_range(2, columns+3, 2, columns+5, 'y', header_format)
+        data_sheet.merge_range(1, columns + 2,
+                               1, columns + 5,
+                               'Guides', header_format)
+        data_sheet.merge_range(2, columns + 2,
+                               3, columns + 2,
+                               'x', header_format)
+        data_sheet.merge_range(2, columns + 3,
+                               2, columns + 5,
+                               'y', header_format)
 
-        data_sheet.write(3, columns+3, 'm=0.9', header_format)
+        alpha02 = 2 / 10
+        alpha09 = 9 / 10
+        alpha11 = 11 / 10
+
+        data_sheet.write(3, columns+3,
+                         f'm={locale.format_string("%.1f", alpha09)}',
+                         header_format)
         data_sheet.write(3, columns+4, 'm=1', header_format)
-        data_sheet.write(3, columns+5, 'm=1.1', header_format)
+        data_sheet.write(3, columns+5,
+                         f'm={locale.format_string("%.1f", alpha11)}',
+                         header_format)
 
         col = columns + 2
         line = 4
         ref_cell = f'INDIRECT(ADDRESS({line+1}, {col+1}))'
-        data_sheet.write(
-            line, col, '=-2', num_format)
+        data_sheet.write(line, col, '=-2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
+            line, col+1,
+            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{intercept}', num_format)
+            line, col+2,
+            f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
+            line, col+3,
+            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
+            num_format)
 
         line += 1
         ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
-        data_sheet.write(
-            line, col, '=2', num_format)
+        data_sheet.write(line, col, '=2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
+            line, col+1,
+            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}',
+            num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{intercept}', num_format)
+            line, col+2,
+            f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
+            line, col+3,
+            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
+            num_format)
         # ----------------------------
 
         self.make_chart_LOG(workbook, msd, 1)
@@ -635,7 +661,7 @@ class Report():
                                sheet_name='Characterization')
 
         sheet_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter'})
+            {'align': 'center', 'valign': 'vcenter', 'num_format': '0.000000000'})
         header_format = workbook.add_format({'align': 'center', 'bold': 1})
 
         data_sheet = writer.sheets['Characterization']
@@ -655,30 +681,36 @@ class Report():
         data_sheet.write('D4', 'Diffusive')
         data_sheet.write('D5', 'Active')
 
-        immobile_low = self.config.immobile['min']
-        immobile_high = self.config.immobile['max']
-        subdiffusive_low = self.config.sub_diffusive['min']
-        subdiffusive_high = self.config.sub_diffusive['max']
-        diffusive_low = self.config.diffusive['min']
-        diffusive_high = self.config.diffusive['max']
-        active_low = self.config.active['min']
+        immobile_low = locale.format_string(
+            "%.1f", self.config.immobile['min'])
+        immobile_high = locale.format_string(
+            "%.3f", self.config.immobile['max'])
+        subdiffusive_low = locale.format_string(
+            "%.1f", self.config.sub_diffusive['min'])
+        subdiffusive_high = locale.format_string(
+            "%.3f", self.config.sub_diffusive['max'])
+        diffusive_low = locale.format_string(
+            "%.1f", self.config.diffusive['min'])
+        diffusive_high = locale.format_string(
+            "%.3f", self.config.diffusive['max'])
+        active_low = locale.format_string(
+            "%.1f", self.config.active['min'])
 
-        data_sheet.write('E2', f'{str(immobile_low)}-{str(immobile_high)}')
+        data_sheet.write(
+            'E2', f'{str(immobile_low)}-{str(immobile_high)}')
         data_sheet.write(
             'E3', f'{str(subdiffusive_low)}-{str(subdiffusive_high)}')
-        data_sheet.write('E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
-        data_sheet.write('E5', f'{str(active_low)}+')
+        data_sheet.write(
+            'E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
+        data_sheet.write(
+            'E5', f'{str(active_low)}+')
 
-        subdiffusive_txt = f'{str(subdiffusive_low).replace(".", ",")}'
-        diffusive_txt = f'{str(diffusive_low).replace(".",",")}'
-        active_txt = f'{str(active_low).replace(".",",")}'
-
-        immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_txt}")'
-        subdiffusive_formula = f'=COUNTIFS(A:A,">={subdiffusive_txt}",'
-        subdiffusive_formula += f'A:A,"<{diffusive_txt}")'
-        diffusive_formula = f'=COUNTIFS(A:A,">={diffusive_txt}",'
-        diffusive_formula += f'A:A,"<{active_txt}")'
-        active_formula = f'=COUNTIF(A:A,">={active_txt}")'
+        immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_low}")'
+        subdiffusive_formula = f'=COUNTIFS(A:A,">={subdiffusive_low}",'
+        subdiffusive_formula += f'A:A,"<{diffusive_low}")'
+        diffusive_formula = f'=COUNTIFS(A:A,">={diffusive_low}",'
+        diffusive_formula += f'A:A,"<{active_low}")'
+        active_formula = f'=COUNTIF(A:A,">={active_low}")'
 
         data_sheet.write_formula('F2', immobile_formula)
         data_sheet.write_formula('F3', subdiffusive_formula)
