@@ -662,6 +662,8 @@ class Report():
 
         sheet_format = workbook.add_format(
             {'align': 'center', 'valign': 'vcenter', 'num_format': '0.000000000'})
+        count_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'num_format': '0'})
         header_format = workbook.add_format({'align': 'center', 'bold': 1})
 
         data_sheet = writer.sheets['Characterization']
@@ -712,10 +714,10 @@ class Report():
         diffusive_formula += f'A:A,"<{active_low}")'
         active_formula = f'=COUNTIF(A:A,">={active_low}")'
 
-        data_sheet.write_formula('F2', immobile_formula)
-        data_sheet.write_formula('F3', subdiffusive_formula)
-        data_sheet.write_formula('F4', diffusive_formula)
-        data_sheet.write_formula('F5', active_formula)
+        data_sheet.write_formula('F2', immobile_formula, count_format)
+        data_sheet.write_formula('F3', subdiffusive_formula, count_format)
+        data_sheet.write_formula('F4', diffusive_formula, count_format)
+        data_sheet.write_formula('F5', active_formula, count_format)
 
         # Statistical info
         summary_format = workbook.add_format(
@@ -725,7 +727,7 @@ class Report():
         data_sheet.write('D10', 'STD = ', summary_format)
 
         data_sheet.write_formula('E8', '=AVERAGE(A:A)')
-        data_sheet.write_formula('E9', '=COUNT(A:A)')
+        data_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         data_sheet.write_formula('E10', '=STDEV(A:A)')
 
         workbook.close()
