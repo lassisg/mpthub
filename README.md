@@ -91,11 +91,15 @@ After reading the files, a summary table will show at the main window. This tabl
 ### 3. Start analysis
 
 Configuration reviewed, reports loaded to app, it is time to make some math.
-Under 'Tools' menu, 'Analyze' sub-menu starts analysis. This sub-menu is disable at startup and only becomes enabled if the previous step occurs with no errors.
+Under 'Edit' menu, 'Start analysis' sub-menu starts analysis. This sub-menu is disable at startup and only becomes enabled if the previous step occurs with no errors.
 
-**TODO: Add image (before/after menu)**
+Disabled menu:
+![start_analysis-disabled](./mpt/assets/Start_analysis-disabled.png "Start analysis (disabled)")
 
-The app must process the data from those files and do a series of calculations, described bellow:
+Enabled menu:
+![start_analysis-enabled](./mpt/assets/Start_analysis-enabled.png "Start analysis (enabled)")
+
+The app must process the data from those files and perform a series of calculations, described bellow:
 
 -   Keep only those trajectories longer than the minimum frame number defined by the filter configuration.
 -   Compute MSD (mean squared displacement) for the group of results (near 100 trajectories)
@@ -103,7 +107,12 @@ The app must process the data from those files and do a series of calculations, 
 -   Compute the slope ($\alpha$) for each trajectory
 
 Along the process, the statusbar shows info about the overall process.
-When it's done, a dialog informs the user.
+
+![during_analysis](./mpt/assets/During_analysis.png "During analysis")
+
+When the analysis is complete, the status bar will show a message to inform the user.
+
+![analysis_complete](./mpt/assets/Analysis_complete.png "Analysis complete")
 
 ---
 
@@ -182,8 +191,9 @@ This sheet contains:
 
 #### 4.3. Einstein-Stokes Calculation - D0_Dw-Microviscosity
 
-This report have only 1 sheet, named _**Microviscosity**_.
+This report has only 1 sheet, named _**Microviscosity**_.
 It contains the data for calculating microviscosity, $D_0/D_W$ ratio and some other intermediate calculations.
 For the Einstein-Stokes, the particle size is considered to be of $\ 200 \ nm$\*.
 **\*The particle size can be changed, as mentioned on item _1.2. Analysis configuration_**
-**TODO: Add image (print)**
+
+![Einstein-Stokes](./mpt/assets/Einstein-Stokes.png "Einstein-Stokes")

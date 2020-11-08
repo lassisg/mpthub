@@ -440,6 +440,7 @@ class analysisWindow (wx.Dialog):
         self.Parent.statusBar.SetStatusText("Saving changes...")
         self.config_update()
         self.Parent.analysis.update(self.Parent.analysis.config)
+        self.Parent.statusBar.SetStatusText("Changes saved.")
         self.Destroy()
 
     def on_cancel_analysis(self, event):
