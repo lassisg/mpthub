@@ -3,6 +3,7 @@ import pandas as pd
 from pandas import ExcelWriter as xls
 import numpy as np
 import os
+import locale
 
 
 class General():
@@ -68,7 +69,7 @@ class Analysis():
         conn = db.connect()
         config_df = pd.read_sql_table("analysis_config", con=conn)
         self.config = config_df.iloc[0]
-        self.config['pixel_size'] = self.config.width_px / self.config.width_si
+        # self.config['pixel_size'] = self.config.width_px / self.config.width_si
 
     def update(self, new_config: pd.Series) -> None:
         """Updates analysis_config ranges data on database.
@@ -199,6 +200,7 @@ class Analysis():
             parent.statusBar.SetStatusText(
                 f"Computing MSD for trajectory {trajectory} of file {file}...")
 
+            pixel_size = self.config.width_px / self.config.width_si
             frames = len(trajectory_data)
             t = tau[:frames]
             xy = trajectory_data.values
@@ -206,15 +208,10 @@ class Analysis():
             position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
             shifts = position["t"].index.values + 1
             msdp = self.compute_msdp(position, shifts)
-            # for k, shift in enumerate(shifts):
-            #     diffs_x = position['x'] - position['x'].shift(-shift)
-            #     diffs_y = position['y'] - position['y'].shift(-shift)
-            #     square_sum = np.square(diffs_x) + np.square(diffs_y)
-            #     msdp[k] = square_sum.mean()
-
-            msdm = msdp * (1 / (self.config.pixel_size ** 2))
+            msdm = msdp * (1 / (pixel_size ** 2))
             msdm = msdm[:int(self.config.min_frames)]
             msd[i] = msdm
+
             i += 1
 
         tau = tau[:int(self.config.min_frames)]
@@ -323,6 +320,15 @@ class Analysis():
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
+        parent.statusBar.SetStatusText(
+            f"Exporting Einstein-Stokes sheet...")
+
+        report_data = {'deff': self.deff.iloc[:, -1].mean(),
+                       'p_size': self.config.p_size,
+                       'temperature_C': self.config.temperature_C}
+        report.export_einstein_stokes(
+            parent.general.config.save_folder, report_data)
+
 
 class Report():
 
@@ -429,8 +435,10 @@ class Report():
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        msd.to_excel(writer, sheet_name='Data', startrow=1)
-        deff.to_excel(writer, sheet_name='Data', startrow=len(msd)+4)
+        msd.to_excel(writer, sheet_name='Data',
+                     float_format='%.9f', startrow=1)
+        deff.to_excel(writer, sheet_name='Data',
+                      float_format='%.9f', startrow=len(msd)+4)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
@@ -563,11 +571,13 @@ class Report():
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
-        msd.to_excel(writer, sheet_name='Data', startrow=1)
+        msd.to_excel(writer, sheet_name='Data',
+                     float_format="%.9f", startrow=1)
         workbook = writer.book
 
         sheet_format = workbook.add_format({'align': 'center',
-                                            'valign': 'vcenter'})
+                                            'valign': 'vcenter',
+                                            'num_format': '0.000000000'})
         header_format = workbook.add_format({'align': 'center',
                                              'valign': 'vcenter',
                                              'bold': 1})
@@ -592,37 +602,57 @@ class Report():
         slope_data = self.get_slopes(msd)
         _, intercept = slope_data.mean().tolist()
 
-        data_sheet.merge_range(1, columns+2, 1, columns +
-                               5, 'Guides', header_format)
-        data_sheet.merge_range(2, columns+2, 3, columns+2, 'x', header_format)
-        data_sheet.merge_range(2, columns+3, 2, columns+5, 'y', header_format)
+        data_sheet.merge_range(1, columns + 2,
+                               1, columns + 5,
+                               'Guides', header_format)
+        data_sheet.merge_range(2, columns + 2,
+                               3, columns + 2,
+                               'x', header_format)
+        data_sheet.merge_range(2, columns + 3,
+                               2, columns + 5,
+                               'y', header_format)
 
-        data_sheet.write(3, columns+3, 'm=0.9', header_format)
+        alpha02 = 2 / 10
+        alpha09 = 9 / 10
+        alpha11 = 11 / 10
+
+        data_sheet.write(3, columns+3,
+                         f'm={locale.format_string("%.1f", alpha09)}',
+                         header_format)
         data_sheet.write(3, columns+4, 'm=1', header_format)
-        data_sheet.write(3, columns+5, 'm=1.1', header_format)
+        data_sheet.write(3, columns+5,
+                         f'm={locale.format_string("%.1f", alpha11)}',
+                         header_format)
 
         col = columns + 2
         line = 4
         ref_cell = f'INDIRECT(ADDRESS({line+1}, {col+1}))'
-        data_sheet.write(
-            line, col, '=-2', num_format)
+        data_sheet.write(line, col, '=-2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
+            line, col+1,
+            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{intercept}', num_format)
+            line, col+2,
+            f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
+            line, col+3,
+            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
+            num_format)
 
         line += 1
         ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
-        data_sheet.write(
-            line, col, '=2', num_format)
+        data_sheet.write(line, col, '=2', num_format)
         data_sheet.write_formula(
-            line, col+1, f'=0.9*{ref_cell}-0.2+{intercept}', num_format)
+            line, col+1,
+            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}',
+            num_format)
         data_sheet.write_formula(
-            line, col+2, f'={ref_cell}+{intercept}', num_format)
+            line, col+2,
+            f'={ref_cell}+{intercept}', num_format)
         data_sheet.write_formula(
-            line, col+3, f'=1.1*{ref_cell}+0.2+{intercept}', num_format)
+            line, col+3,
+            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
+            num_format)
         # ----------------------------
 
         self.make_chart_LOG(workbook, msd, 1)
@@ -631,7 +661,9 @@ class Report():
                                sheet_name='Characterization')
 
         sheet_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter'})
+            {'align': 'center', 'valign': 'vcenter', 'num_format': '0.000000000'})
+        count_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'num_format': '0'})
         header_format = workbook.add_format({'align': 'center', 'bold': 1})
 
         data_sheet = writer.sheets['Characterization']
@@ -651,35 +683,41 @@ class Report():
         data_sheet.write('D4', 'Diffusive')
         data_sheet.write('D5', 'Active')
 
-        immobile_low = self.config.immobile['min']
-        immobile_high = self.config.immobile['max']
-        subdiffusive_low = self.config.sub_diffusive['min']
-        subdiffusive_high = self.config.sub_diffusive['max']
-        diffusive_low = self.config.diffusive['min']
-        diffusive_high = self.config.diffusive['max']
-        active_low = self.config.active['min']
+        immobile_low = locale.format_string(
+            "%.1f", self.config.immobile['min'])
+        immobile_high = locale.format_string(
+            "%.3f", self.config.immobile['max'])
+        subdiffusive_low = locale.format_string(
+            "%.1f", self.config.sub_diffusive['min'])
+        subdiffusive_high = locale.format_string(
+            "%.3f", self.config.sub_diffusive['max'])
+        diffusive_low = locale.format_string(
+            "%.1f", self.config.diffusive['min'])
+        diffusive_high = locale.format_string(
+            "%.3f", self.config.diffusive['max'])
+        active_low = locale.format_string(
+            "%.1f", self.config.active['min'])
 
-        data_sheet.write('E2', f'{str(immobile_low)}-{str(immobile_high)}')
+        data_sheet.write(
+            'E2', f'{str(immobile_low)}-{str(immobile_high)}')
         data_sheet.write(
             'E3', f'{str(subdiffusive_low)}-{str(subdiffusive_high)}')
-        data_sheet.write('E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
-        data_sheet.write('E5', f'{str(active_low)}+')
+        data_sheet.write(
+            'E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
+        data_sheet.write(
+            'E5', f'{str(active_low)}+')
 
-        subdiffusive_txt = f'{str(subdiffusive_low).replace(".", ",")}'
-        diffusive_txt = f'{str(diffusive_low).replace(".",",")}'
-        active_txt = f'{str(active_low).replace(".",",")}'
+        immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_low}")'
+        subdiffusive_formula = f'=COUNTIFS(A:A,">={subdiffusive_low}",'
+        subdiffusive_formula += f'A:A,"<{diffusive_low}")'
+        diffusive_formula = f'=COUNTIFS(A:A,">={diffusive_low}",'
+        diffusive_formula += f'A:A,"<{active_low}")'
+        active_formula = f'=COUNTIF(A:A,">={active_low}")'
 
-        immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_txt}")'
-        subdiffusive_formula = f'=COUNTIFS(A:A,">={subdiffusive_txt}",'
-        subdiffusive_formula += f'A:A,"<{diffusive_txt}")'
-        diffusive_formula = f'=COUNTIFS(A:A,">={diffusive_txt}",'
-        diffusive_formula += f'A:A,"<{active_txt}")'
-        active_formula = f'=COUNTIF(A:A,">={active_txt}")'
-
-        data_sheet.write_formula('F2', immobile_formula)
-        data_sheet.write_formula('F3', subdiffusive_formula)
-        data_sheet.write_formula('F4', diffusive_formula)
-        data_sheet.write_formula('F5', active_formula)
+        data_sheet.write_formula('F2', immobile_formula, count_format)
+        data_sheet.write_formula('F3', subdiffusive_formula, count_format)
+        data_sheet.write_formula('F4', diffusive_formula, count_format)
+        data_sheet.write_formula('F5', active_formula, count_format)
 
         # Statistical info
         summary_format = workbook.add_format(
@@ -689,8 +727,292 @@ class Report():
         data_sheet.write('D10', 'STD = ', summary_format)
 
         data_sheet.write_formula('E8', '=AVERAGE(A:A)')
-        data_sheet.write_formula('E9', '=COUNT(A:A)')
+        data_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         data_sheet.write_formula('E10', '=STDEV(A:A)')
+
+        workbook.close()
+        writer.save()
+
+    def export_einstein_stokes(self, path: str, data):
+
+        file_name = "Einstein-Stokes Calculations (D0_Dw & microviscosity)"
+        full_path = os.path.join(path, file_name+'.xlsx')
+
+        writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
+
+        workbook = writer.book
+
+        # --------------------------------------------------------------------
+        worksheet = workbook.add_worksheet('Microviscosity calculation')
+        worksheet.hide_gridlines(2)
+
+        sheet_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter'})
+        left_format = workbook.add_format(
+            {'align': 'left', 'valign': 'vcenter'})
+        equation_format = workbook.add_format(
+            {'align': 'center', 'valign': 'vcenter', 'border': 1})
+        caption_format = workbook.add_format(
+            {'align': 'left', 'bold': True, 'valign': 'vcenter'})
+
+        variable_format = workbook.add_format(
+            {'align': 'left', 'valign': 'vcenter', 'border': 1})
+        intermediate_val_E_format = workbook.add_format({'align': 'right',
+                                                         'valign': 'vcenter',
+                                                         'bg_color': '#e6b8b7',
+                                                         'num_format': '##0.00000E+0',
+                                                         'border': 1})
+        intermediate_val_2d_format = workbook.add_format({'align': 'right',
+                                                          'valign': 'vcenter',
+                                                          'bg_color': '#e6b8b7',
+                                                          'num_format': '0.00',
+                                                          'border': 1})
+        intermediate_val_7d_format = workbook.add_format({'align': 'right',
+                                                          'valign': 'vcenter',
+                                                          'bg_color': '#e6b8b7',
+                                                          'num_format': '0.0000000',
+                                                          'border': 1})
+        note_format = workbook.add_format({'align': 'center',
+                                           'valign': 'vcenter',
+                                           'bg_color': 'yellow',
+                                           'border': 1})
+        input_lbl_format = workbook.add_format({'align': 'center',
+                                                'valign': 'vcenter',
+                                                'bold': True,
+                                                'bg_color': '#b8cce4'})
+        info_lbl_format = workbook.add_format({'align': 'center',
+                                               'valign': 'vcenter',
+                                               'bold': True,
+                                               'bg_color': '#ffff66'})
+        intermediate_lbl_format = workbook.add_format({'align': 'center',
+                                                       'valign': 'vcenter',
+                                                       'bold': True,
+                                                       'bg_color': '#e6b8b7'})
+        output_lbl_format = workbook.add_format({'align': 'center',
+                                                 'valign': 'vcenter',
+                                                 'bold': True,
+                                                 'bg_color': '#d8e4bc'})
+        dw_format = workbook.add_format({'align': 'left',
+                                         'valign': 'vcenter',
+                                         'bg_color': '#d8e4bc'})
+        output_val_format = workbook.add_format({'align': 'center',
+                                                 'valign': 'vcenter',
+                                                 'bold': True,
+                                                 'bg_color': '#d8e4bc'})
+        input_val_format = workbook.add_format({'align': 'center',
+                                                'valign': 'vcenter',
+                                                'bg_color': '#b8cce4'})
+        subscript_format = workbook.add_format({'font_script': 2})
+        superscript_format = workbook.add_format({'font_script': 1})
+        summary_format = workbook.add_format({'align': 'center',
+                                              'valign': 'vcenter',
+                                              'bold': True,
+                                              'border': 1,
+                                              'text_wrap': True})
+        summary_file_format = workbook.add_format({'align': 'left',
+                                                   'valign': 'vcenter',
+                                                   'border': 1})
+        summary_val_1d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.0'})
+        summary_val_4d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.0000'})
+        summary_val_E_format = workbook.add_format({'align': 'center',
+                                                    'valign': 'vcenter',
+                                                    'border': 1,
+                                                    'num_format': '##0.00000E+0'})
+        summary_val_9d_format = workbook.add_format({'align': 'center',
+                                                     'valign': 'vcenter',
+                                                     'border': 1,
+                                                     'num_format': '0.000000000'})
+
+        worksheet.set_column('A:A', 16, sheet_format)
+        worksheet.set_column('B:Z', 12, sheet_format)
+        worksheet.set_column('C:C', 7)
+        worksheet.set_column('E:E', 7)
+
+        worksheet.set_default_row(21)
+
+        worksheet.merge_range('A1:B3', '', equation_format)
+        formula_image = './mpt/assets/einstein-stokes_equation.png'
+        worksheet.insert_image('A1',
+                               formula_image,
+                               {'x_offset': 52, 'y_offset': 21,
+                                'x_scale': 1.2, 'y_scale': 1.2})
+
+        worksheet.write_rich_string('A5',
+                                    variable_format, 'D',
+                                    subscript_format, 'W',
+                                    variable_format, ' (m',
+                                    superscript_format, '2',
+                                    variable_format, ' s',
+                                    superscript_format, '-1',
+                                    variable_format, ')', variable_format)
+        worksheet.write_rich_string('A6',
+                                    variable_format, 'K',
+                                    subscript_format, 'B',
+                                    variable_format, ' (m',
+                                    superscript_format, '2',
+                                    variable_format, ' kg s',
+                                    superscript_format, '-2',
+                                    variable_format, ')', variable_format)
+        worksheet.write('A7', 'T (K)', variable_format)
+        worksheet.write('A8', 'Pi', variable_format)
+        worksheet.write_rich_string('A9',
+                                    variable_format, 'H',
+                                    subscript_format, '2',
+                                    variable_format, 'O viscosity (Pa.s)',
+                                    variable_format)
+        worksheet.write('A10', 'Radius (m)', variable_format)
+
+        worksheet.write_formula('B5', '=($B$6*$B$7)/(6*$B$8*B9*$B$10)',
+                                intermediate_val_E_format)
+        worksheet.write_formula('B6', '=1.3806488E-23',
+                                intermediate_val_E_format)
+        worksheet.write_formula('B7', '=$E$7+273.15',
+                                intermediate_val_2d_format)
+        worksheet.write_formula('B8', '=PI()',
+                                intermediate_val_7d_format)
+        worksheet.write_formula('B9', '=0.0006913',
+                                intermediate_val_7d_format)
+        worksheet.write_formula('B10', '=($E$10*0.000000001)/2',
+                                intermediate_val_7d_format)
+        worksheet.merge_range('A11:B11', '', note_format)
+        worksheet.write_rich_string('A11', 'NOTE: Pa.s = kg m',
+                                    superscript_format, '-1', ' s',
+                                    superscript_format, '-1',
+                                    note_format)
+
+        worksheet.write('A13', 'Input cells', input_lbl_format)
+        worksheet.write('A14', 'Info cells', info_lbl_format)
+        worksheet.write('A15', 'Intermediate cells', intermediate_lbl_format)
+        worksheet.write('A16', 'Output cells', output_lbl_format)
+
+        B13_text = 'These cells are used to input known values'
+        B14_text = 'Informative cells to help understand the formula'
+        B15_text = 'These are cells used for the calculation.'
+        B15_text += ' Must not be changed!'
+        B16_text = 'Desired results are in these cells.'
+        worksheet.write('B13', B13_text, caption_format)
+        worksheet.write('B14', B14_text, caption_format)
+        worksheet.write('B15', B15_text, caption_format)
+        worksheet.write('B16', B16_text, caption_format)
+
+        worksheet.write_string('C5', "=>")
+        worksheet.write_string('C7', "<=")
+        worksheet.write_string('C10', "<=")
+
+        worksheet.write('D5', '')
+        worksheet.write_rich_string('D5',
+                                    dw_format, 'D',
+                                    subscript_format, 'W',
+                                    dw_format, f' ({chr(956)}m',
+                                    superscript_format, '2',
+                                    dw_format, ' s',
+                                    superscript_format, '-1',
+                                    dw_format, ')', dw_format)
+        worksheet.write('D7', "T (ºC)", left_format)
+        worksheet.write('D10', "Diameter (nm)", left_format)
+
+        worksheet.write('E5', "=$B$5*10^12", output_val_format)
+        worksheet.write('E7', data['temperature_C'], input_val_format)
+        worksheet.write('E10', data['p_size'], input_val_format)
+
+        # worksheet.merge_range('G1:I2', 'ImageJ report file', summary_format)
+        worksheet.merge_range('J1:J2', '', summary_format)
+        worksheet.write_rich_string('J1',
+                                    summary_format, 'D',
+                                    subscript_format, '0\n',
+                                    summary_format, f'({chr(956)}m',
+                                    superscript_format, '2',
+                                    summary_format, '-s',
+                                    superscript_format, '-1',
+                                    summary_format, ')',
+                                    summary_format)
+
+        worksheet.merge_range('K1:K2', '', summary_format)
+        worksheet.write_rich_string('K1',
+                                    summary_format, 'D',
+                                    subscript_format, '0\n',
+                                    summary_format, '(m',
+                                    superscript_format, '2',
+                                    summary_format, '-s',
+                                    superscript_format, '-1',
+                                    summary_format, ')',
+                                    summary_format)
+
+        worksheet.merge_range('L1:L2', '', summary_format)
+        worksheet.write_rich_string('L1',
+                                    summary_format, 'D',
+                                    subscript_format, '0',
+                                    summary_format, ' / D',
+                                    subscript_format, 'W',
+                                    summary_format)
+
+        worksheet.merge_range('M1:M2', '', summary_format)
+        worksheet.write_rich_string('M1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(Pa.s)',
+                                    summary_format)
+
+        worksheet.merge_range('N1:N2', '', summary_format)
+        worksheet.write_rich_string('N1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(Po)',
+                                    summary_format)
+
+        worksheet.merge_range('O1:O2', '', summary_format)
+        worksheet.write_rich_string('O1',
+                                    summary_format, 'Viscosity\n',
+                                    summary_format, '(cPo)',
+                                    summary_format)
+
+        worksheet.write('J3',
+                        data['deff'],
+                        summary_val_4d_format)
+        worksheet.write_formula('K3',
+                                '=$J3/10^12',
+                                summary_val_E_format)
+        worksheet.write_formula('L3',
+                                '=$J3/$E$5',
+                                summary_val_4d_format)
+        worksheet.write_formula('M3',
+                                '=($B$6*$B$7)/(6*$B$8*$K3*$B$10)',
+                                summary_val_9d_format)
+        worksheet.write_formula('N3',
+                                '=$M3*10',
+                                summary_val_9d_format)
+        worksheet.write_formula('O3',
+                                '=$N3*100',
+                                summary_val_1d_format)
+        # TODO: For each file, write the next lines
+        # for key, item in enumerate(data['summary'].values):
+        #     i = key+3
+        #     worksheet.merge_range(f'G{i}:I{i}',
+        #                           item[0],
+        #                           summary_file_format)
+        #     worksheet.write(f'J{i}',
+        #                     item[1],
+        #                     summary_val_4d_format)
+        #     worksheet.write_formula(f'K{i}',
+        #                             f'=$J{i}/10^12',
+        #                             summary_val_E_format)
+        #     worksheet.write_formula(f'L{i}',
+        #                             f'=$J{i}/$E$5',
+        #                             summary_val_4d_format)
+        #     worksheet.write_formula(f'M{i}',
+        #                             f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
+        #                             summary_val_9d_format)
+        #     worksheet.write_formula(f'N{i}',
+        #                             f'=$M{i}*10',
+        #                             summary_val_9d_format)
+        #     worksheet.write_formula(f'O{i}',
+        #                             f'=$N{i}*100',
+        #                             summary_val_1d_format)
+        # --------------------------------------------------------------------
 
         workbook.close()
         writer.save()

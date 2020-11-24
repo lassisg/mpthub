@@ -37,3 +37,4 @@ class Settings():
         self.DEFAULT_TOTAL_FRAMES = 606
         self.DEFAULT_WIDTH_PX = 512
         self.DEFAULT_WIDTH_SI = 160
+        self.DEFAULT_TEMPERATURE_C = 37

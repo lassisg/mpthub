@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "MPT"
-version = "0.2.0"
+version = "0.5.0"
 description = "Reads ImageJ results file, in CSV. Exports Multiple Particle Tracking Analysis in xlsx format."
 authors = ["Leandro Gabriel <lassisg@gmail.com>"]
 license = "MIT"
@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.8"
 wxPython = "^4.0.7"
+numpy = "1.19.3"
 pandas = "^1.0.3"
 matplotlib = "^3.2.1"
 sqlalchemy = "^1.3.15"
@@ -24,6 +25,9 @@ tornado = "^6.0.4"
 pypiwin32 = "^223"
 
 # [tool.poetry.scripts]
+jupyter = "^1.0.0"
+pywin32 = "^300"
+pywinpty = "^0.5.7"
 # build = 'pyinstaller --clean -D --noconfirm -w --add-data="README.md;." --add-data="LICENSE;." --add-data="mpt/assets/*;./mpt/assets/" -n "MPT_Analysis" -i ".\mpt\assets\icon.ico" app.py'
 
 [build-system]
