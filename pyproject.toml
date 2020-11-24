@@ -26,6 +26,8 @@ pypiwin32 = "^223"
 
 # [tool.poetry.scripts]
 jupyter = "^1.0.0"
+pywin32 = "^300"
+pywinpty = "^0.5.7"
 # build = 'pyinstaller --clean -D --noconfirm -w --add-data="README.md;." --add-data="LICENSE;." --add-data="mpt/assets/*;./mpt/assets/" -n "MPT_Analysis" -i ".\mpt\assets\icon.ico" app.py'
 
 [build-system]
