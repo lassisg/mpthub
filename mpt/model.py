@@ -110,8 +110,7 @@ class Analysis():
 
                 parent.statusBar.SetStatusText(
                     f"Importing file {file_name}...")
-                trajectories = len(
-                    raw_data.iloc[:, :1].groupby('Trajectory').nunique())
+                trajectories = len(raw_data.groupby("Trajectory").count())
                 valid = self.get_valid_trajectories(
                     parent, file_name, raw_data)
 
