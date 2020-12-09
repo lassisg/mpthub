@@ -147,19 +147,25 @@ class Analysis():
                                data_in: pd.DataFrame) -> int:
         parent.statusBar.SetStatusText(
             f"Filtering valid trajectories on {file_name}...")
-        grouped_trajectories = data_in.groupby('Trajectory').filter(
+        # grouped_trajectories = data_in.groupby('Trajectory').filter(
+        #     lambda x: len(x['Trajectory']) > self.config.min_frames)
+        valid_trajectories_data = data_in.groupby('Trajectory').filter(
             lambda x: len(x['Trajectory']) > self.config.min_frames)
 
-        valid_trajectories = grouped_trajectories.iloc[:, :1].groupby(
-            'Trajectory').nunique()
+        # valid_trajectories = valid_trajectories_data.iloc[:, :1].groupby(
+        #     'Trajectory').nunique()
 
-        valid_trajectories_data = data_in[data_in['Trajectory'].isin(
-            valid_trajectories.iloc[:, 0].index.values)]
+        # valid_trajectories = len(
+        #     valid_trajectories_data.groupby('Trajectory')['Trajectory'])
+
+        # valid_trajectories_data = data_in[data_in['Trajectory'].isin(
+        #     valid_trajectories.iloc[:, 0].index.values)]
         valid_trajectories_data.insert(0, 'file_name', file_name)
         self.trajectories = self.trajectories.append(
             valid_trajectories_data, ignore_index=True)
 
-        return len(valid_trajectories)
+        return len(
+            valid_trajectories_data.groupby('Trajectory')['Trajectory'])
 
     def start(self, parent):
         parent.statusBar.SetStatusText(
