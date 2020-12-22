@@ -59,7 +59,6 @@ class Diffusivity:
 class Analysis():
 
     def __init__(self) -> None:
-        # print("Initializing Analysis configuration object...")
         self.summary = pd.DataFrame()
         self.load_config()
 
@@ -69,7 +68,6 @@ class Analysis():
         conn = db.connect()
         config_df = pd.read_sql_table("analysis_config", con=conn)
         self.config = config_df.iloc[0]
-        # self.config['pixel_size'] = self.config.width_px / self.config.width_si
 
     def update(self, new_config: pd.Series) -> None:
         """Updates analysis_config ranges data on database.
@@ -119,7 +117,7 @@ class Analysis():
                     'trajectories': trajectories, 'valid': valid},
                     ignore_index=True)
             else:
-                parent.statusBar.SetStatusText(f"Wrong file format.")
+                parent.statusBar.SetStatusText("Wrong file format.")
                 parent.statusBar.SetStatusText(
                     f"Aborting import of file: '{file_name}'")
 
@@ -147,19 +145,9 @@ class Analysis():
                                data_in: pd.DataFrame) -> int:
         parent.statusBar.SetStatusText(
             f"Filtering valid trajectories on {file_name}...")
-        # grouped_trajectories = data_in.groupby('Trajectory').filter(
-        #     lambda x: len(x['Trajectory']) > self.config.min_frames)
         valid_trajectories_data = data_in.groupby('Trajectory').filter(
             lambda x: len(x['Trajectory']) > self.config.min_frames)
 
-        # valid_trajectories = valid_trajectories_data.iloc[:, :1].groupby(
-        #     'Trajectory').nunique()
-
-        # valid_trajectories = len(
-        #     valid_trajectories_data.groupby('Trajectory')['Trajectory'])
-
-        # valid_trajectories_data = data_in[data_in['Trajectory'].isin(
-        #     valid_trajectories.iloc[:, 0].index.values)]
         valid_trajectories_data.insert(0, 'file_name', file_name)
         self.trajectories = self.trajectories.append(
             valid_trajectories_data, ignore_index=True)
@@ -169,17 +157,17 @@ class Analysis():
 
     def start(self, parent):
         parent.statusBar.SetStatusText(
-            f"Computing MSD (mean squared displacement)...")
+            "Computing MSD (mean squared displacement)...")
 
         self.msd = self.compute_msd(parent)
         self.msd_log = self.compute_msd_log(self.msd)
 
         parent.statusBar.SetStatusText(
-            f"Computing Deff (diffusivity coefficient)...")
+            "Computing Deff (diffusivity coefficient)...")
         self.deff = self.compute_deff(self.msd)
 
         parent.statusBar.SetStatusText(
-            f"Adjusting data labels...")
+            "Adjusting data labels...")
         self.msd = self.rename_columns(self.msd)
         self.msd_log = self.rename_columns(self.msd_log)
         self.deff = self.rename_columns(self.deff)
@@ -316,17 +304,17 @@ class Analysis():
         report = Report()
 
         parent.statusBar.SetStatusText(
-            f"Exporting 'Individual Particle Analysis' report...")
+            "Exporting 'Individual Particle Analysis' report...")
         report.export_individual_particle_analysis(
             parent.general.config.save_folder, self.msd, self.deff)
 
         parent.statusBar.SetStatusText(
-            f"Exporting transport mode sheet...")
+            "Exporting transport mode sheet...")
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
         parent.statusBar.SetStatusText(
-            f"Exporting Einstein-Stokes sheet...")
+            "Exporting Einstein-Stokes sheet...")
 
         report_data = {'deff': self.deff.iloc[:, -1].mean(),
                        'p_size': self.config.p_size,
@@ -666,10 +654,15 @@ class Report():
                                sheet_name='Characterization')
 
         sheet_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter', 'num_format': '0.000000000'})
+            {'align': 'center',
+             'valign': 'vcenter',
+             'num_format': '0.000000000'})
         count_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter', 'num_format': '0'})
-        header_format = workbook.add_format({'align': 'center', 'bold': 1})
+            {'align': 'center',
+             'valign': 'vcenter',
+             'num_format': '0'})
+        header_format = workbook.add_format(
+            {'align': 'center', 'bold': 1})
 
         data_sheet = writer.sheets['Characterization']
         data_sheet.set_column(0, 0, 4, header_format)
@@ -726,7 +719,8 @@ class Report():
 
         # Statistical info
         summary_format = workbook.add_format(
-            {'align': 'right', 'valign': 'vcenter'})
+            {'align': 'right',
+             'valign': 'vcenter'})
         data_sheet.write('D8', '<slope> = ', summary_format)
         data_sheet.write('D9', 'N = ', summary_format)
         data_sheet.write('D10', 'STD = ', summary_format)
@@ -752,87 +746,114 @@ class Report():
         worksheet.hide_gridlines(2)
 
         sheet_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter'})
+            {'align': 'center',
+             'valign': 'vcenter'})
         left_format = workbook.add_format(
-            {'align': 'left', 'valign': 'vcenter'})
+            {'align': 'left',
+             'valign': 'vcenter'})
         equation_format = workbook.add_format(
-            {'align': 'center', 'valign': 'vcenter', 'border': 1})
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1})
         caption_format = workbook.add_format(
-            {'align': 'left', 'bold': True, 'valign': 'vcenter'})
+            {'align': 'left',
+             'bold': True,
+             'valign': 'vcenter'})
 
         variable_format = workbook.add_format(
-            {'align': 'left', 'valign': 'vcenter', 'border': 1})
-        intermediate_val_E_format = workbook.add_format({'align': 'right',
-                                                         'valign': 'vcenter',
-                                                         'bg_color': '#e6b8b7',
-                                                         'num_format': '##0.00000E+0',
-                                                         'border': 1})
-        intermediate_val_2d_format = workbook.add_format({'align': 'right',
-                                                          'valign': 'vcenter',
-                                                          'bg_color': '#e6b8b7',
-                                                          'num_format': '0.00',
-                                                          'border': 1})
-        intermediate_val_7d_format = workbook.add_format({'align': 'right',
-                                                          'valign': 'vcenter',
-                                                          'bg_color': '#e6b8b7',
-                                                          'num_format': '0.0000000',
-                                                          'border': 1})
-        note_format = workbook.add_format({'align': 'center',
-                                           'valign': 'vcenter',
-                                           'bg_color': 'yellow',
-                                           'border': 1})
-        input_lbl_format = workbook.add_format({'align': 'center',
-                                                'valign': 'vcenter',
-                                                'bold': True,
-                                                'bg_color': '#b8cce4'})
-        info_lbl_format = workbook.add_format({'align': 'center',
-                                               'valign': 'vcenter',
-                                               'bold': True,
-                                               'bg_color': '#ffff66'})
-        intermediate_lbl_format = workbook.add_format({'align': 'center',
-                                                       'valign': 'vcenter',
-                                                       'bold': True,
-                                                       'bg_color': '#e6b8b7'})
-        output_lbl_format = workbook.add_format({'align': 'center',
-                                                 'valign': 'vcenter',
-                                                 'bold': True,
-                                                 'bg_color': '#d8e4bc'})
-        dw_format = workbook.add_format({'align': 'left',
-                                         'valign': 'vcenter',
-                                         'bg_color': '#d8e4bc'})
-        output_val_format = workbook.add_format({'align': 'center',
-                                                 'valign': 'vcenter',
-                                                 'bold': True,
-                                                 'bg_color': '#d8e4bc'})
-        input_val_format = workbook.add_format({'align': 'center',
-                                                'valign': 'vcenter',
-                                                'bg_color': '#b8cce4'})
-        subscript_format = workbook.add_format({'font_script': 2})
-        superscript_format = workbook.add_format({'font_script': 1})
-        summary_format = workbook.add_format({'align': 'center',
-                                              'valign': 'vcenter',
-                                              'bold': True,
-                                              'border': 1,
-                                              'text_wrap': True})
-        summary_file_format = workbook.add_format({'align': 'left',
-                                                   'valign': 'vcenter',
-                                                   'border': 1})
-        summary_val_1d_format = workbook.add_format({'align': 'center',
-                                                     'valign': 'vcenter',
-                                                     'border': 1,
-                                                     'num_format': '0.0'})
-        summary_val_4d_format = workbook.add_format({'align': 'center',
-                                                     'valign': 'vcenter',
-                                                     'border': 1,
-                                                     'num_format': '0.0000'})
-        summary_val_E_format = workbook.add_format({'align': 'center',
-                                                    'valign': 'vcenter',
-                                                    'border': 1,
-                                                    'num_format': '##0.00000E+0'})
-        summary_val_9d_format = workbook.add_format({'align': 'center',
-                                                     'valign': 'vcenter',
-                                                     'border': 1,
-                                                     'num_format': '0.000000000'})
+            {'align': 'left',
+             'valign': 'vcenter',
+             'border': 1})
+        intermediate_val_E_format = workbook.add_format(
+            {'align': 'right',
+             'valign': 'vcenter',
+             'bg_color': '#e6b8b7',
+             'num_format': '##0.00000E+0',
+             'border': 1})
+        intermediate_val_2d_format = workbook.add_format(
+            {'align': 'right',
+             'valign': 'vcenter',
+             'bg_color': '#e6b8b7',
+             'num_format': '0.00',
+             'border': 1})
+        intermediate_val_7d_format = workbook.add_format(
+            {'align': 'right',
+             'valign': 'vcenter',
+             'bg_color': '#e6b8b7',
+             'num_format': '0.0000000',
+             'border': 1})
+        note_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bg_color': 'yellow',
+             'border': 1})
+        input_lbl_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'bg_color': '#b8cce4'})
+        info_lbl_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'bg_color': '#ffff66'})
+        intermediate_lbl_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'bg_color': '#e6b8b7'})
+        output_lbl_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'bg_color': '#d8e4bc'})
+        dw_format = workbook.add_format(
+            {'align': 'left',
+             'valign': 'vcenter',
+             'bg_color': '#d8e4bc'})
+        output_val_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'bg_color': '#d8e4bc'})
+        input_val_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bg_color': '#b8cce4'})
+        subscript_format = workbook.add_format(
+            {'font_script': 2})
+        superscript_format = workbook.add_format(
+            {'font_script': 1})
+        summary_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'border': 1,
+             'text_wrap': True})
+        # summary_file_format = workbook.add_format(
+        #     {'align': 'left',
+        #      'valign': 'vcenter',
+        #      'border': 1})
+        summary_val_1d_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1,
+             'num_format': '0.0'})
+        summary_val_4d_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1,
+             'num_format': '0.0000'})
+        summary_val_E_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1,
+             'num_format': '##0.00000E+0'})
+        summary_val_9d_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1,
+             'num_format': '0.000000000'})
 
         worksheet.set_column('A:A', 16, sheet_format)
         worksheet.set_column('B:Z', 12, sheet_format)

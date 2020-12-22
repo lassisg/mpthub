@@ -186,7 +186,7 @@ class mainWindow (wx.Frame):
 
     def on_mnuAnalysis(self, event):
         self.statusBar.SetStatusText(
-            f"Starting multiple particle analysis...")
+            "Starting multiple particle analysis...")
 
         start = time.time()
         print(f"Start time: {start}")
@@ -203,7 +203,7 @@ class mainWindow (wx.Frame):
     def on_mnuExport(self, event):
 
         with wx.DirDialog(
-                None, message=f"Chose folder to save report files",
+                None, message="Chose folder to save report files",
                 defaultPath=self.general.config.save_folder) as saveDialog:
 
             # TODO: Add save path to app_config table
@@ -232,7 +232,7 @@ class mainWindow (wx.Frame):
             self.clear_summary()
 
     def on_mnuClear(self, event):
-        self.statusBar.SetStatusText(f"Starting summary clear...")
+        self.statusBar.SetStatusText("Starting summary clear...")
         self.clear_summary()
         self.analysis.clear_summary()
         self.toggle_menu_item(
