@@ -38,5 +38,5 @@ pywinpty = "^0.5.7"
 # build = 'pyinstaller --clean -D --noconfirm -w --add-data="README.md;." --add-data="LICENSE;." --add-data="mpt/assets/*;./mpt/assets/" -n "MPT_Analysis" -i ".\mpt\assets\icon.ico" app.py'
 
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
