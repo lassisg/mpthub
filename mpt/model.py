@@ -140,6 +140,10 @@ class Analysis():
         empty_data.to_sql('trajectories', con=conn,
                           index=False, if_exists='replace')
 
+    def update_summary(self, parent):
+        parent.statusBar.SetStatusText("Updating summary...")
+        print("...")
+
     def get_valid_trajectories(self, parent,
                                file_name: str,
                                data_in: pd.DataFrame) -> int:

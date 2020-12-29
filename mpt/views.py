@@ -422,7 +422,7 @@ class analysisWindow (wx.Dialog):
         # Connect Events
         # self.txt_size.Bind(wx.FOCUS, self.config_update)
         self.txt_filter.Bind(wx.EVT_TEXT, self.filter_changed)
-        self.needs_summary_update = False
+        self.summary_is_outdated = False
         # self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
@@ -436,7 +436,7 @@ class analysisWindow (wx.Dialog):
         previous_filter = int(event.GetEventObject().Label)
         new_filter = int(event.GetEventObject().Value)
 
-        self.needs_summary_update = (new_filter != previous_filter)
+        self.summary_is_outdated = (new_filter != previous_filter)
 
     def config_update(self):
         for widget in self.GetChildren():
@@ -448,6 +448,10 @@ class analysisWindow (wx.Dialog):
         self.config_update()
         self.Parent.analysis.update(self.Parent.analysis.config)
         self.Parent.statusBar.SetStatusText("Changes saved.")
+
+        if self.summary_is_outdated and not self.Parent.analysis.summary.empty:
+            self.Parent.analysis.update_summary(self.Parent)
+
         self.Destroy()
 
     def on_cancel_analysis(self, event):
