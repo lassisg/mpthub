@@ -421,7 +421,8 @@ class analysisWindow (wx.Dialog):
 
         # Connect Events
         # self.txt_size.Bind(wx.FOCUS, self.config_update)
-        # self.txt_filter.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_filter.Bind(wx.EVT_TEXT, self.filter_changed)
+        self.needs_summary_update = False
         # self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
@@ -430,6 +431,12 @@ class analysisWindow (wx.Dialog):
         self.ctrl_buttonCancel.Bind(wx.EVT_BUTTON, self.on_cancel_analysis)
 
     # Virtual event handlers, overide them in your derived class
+
+    def filter_changed(self, event):
+        previous_filter = int(event.GetEventObject().Label)
+        new_filter = int(event.GetEventObject().Value)
+
+        self.needs_summary_update = (new_filter != previous_filter)
 
     def config_update(self):
         for widget in self.GetChildren():
