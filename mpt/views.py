@@ -163,6 +163,11 @@ class mainWindow (wx.Frame):
             self.general.update(self.general.config)
             self.statusBar.SetStatusText("Data fetched!")
 
+    def update_summary(self) -> None:
+        self.SetStatusText("Updating summary...")
+        self.analysis.update_valid_trajectories()
+        self.update_list_view()
+
     def update_list_view(self) -> None:
         total_trajectories = 0
         total_valid_trajectories = 0
@@ -450,7 +455,7 @@ class analysisWindow (wx.Dialog):
         self.Parent.statusBar.SetStatusText("Changes saved.")
 
         if self.summary_is_outdated and not self.Parent.analysis.summary.empty:
-            self.Parent.analysis.update_summary(self.Parent)
+            self.Parent.update_summary()
 
         self.Destroy()
 
