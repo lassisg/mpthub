@@ -90,6 +90,8 @@ class Analysis():
         """
         self.trajectories = pd.DataFrame(
             columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
+        self.valid_trajectories = self.trajectories.copy()
+
         parent.statusBar.SetStatusText("Loading report(s)...")
         for file in file_list:
             if not self.summary.empty:
@@ -140,6 +142,25 @@ class Analysis():
         empty_data.to_sql('trajectories', con=conn,
                           index=False, if_exists='replace')
 
+    def update_valid_trajectories(self, parent):
+        summary_files = sorted(
+            set(self.trajectories.loc[:, 'file_name'].values))
+
+        for file_name in summary_files:
+            parent.statusBar.SetStatusText(
+                f"Updating valid trajectories on {file_name}...")
+
+            valid_trajectories_data = self.trajectories[
+                self.trajectories['file_name'] == file_name].groupby(
+                ['file_name', 'Trajectory']).filter(
+                lambda x: len(x['Trajectory']) > self.config.min_frames)
+
+            valid_trajectories_count = len(valid_trajectories_data.groupby(
+                'Trajectory')['Trajectory'])
+
+            self.summary.loc[self.summary['file_name'] ==
+                             file_name, "valid"] = valid_trajectories_count
+
     def get_valid_trajectories(self, parent,
                                file_name: str,
                                data_in: pd.DataFrame) -> int:
@@ -149,7 +170,12 @@ class Analysis():
             lambda x: len(x['Trajectory']) > self.config.min_frames)
 
         valid_trajectories_data.insert(0, 'file_name', file_name)
+        data_in.insert(0, 'file_name', file_name)
+
         self.trajectories = self.trajectories.append(
+            data_in, ignore_index=True)
+
+        self.valid_trajectories = self.valid_trajectories.append(
             valid_trajectories_data, ignore_index=True)
 
         return len(
@@ -185,7 +211,7 @@ class Analysis():
         tau = np.linspace(time_step, max_time, int(self.config.total_frames))
 
         msd = pd.DataFrame()
-        trajectories_group = self.trajectories.groupby(
+        trajectories_group = self.valid_trajectories.groupby(
             ['file_name', 'Trajectory'])
 
         i = 0

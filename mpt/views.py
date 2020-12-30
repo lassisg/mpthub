@@ -28,6 +28,7 @@ class mainWindow (wx.Frame):
                           wx.MINIMIZE_BOX | wx.CLOSE_BOX)
 
         settings = Settings()
+        self.summary_is_outdated = False
         self.SetIcon(wx.Icon(os.path.join(settings.ICON_PATH, "icon.ico")))
         self.SetSizeHints(wx.Size(688, 480), wx.Size(688, 480))
         self.create_menu_bar()
@@ -163,6 +164,12 @@ class mainWindow (wx.Frame):
             self.general.update(self.general.config)
             self.statusBar.SetStatusText("Data fetched!")
 
+    def update_summary(self) -> None:
+        self.SetStatusText("Updating summary...")
+        self.analysis.update_valid_trajectories(self)
+        self.update_list_view()
+        self.SetStatusText("Summary updated!")
+
     def update_list_view(self) -> None:
         total_trajectories = 0
         total_valid_trajectories = 0
@@ -252,6 +259,9 @@ class mainWindow (wx.Frame):
     def on_mnuGeneral(self, event) -> None:
         self.statusBar.SetStatusText("Open dialog for general setup...")
         analysisWindow(self).ShowModal()
+
+        if self.summary_is_outdated:
+            self.update_summary()
 
     def on_mnuHelp(self, event):
         self.statusBar.SetStatusText("Open Help window...")
@@ -421,7 +431,7 @@ class analysisWindow (wx.Dialog):
 
         # Connect Events
         # self.txt_size.Bind(wx.FOCUS, self.config_update)
-        # self.txt_filter.Bind(wx.EVT_KILL_FOCUS, self.config_update)
+        self.txt_filter.Bind(wx.EVT_TEXT, self.filter_changed)
         # self.txt_fps.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_frames.Bind(wx.EVT_KILL_FOCUS, self.config_update)
         # self.txt_width_px.Bind(wx.EVT_KILL_FOCUS, self.config_update)
@@ -430,6 +440,12 @@ class analysisWindow (wx.Dialog):
         self.ctrl_buttonCancel.Bind(wx.EVT_BUTTON, self.on_cancel_analysis)
 
     # Virtual event handlers, overide them in your derived class
+
+    def filter_changed(self, event):
+        previous_filter = int(event.GetEventObject().Label)
+        new_filter = int(event.GetEventObject().Value)
+
+        self.Parent.summary_is_outdated = (new_filter != previous_filter)
 
     def config_update(self):
         for widget in self.GetChildren():
@@ -441,6 +457,11 @@ class analysisWindow (wx.Dialog):
         self.config_update()
         self.Parent.analysis.update(self.Parent.analysis.config)
         self.Parent.statusBar.SetStatusText("Changes saved.")
+
+        self.Parent.summary_is_outdated = (
+            self.Parent.summary_is_outdated and
+            not self.Parent.analysis.summary.empty)
+
         self.Destroy()
 
     def on_cancel_analysis(self, event):
