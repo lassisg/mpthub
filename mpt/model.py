@@ -142,11 +142,24 @@ class Analysis():
         empty_data.to_sql('trajectories', con=conn,
                           index=False, if_exists='replace')
 
-    def update_valid_trajectories(self):
-        valid_trajectories_data = self.trajectories.groupby(
-            ['file_name', 'Trajectory']).filter(
-            lambda x: len(x['Trajectory']) > self.config.min_frames)
-        print("Getting new valid trajectories on model")
+    def update_valid_trajectories(self, parent):
+        summary_files = sorted(
+            set(self.trajectories.loc[:, 'file_name'].values))
+
+        for file_name in summary_files:
+            parent.statusBar.SetStatusText(
+                f"Updating valid trajectories on {file_name}...")
+
+            valid_trajectories_data = self.trajectories[
+                self.trajectories['file_name'] == file_name].groupby(
+                ['file_name', 'Trajectory']).filter(
+                lambda x: len(x['Trajectory']) > self.config.min_frames)
+
+            valid_trajectories_count = len(valid_trajectories_data.groupby(
+                'Trajectory')['Trajectory'])
+
+            self.summary.loc[self.summary['file_name'] ==
+                             file_name, "valid"] = valid_trajectories_count
 
     def get_valid_trajectories(self, parent,
                                file_name: str,
