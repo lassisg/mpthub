@@ -134,6 +134,7 @@ class mainWindow (wx.Frame):
 
     def on_mnuImport(self, event) -> None:
         self.get_summary()
+
         if self.analysis.summary.empty:
             return
 
