@@ -310,7 +310,7 @@ class analysisWindow (wx.Dialog):
 
         self.txt_size = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['p_size']}",
+            value=f"{int(parent.analysis.config['p_size'])}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="p_size")
         sz_config_1.Add(self.txt_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
@@ -327,7 +327,7 @@ class analysisWindow (wx.Dialog):
 
         self.txt_filter = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['min_frames']}",
+            value=f"{int(parent.analysis.config['min_frames'])}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="min_frames")
         sz_config_1.Add(
@@ -351,7 +351,7 @@ class analysisWindow (wx.Dialog):
 
         self.txt_fps = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['fps']}",
+            value=f"{int(parent.analysis.config['fps'])}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="fps")
         sz_config_2.Add(
@@ -369,7 +369,7 @@ class analysisWindow (wx.Dialog):
 
         self.txt_frames = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['total_frames']}",
+            value=f"{int(parent.analysis.config['total_frames'])}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="total_frames")
         sz_config_2.Add(
@@ -393,7 +393,7 @@ class analysisWindow (wx.Dialog):
 
         self.txt_width_px = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['width_px']}",
+            value=f"{int(parent.analysis.config['width_px'])}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="width_px")
         sz_config_3.Add(
@@ -411,7 +411,9 @@ class analysisWindow (wx.Dialog):
 
         self.txt_width_si = wx.TextCtrl(
             self, id=wx.ID_ANY,
-            value=f"{parent.analysis.config['width_si']}",
+            value=locale.format_string(
+                '%.2f', parent.analysis.config['width_si']),
+            # value=f"{parent.analysis.config['width_si']:.2f}",
             pos=wx.DefaultPosition, size=wx.Size(43, -1),
             style=wx.TE_CENTER, name="width_si")
         sz_config_3.Add(
@@ -458,7 +460,11 @@ class analysisWindow (wx.Dialog):
     def config_update(self):
         for widget in self.GetChildren():
             if widget.ClassName == 'wxTextCtrl':
-                self.Parent.analysis.config[widget.Name] = widget.Value
+                if widget.Name in ['width_si', 'temperature_C']:
+                    self.Parent.analysis.config[widget.Name] = float(
+                        widget.Value.replace(',', '.'))
+                else:
+                    self.Parent.analysis.config[widget.Name] = widget.Value
 
     def on_save_analysis(self, event):
         self.Parent.statusBar.SetStatusText("Saving changes...")

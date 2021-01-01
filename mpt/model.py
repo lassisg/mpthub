@@ -66,8 +66,7 @@ class Analysis():
         """Loads configuration into a Series with data from database.
         """
         conn = db.connect()
-        config_df = pd.read_sql_table("analysis_config", con=conn)
-        self.config = config_df.iloc[0]
+        self.config = pd.read_sql_table("analysis_config", con=conn).squeeze()
 
     def update(self, new_config: pd.Series) -> None:
         """Updates analysis_config ranges data on database.
