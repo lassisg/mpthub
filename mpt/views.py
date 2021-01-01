@@ -134,6 +134,9 @@ class mainWindow (wx.Frame):
 
     def on_mnuImport(self, event) -> None:
         self.get_summary()
+        if self.analysis.summary.empty:
+            return
+
         self.update_list_view()
         # TODO: Find a way to avoid using text as parameters
         self.toggle_menu_item(
@@ -228,12 +231,16 @@ class mainWindow (wx.Frame):
     def on_mnuRemove(self, event):
 
         row = 0
-        while row < self.dataListView.ItemCount - 1:
+        rows_to_remove = []
+        while row < self.dataListView.ItemCount-1:
             if self.dataListView.GetToggleValue(row, 0):
-                self.dataListView.DeleteItem(row)
-                row -= 1
+                rows_to_remove.append(row)
 
             row += 1
+
+        self.analysis.summary.drop(rows_to_remove, inplace=True)
+        self.analysis.summary.reset_index(drop=True, inplace=True)
+        self.update_list_view()
 
         if self.dataListView.ItemCount == 1:
             self.clear_summary()
