@@ -235,7 +235,7 @@ class Analysis():
         tau = tau[:int(self.config.min_frames)]
 
         msd.insert(0, "tau", tau, True)
-        msd = msd[msd[msd.columns[0]] < 10]
+        msd = msd[msd[msd.columns[0]] < self.config.time]
 
         msd.name = "MSD"
         msd.set_index('tau', inplace=True)
