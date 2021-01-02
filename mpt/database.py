@@ -47,6 +47,7 @@ def persist() -> str:
         'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
         'width_px': [settings.DEFAULT_WIDTH_PX],
         'width_si': [settings.DEFAULT_WIDTH_SI],
+        'time': [settings.DEFAULT_TIME],
         'temperature_C': [settings.DEFAULT_TEMPERATURE_C]
     })
 

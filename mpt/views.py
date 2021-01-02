@@ -107,7 +107,7 @@ class mainWindow (wx.Frame):
             wx.dataview.DV_HORIZ_RULES | wx.dataview.DV_ROW_LINES |
             wx.dataview.DV_VARIABLE_LINE_HEIGHT | wx.BORDER_NONE)
         self.col_remove = self.dataListView.AppendToggleColumn(
-            "Remove", wx.dataview.DATAVIEW_CELL_ACTIVATABLE, 21,
+            "", wx.dataview.DATAVIEW_CELL_ACTIVATABLE, 21,
             wx.ALIGN_CENTER, 0)
         self.col_name = self.dataListView.AppendTextColumn(
             "File name", wx.dataview.DATAVIEW_CELL_INERT, 444,
@@ -287,7 +287,7 @@ class analysisWindow (wx.Dialog):
     def __init__(self, parent):
         wx.Dialog.__init__(self, parent, id=wx.ID_ANY,
                            title=u"Analysis configuration",
-                           pos=wx.DefaultPosition, size=wx.Size(378, 235),
+                           pos=wx.DefaultPosition, size=wx.Size(430, 250),
                            style=wx.DEFAULT_DIALOG_STYLE)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
@@ -297,115 +297,101 @@ class analysisWindow (wx.Dialog):
         main_diff_sizer.Add((0, 0), 1, wx.EXPAND, 5)
 
         sz_config_1 = wx.BoxSizer(wx.HORIZONTAL)
-
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_size = wx.StaticText(
             self, wx.ID_ANY, "Size (nm)",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_size.Wrap(-1)
-
         sz_config_1.Add(
             self.lbl_size, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_size = wx.TextCtrl(
             self, id=wx.ID_ANY,
             value=f"{int(parent.analysis.config['p_size'])}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="p_size")
         sz_config_1.Add(self.txt_size, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_filter = wx.StaticText(
             self, wx.ID_ANY, u"Filter",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_filter.Wrap(-1)
-
         sz_config_1.Add(
             self.lbl_filter, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_filter = wx.TextCtrl(
             self, id=wx.ID_ANY,
             value=f"{int(parent.analysis.config['min_frames'])}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="min_frames")
         sz_config_1.Add(
             self.txt_filter, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_1.Add((0, 0), 1, wx.EXPAND, 5)
 
         main_diff_sizer.Add(sz_config_1, 1, wx.EXPAND, 5)
 
         sz_config_2 = wx.BoxSizer(wx.HORIZONTAL)
-
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_fps = wx.StaticText(
             self, wx.ID_ANY, u"FPS",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_fps.Wrap(-1)
-
         sz_config_2.Add(
             self.lbl_fps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_fps = wx.TextCtrl(
             self, id=wx.ID_ANY,
             value=f"{int(parent.analysis.config['fps'])}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="fps")
         sz_config_2.Add(
             self.txt_fps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_frames = wx.StaticText(
             self, wx.ID_ANY, u"Frames",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_frames.Wrap(-1)
-
         sz_config_2.Add(
             self.lbl_frames, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_frames = wx.TextCtrl(
             self, id=wx.ID_ANY,
             value=f"{int(parent.analysis.config['total_frames'])}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="total_frames")
         sz_config_2.Add(
             self.txt_frames, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
 
         main_diff_sizer.Add(sz_config_2, 1, wx.EXPAND, 5)
 
         sz_config_3 = wx.BoxSizer(wx.HORIZONTAL)
-
         sz_config_3.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_width_px = wx.StaticText(
             self, wx.ID_ANY, u"Width (px)",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_width_px.Wrap(-1)
-
         sz_config_3.Add(
             self.lbl_width_px, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
         self.txt_width_px = wx.TextCtrl(
             self, id=wx.ID_ANY,
             value=f"{int(parent.analysis.config['width_px'])}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="width_px")
         sz_config_3.Add(
             self.txt_width_px, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_3.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_width_si = wx.StaticText(
             self, wx.ID_ANY, f"Width ({chr(956)}m)",
-            wx.DefaultPosition, wx.Size(70, -1), wx.ALIGN_RIGHT)
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
         self.lbl_width_si.Wrap(-1)
-
         sz_config_3.Add(
             self.lbl_width_si, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
@@ -413,15 +399,54 @@ class analysisWindow (wx.Dialog):
             self, id=wx.ID_ANY,
             value=locale.format_string(
                 '%.2f', parent.analysis.config['width_si']),
-            # value=f"{parent.analysis.config['width_si']:.2f}",
-            pos=wx.DefaultPosition, size=wx.Size(43, -1),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
             style=wx.TE_CENTER, name="width_si")
         sz_config_3.Add(
             self.txt_width_si, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
-
         sz_config_3.Add((0, 0), 1, wx.EXPAND, 5)
 
         main_diff_sizer.Add(sz_config_3, 1, wx.EXPAND, 5)
+
+        # ---------------------------------------------------------------------
+        sz_config_4 = wx.BoxSizer(wx.HORIZONTAL)
+        sz_config_4.Add((0, 0), 1, wx.EXPAND, 5)
+
+        self.lbl_time = wx.StaticText(
+            self, wx.ID_ANY, u"Analysis time (s)",
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
+        self.lbl_time.Wrap(-1)
+        sz_config_4.Add(
+            self.lbl_time, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.txt_time = wx.TextCtrl(
+            self, id=wx.ID_ANY,
+            value=locale.format_string(
+                '%.2f', parent.analysis.config['time']),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
+            style=wx.TE_CENTER, name="time")
+        sz_config_4.Add(
+            self.txt_time, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        sz_config_4.Add((0, 0), 1, wx.EXPAND, 5)
+
+        self.lbl_temperature_C = wx.StaticText(
+            self, wx.ID_ANY, "Temperature (C)",
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
+        self.lbl_temperature_C.Wrap(-1)
+        sz_config_4.Add(
+            self.lbl_temperature_C, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.txt_temperature_C = wx.TextCtrl(
+            self, id=wx.ID_ANY,
+            value=locale.format_string(
+                '%.2f', parent.analysis.config['temperature_C']),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
+            style=wx.TE_CENTER, name="temperature_C")
+        sz_config_4.Add(
+            self.txt_temperature_C, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        sz_config_4.Add((0, 0), 1, wx.EXPAND, 5)
+
+        main_diff_sizer.Add(sz_config_4, 1, wx.EXPAND, 5)
+        # ---------------------------------------------------------------------
 
         main_diff_sizer.Add((0, 0), 1, wx.EXPAND, 5)
 
@@ -460,7 +485,7 @@ class analysisWindow (wx.Dialog):
     def config_update(self):
         for widget in self.GetChildren():
             if widget.ClassName == 'wxTextCtrl':
-                if widget.Name in ['width_si', 'temperature_C']:
+                if widget.Name in ['width_si', 'time', 'temperature_C']:
                     self.Parent.analysis.config[widget.Name] = float(
                         widget.Value.replace(',', '.'))
                 else:
