@@ -31,10 +31,12 @@ pefile = "^2019.4.18"
 tornado = "^6.0.4"
 pypiwin32 = "^223"
 
-# [tool.poetry.scripts]
 jupyter = "^1.0.0"
 pywin32 = "^300"
 pywinpty = "^0.5.7"
+
+[tool.poetry.scripts]
+build_mpt = "build_mpt:main"
 # build = 'pyinstaller --clean -D --noconfirm -w --add-data="README.md;." --add-data="LICENSE;." --add-data="mpt/assets/*;./mpt/assets/" -n "MPT_Analysis" -i ".\mpt\assets\icon.ico" app.py'
 
 [build-system]
