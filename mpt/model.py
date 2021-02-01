@@ -205,8 +205,12 @@ class Analysis():
             pd.DataFrame -- Pandas DataFrame containing analysis MSD.
         """
         # TODO: Raise error if anything goes wrong
-        time_step = 1 / self.config.fps
-        max_time = self.config.total_frames / self.config.fps
+        # time_step = 1 / self.config.fps
+        # max_time = self.config.total_frames / self.config.fps
+        # tau = np.linspace(time_step, max_time, int(self.config.total_frames))
+
+        time_step = self.config.delta_t / 1000
+        max_time = self.config.total_frames * time_step
         tau = np.linspace(time_step, max_time, int(self.config.total_frames))
 
         msd = pd.DataFrame()
@@ -233,6 +237,7 @@ class Analysis():
             i += 1
 
         tau = tau[:int(self.config.min_frames)]
+        # tau = tau[tau < self.config.time]
 
         msd.insert(0, "tau", tau, True)
         msd = msd[msd[msd.columns[0]] < self.config.time]
