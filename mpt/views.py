@@ -362,7 +362,7 @@ class analysisWindow (wx.Dialog):
             self, id=wx.ID_ANY, value=locale.format_string(
                 '%.2f', parent.analysis.config.delta_t),
             pos=wx.DefaultPosition, size=wx.Size(48, -1),
-            style=wx.TE_CENTER, name="dt")
+            style=wx.TE_CENTER, name="delta_t")
         sz_config_2.Add(
             self.txt_delta_t, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
@@ -504,7 +504,8 @@ class analysisWindow (wx.Dialog):
                     self.Parent.analysis.config[widget.Name] = float(
                         widget.Value.replace(',', '.'))
                 else:
-                    self.Parent.analysis.config[widget.Name] = widget.Value
+                    self.Parent.analysis.config[widget.Name] = int(
+                        widget.Value)
 
     def on_save_analysis(self, event):
         self.Parent.statusBar.SetStatusText("Saving changes...")
