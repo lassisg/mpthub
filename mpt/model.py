@@ -209,8 +209,8 @@ class Analysis():
         # max_time = self.config.total_frames / self.config.fps
         # tau = np.linspace(time_step, max_time, int(self.config.total_frames))
 
-        time_step = self.config.delta_t / 1000
-        max_time = self.config.total_frames * time_step
+        time_step = float(self.config.delta_t) / 1000
+        max_time = int(self.config.total_frames) * time_step
         tau = np.linspace(time_step, max_time, int(self.config.total_frames))
 
         msd = pd.DataFrame()
@@ -222,7 +222,8 @@ class Analysis():
             parent.statusBar.SetStatusText(
                 f"Computing MSD for trajectory {trajectory} of file {file}...")
 
-            pixel_size = self.config.width_px / self.config.width_si
+            pixel_size = int(self.config.width_px) / \
+                float(self.config.width_si)
             frames = len(trajectory_data)
             t = tau[:frames]
             xy = trajectory_data.values
@@ -240,7 +241,7 @@ class Analysis():
         # tau = tau[tau < self.config.time]
 
         msd.insert(0, "tau", tau, True)
-        msd = msd[msd[msd.columns[0]] < self.config.time]
+        msd = msd[msd[msd.columns[0]] < float(self.config.time)]
 
         msd.name = "MSD"
         msd.set_index('tau', inplace=True)
