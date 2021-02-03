@@ -335,20 +335,36 @@ class analysisWindow (wx.Dialog):
         sz_config_2 = wx.BoxSizer(wx.HORIZONTAL)
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
 
-        self.lbl_fps = wx.StaticText(
-            self, wx.ID_ANY, u"FPS",
-            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
-        self.lbl_fps.Wrap(-1)
-        sz_config_2.Add(
-            self.lbl_fps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        # self.lbl_fps = wx.StaticText(
+        #     self, wx.ID_ANY, u"FPS",
+        #     wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
+        # self.lbl_fps.Wrap(-1)
+        # sz_config_2.Add(
+        #     self.lbl_fps, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
 
-        self.txt_fps = wx.TextCtrl(
-            self, id=wx.ID_ANY,
-            value=f"{int(parent.analysis.config.fps)}",
-            pos=wx.DefaultPosition, size=wx.Size(48, -1),
-            style=wx.TE_CENTER, name="fps")
+        # self.txt_fps = wx.TextCtrl(
+        #     self, id=wx.ID_ANY,
+        #     value=f"{int(parent.analysis.config.fps)}",
+        #     pos=wx.DefaultPosition, size=wx.Size(48, -1),
+        #     style=wx.TE_CENTER, name="fps")
+        # sz_config_2.Add(
+        #     self.txt_fps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        # sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
+
+        self.lbl_delta_t = wx.StaticText(
+            self, wx.ID_ANY, f"{chr(916)}t (ms)",
+            wx.DefaultPosition, wx.Size(90, -1), wx.ALIGN_RIGHT)
+        self.lbl_delta_t.Wrap(-1)
         sz_config_2.Add(
-            self.txt_fps, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+            self.lbl_delta_t, 1, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+
+        self.txt_delta_t = wx.TextCtrl(
+            self, id=wx.ID_ANY, value=locale.format_string(
+                '%.2f', parent.analysis.config.delta_t),
+            pos=wx.DefaultPosition, size=wx.Size(48, -1),
+            style=wx.TE_CENTER, name="delta_t")
+        sz_config_2.Add(
+            self.txt_delta_t, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
         sz_config_2.Add((0, 0), 1, wx.EXPAND, 5)
 
         self.lbl_frames = wx.StaticText(
@@ -483,11 +499,13 @@ class analysisWindow (wx.Dialog):
     def config_update(self):
         for widget in self.GetChildren():
             if widget.ClassName == 'wxTextCtrl':
-                if widget.Name in ['width_si', 'time', 'temperature_C']:
+                if widget.Name in [
+                        'width_si', 'time', 'temperature_C', 'delta_t']:
                     self.Parent.analysis.config[widget.Name] = float(
                         widget.Value.replace(',', '.'))
                 else:
-                    self.Parent.analysis.config[widget.Name] = widget.Value
+                    self.Parent.analysis.config[widget.Name] = int(
+                        widget.Value)
 
     def on_save_analysis(self, event):
         self.Parent.statusBar.SetStatusText("Saving changes...")

@@ -34,6 +34,7 @@ class Settings():
         self.DEFAULT_P_SIZE = 200
         self.DEFAULT_MIN_FRAMES = 590
         self.DEFAULT_FPS = 30
+        self.DEFAULT_DELTA_T = 33.00
         self.DEFAULT_TOTAL_FRAMES = 606
         self.DEFAULT_WIDTH_PX = 512
         self.DEFAULT_WIDTH_SI = 160.00

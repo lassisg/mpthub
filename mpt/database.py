@@ -44,6 +44,7 @@ def persist() -> str:
         'p_size': [settings.DEFAULT_P_SIZE],
         'min_frames': [settings.DEFAULT_MIN_FRAMES],
         'fps': [settings.DEFAULT_FPS],
+        'delta_t': [settings.DEFAULT_DELTA_T],
         'total_frames': [settings.DEFAULT_TOTAL_FRAMES],
         'width_px': [settings.DEFAULT_WIDTH_PX],
         'width_si': [settings.DEFAULT_WIDTH_SI],
