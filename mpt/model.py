@@ -186,7 +186,7 @@ class Analysis():
             valid_trajectories_data, ignore_index=True)
 
         return len(
-            valid_trajectories_data.groupby('Trajectory')['Trajectory'])
+            valid_trajectories_data.groupby('Trajectory')['Trajectory']), i
 
     def prepare_for_track_py(self, data_in, i):
         data_out = data_in.copy()
