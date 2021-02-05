@@ -764,14 +764,10 @@ class Report():
         characterization_sheet.write('D4', 'Diffusive')
         characterization_sheet.write('D5', 'Active')
 
-        # ---------------------------- SLOPE
+        # -------------------------------------------------------- SLOPE and R2
         import string
         import itertools
-
-        characterization_sheet.write(
-            'B1', 'Slopes (Excel)', header_format)
         min_row = 2
-        # max_row = min_row + len(msd)
         total_trajectories = len(msd.columns)-1
 
         column_list = list(
@@ -780,17 +776,18 @@ class Report():
                                 string.ascii_uppercase, repeat=2))
                             ))[1:total_trajectories+1]
 
+        # --------------------------------------------------------------- SLOPE
+        characterization_sheet.write(
+            'B1', 'Slopes (Excel)', header_format)
         excel_slopes = [f'B{x+min_row}' for x in list(
             range(total_trajectories))]
-
         slope_formulas = [
             f'=SLOPE(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
 
         for cell, formula in zip(excel_slopes, slope_formulas):
             characterization_sheet.write_formula(cell, formula)
-        # # =SLOPE(Data!B3:B302;Data!A3:A302)
 
-        # # ---------------------------- R2
+        # ------------------------------------------------------------------ R2
         characterization_sheet.write(
             'C1', f'R{chr(178)} (Excel)', header_format)
         excel_r2 = [f'C{x+min_row}' for x in list(
@@ -800,12 +797,7 @@ class Report():
 
         for cell, formula in zip(excel_r2, r2_formulas):
             characterization_sheet.write_formula(cell, formula)
-        # excel_r2 = [f'C{x+1}' for x in list(range(1, len(msd.columns)))]
-        # # =RSQ(Data!B3:B302;Data!A3:A302)
-        # characterization_sheet.write_formula('C2', '=RSQ(Data!B3:B305,Data!A3:A305)')
-        # # characterization_sheet.write_formula('C2', '=RQUAD(Data!B3:B305;Data!A3:A305)')
-        # # characterization_sheet.write_formula('C2', immobile_formula, count_format)
-        # ----------------------------
+        # ---------------------------------------------------------------------
 
         immobile_low = locale.format_string(
             "%.1f", self.config.immobile['min'])
