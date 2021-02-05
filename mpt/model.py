@@ -93,6 +93,7 @@ class Analysis():
         self.valid_trajectories = self.trajectories.copy()
 
         parent.statusBar.SetStatusText("Loading report(s)...")
+        i = 0
         for file in file_list:
             if not self.summary.empty:
                 masked_df = self.summary.full_path == file
@@ -111,8 +112,10 @@ class Analysis():
                 parent.statusBar.SetStatusText(
                     f"Importing file {file_name}...")
                 trajectories = len(raw_data.groupby("Trajectory").count())
-                valid = self.get_valid_trajectories(
-                    parent, file_name, raw_data)
+                # valid = self.get_valid_trajectories(
+                #     parent, file_name, raw_data)
+                valid, i = self.get_valid_trajectories(
+                    parent, file_name, raw_data, i)
 
                 self.summary = self.summary.append({
                     'full_path': full_path, 'file_name': file_name,
@@ -163,9 +166,13 @@ class Analysis():
 
     def get_valid_trajectories(self, parent,
                                file_name: str,
-                               data_in: pd.DataFrame) -> int:
+                               data_in: pd.DataFrame,
+                               i: int) -> int:
         parent.statusBar.SetStatusText(
             f"Filtering valid trajectories on {file_name}...")
+
+        data_in, i = self.prepare_for_track_py(data_in, i)
+
         valid_trajectories_data = data_in.groupby('Trajectory').filter(
             lambda x: len(x['Trajectory']) > self.config.min_frames)
 
@@ -180,6 +187,18 @@ class Analysis():
 
         return len(
             valid_trajectories_data.groupby('Trajectory')['Trajectory'])
+
+    def prepare_for_track_py(self, data_in, i):
+        data_out = data_in.copy()
+        original_particle = data_in.groupby(
+            ['Trajectory'], as_index=False).count()['Trajectory'].values
+        new_particle_ref = dict(
+            zip(original_particle, range(i, len(original_particle) + i)))
+
+        data_out['Trajectory'] = data_in['Trajectory'].map(new_particle_ref)
+        i += len(original_particle)
+
+        return data_out, i
 
     def start(self, parent):
         parent.statusBar.SetStatusText(
