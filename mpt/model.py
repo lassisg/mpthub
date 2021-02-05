@@ -4,6 +4,7 @@ from pandas import ExcelWriter as xls
 import numpy as np
 import os
 import locale
+import trackpy as tp
 
 
 class General():
@@ -184,7 +185,8 @@ class Analysis():
         parent.statusBar.SetStatusText(
             "Computing MSD (mean squared displacement)...")
 
-        self.msd = self.compute_msd(parent)
+        # self.msd = self.compute_msd(parent)
+        self.msd = self.compute_msd_tp(parent)
         self.msd_log = self.compute_msd_log(self.msd)
 
         parent.statusBar.SetStatusText(
@@ -193,9 +195,46 @@ class Analysis():
 
         parent.statusBar.SetStatusText(
             "Adjusting data labels...")
-        self.msd = self.rename_columns(self.msd)
-        self.msd_log = self.rename_columns(self.msd_log)
-        self.deff = self.rename_columns(self.deff)
+        self.msd = self.rename_columns(self.msd, "MSD")
+        self.msd_log = self.rename_columns(self.msd_log, "MSD-LOG")
+        self.deff = self.rename_columns(self.deff, "Deff")
+
+    def compute_msd_tp(self, parent):
+
+        full_data_tp = self.trajectories.copy()
+        full_data_tp.rename(columns={"Trajectory": "particle",
+                                     "Frame": "frame"}, inplace=True)
+
+        full_valid_data = tp.filter_stubs(full_data_tp,
+                                          self.config.min_frames+1)
+        self.valid_trajectories = full_valid_data.copy()
+        self.valid_trajectories.rename(columns={"particle": "Trajectory",
+                                                "frame": "Frame"},
+                                       inplace=True)
+
+        max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
+        fps = self.config.delta_t * self.config.total_frames
+        msd = tp.imsd(traj=full_valid_data,
+                      mpp=self.config.width_si/self.config.width_px,
+                      fps=fps,
+                      max_lagtime=max_lagtime)
+        # msd.name = "MSD"
+        # emsd = tp.emsd(traj=full_valid_data,
+        #                mpp=self.config.width_si/self.config.width_px,
+        #                fps=fps,
+        #                max_lagtime=max_lagtime)
+
+        msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        # msd.columns = [f'MSD {col}' for col in msd.columns.values]
+        msd.columns = [f'MSD {col}' for col in range(1, len(msd.columns)+1)]
+
+        msd['MSD mean'] = msd.mean(axis=1)
+        # msd['<EMSD>'] = emsd.values
+
+        msd = msd.iloc[:max_lagtime, :]
+        # emsd = emsd.iloc[:max_lagtime]
+
+        return msd
 
     def compute_msd(self, parent) -> pd.DataFrame:
         """Computes the Mean-squared Displacement (MSD).
@@ -306,7 +345,7 @@ class Analysis():
 
         return deff
 
-    def rename_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def rename_columns(self, data: pd.DataFrame, header) -> pd.DataFrame:
         """Rename Pandas DataFrame columns to meaningfull names according \
             with the input's Pandas DataFrame name.
 
@@ -318,7 +357,7 @@ class Analysis():
             pd.DataFrame -- Input Pandas DataFrame with renamed \
                 columns. No data changed.
         """
-        header = data.name
+        # header = data.name
         unit = f"{chr(956)}m{chr(178)}"
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
@@ -384,6 +423,7 @@ class Report():
 
     def make_chart(self, workbook: xls.book,
                    data: pd.DataFrame,
+                   data_name: str,
                    start_row: int) -> None:
         # TODO: Make function generic so it can be used for any chart
         """Create a chart for individual particle analysis.
@@ -423,24 +463,29 @@ class Report():
 
         # Add a chart title, style and some axis labels.
         chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Add a chart title, style and some axis labels.
         mean_chart.set_title(
-            {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
+            # {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
+            {'name': f'Ensemble Data - <{data_name}> vs. Time Scale'})
         mean_chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        mean_chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         mean_chart.set_legend({'none': True})
         mean_chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
+        # mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
+        mean_time_chart = workbook.add_chartsheet(f'<{data_name}> vs Time')
         mean_time_chart.set_chart(mean_chart)
 
         # Insert the chart into the worksheet.
-        time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
 
     def export_individual_particle_analysis(self,
@@ -478,26 +523,29 @@ class Report():
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{msd.name} Data'
+        msd_title = 'MSD Data'
+        # msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, len(msd.columns),
                                msd_title, header_format)
 
-        deff_title = f'{deff.name} Data'
+        deff_title = 'Deff Data'
+        # deff_title = f'{deff.name} Data'
         data_sheet.merge_range(len(msd)+3,
                                0,
                                len(msd) + 3,
                                len(msd.columns),
                                deff_title, header_format)
 
-        self.make_chart(workbook, msd, 1)
-        self.make_chart(workbook, deff, len(msd)+4)
+        self.make_chart(workbook, msd, "MSD", 1)
+        self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
         workbook.close()
         writer.save()
 
     def make_chart_LOG(self, workbook: xls.book,
                        data: pd.DataFrame,
+                       data_name: str,
                        start_row: int) -> None:
         """Creates a log-log plot from given data.
 
@@ -513,7 +561,8 @@ class Report():
 
         # Configure the series of the chart from the dataframe data.
         trendLine = False
-        if data.name in ("MSD", "MSD-LOG"):
+        # if data.name in ("MSD", "MSD-LOG"):
+        if data_name in ("MSD", "MSD-LOG"):
             trendLine = {
                 'type': 'linear',
                 'display_equation': True,
@@ -575,12 +624,14 @@ class Report():
 
         # Add a chart title, style and some axis labels.
         chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
 
     def export_transport_mode(self, path: str, msd: pd.DataFrame):
@@ -617,7 +668,8 @@ class Report():
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{msd.name} Data'
+        msd_title = 'MSD Data'
+        # msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, columns,
                                msd_title, header_format)
@@ -679,7 +731,7 @@ class Report():
             num_format)
         # ----------------------------
 
-        self.make_chart_LOG(workbook, msd, 1)
+        self.make_chart_LOG(workbook, msd, "MSD", 1)
 
         slope_data[0].to_excel(writer, index=False,
                                sheet_name='Characterization')
@@ -695,22 +747,65 @@ class Report():
         header_format = workbook.add_format(
             {'align': 'center', 'bold': 1})
 
-        data_sheet = writer.sheets['Characterization']
-        data_sheet.set_column(0, 0, 4, header_format)
-        data_sheet.set_column(0, 0, 12, sheet_format)
-        data_sheet.set_column(3, 3, 18, sheet_format)
-        data_sheet.set_column(4, 4, 12, sheet_format)
-        data_sheet.set_column(5, 5, 7, sheet_format)
+        characterization_sheet = writer.sheets['Characterization']
+        characterization_sheet.set_column(0, 0, 4, header_format)
+        characterization_sheet.set_column(0, 0, 12, sheet_format)
+        characterization_sheet.set_column(3, 3, 18, sheet_format)
+        characterization_sheet.set_column(4, 4, 12, sheet_format)
+        characterization_sheet.set_column(5, 5, 7, sheet_format)
 
-        data_sheet.write('A1', 'Slopes', header_format)
-        data_sheet.write('D1', 'Transport Mode', header_format)
-        data_sheet.write('E1', 'Slope', header_format)
-        data_sheet.write('F1', 'Count', header_format)
+        characterization_sheet.write('A1', 'Slopes', header_format)
+        characterization_sheet.write('D1', 'Transport Mode', header_format)
+        characterization_sheet.write('E1', 'Slope', header_format)
+        characterization_sheet.write('F1', 'Count', header_format)
 
-        data_sheet.write('D2', 'Immobile')
-        data_sheet.write('D3', 'Sub-diffusive')
-        data_sheet.write('D4', 'Diffusive')
-        data_sheet.write('D5', 'Active')
+        characterization_sheet.write('D2', 'Immobile')
+        characterization_sheet.write('D3', 'Sub-diffusive')
+        characterization_sheet.write('D4', 'Diffusive')
+        characterization_sheet.write('D5', 'Active')
+
+        # ---------------------------- SLOPE
+        import string
+        import itertools
+
+        characterization_sheet.write(
+            'B1', 'Slopes (Excel)', header_format)
+        min_row = 2
+        # max_row = min_row + len(msd)
+        total_trajectories = len(msd.columns)-1
+
+        column_list = list(
+            itertools.chain(string.ascii_uppercase,
+                            (''.join(pair) for pair in itertools.product(
+                                string.ascii_uppercase, repeat=2))
+                            ))[1:total_trajectories+1]
+
+        excel_slopes = [f'B{x+min_row}' for x in list(
+            range(total_trajectories))]
+
+        slope_formulas = [
+            f'=SLOPE(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
+
+        for cell, formula in zip(excel_slopes, slope_formulas):
+            characterization_sheet.write_formula(cell, formula)
+        # # =SLOPE(Data!B3:B302;Data!A3:A302)
+
+        # # ---------------------------- R2
+        characterization_sheet.write(
+            'C1', f'R{chr(178)} (Excel)', header_format)
+        excel_r2 = [f'C{x+min_row}' for x in list(
+            range(total_trajectories))]
+        r2_formulas = [
+            f'=RSQ(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
+
+        for cell, formula in zip(excel_r2, r2_formulas):
+            characterization_sheet.write_formula(cell, formula)
+        # excel_r2 = [f'C{x+1}' for x in list(range(1, len(msd.columns)))]
+        # # =RSQ(Data!B3:B302;Data!A3:A302)
+        # characterization_sheet.write_formula('C2', '=RSQ(Data!B3:B305,Data!A3:A305)')
+        # # characterization_sheet.write_formula('C2', '=RQUAD(Data!B3:B305;Data!A3:A305)')
+        # # characterization_sheet.write_formula('C2', immobile_formula, count_format)
+        # ----------------------------
 
         immobile_low = locale.format_string(
             "%.1f", self.config.immobile['min'])
@@ -727,13 +822,13 @@ class Report():
         active_low = locale.format_string(
             "%.1f", self.config.active['min'])
 
-        data_sheet.write(
+        characterization_sheet.write(
             'E2', f'{str(immobile_low)}-{str(immobile_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E3', f'{str(subdiffusive_low)}-{str(subdiffusive_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E5', f'{str(active_low)}+')
 
         immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_low}")'
@@ -743,22 +838,26 @@ class Report():
         diffusive_formula += f'A:A,"<{active_low}")'
         active_formula = f'=COUNTIF(A:A,">={active_low}")'
 
-        data_sheet.write_formula('F2', immobile_formula, count_format)
-        data_sheet.write_formula('F3', subdiffusive_formula, count_format)
-        data_sheet.write_formula('F4', diffusive_formula, count_format)
-        data_sheet.write_formula('F5', active_formula, count_format)
+        characterization_sheet.write_formula(
+            'F2', immobile_formula, count_format)
+        characterization_sheet.write_formula(
+            'F3', subdiffusive_formula, count_format)
+        characterization_sheet.write_formula(
+            'F4', diffusive_formula, count_format)
+        characterization_sheet.write_formula(
+            'F5', active_formula, count_format)
 
         # Statistical info
         summary_format = workbook.add_format(
             {'align': 'right',
              'valign': 'vcenter'})
-        data_sheet.write('D8', '<slope> = ', summary_format)
-        data_sheet.write('D9', 'N = ', summary_format)
-        data_sheet.write('D10', 'STD = ', summary_format)
+        characterization_sheet.write('D8', '<slope> = ', summary_format)
+        characterization_sheet.write('D9', 'N = ', summary_format)
+        characterization_sheet.write('D10', 'STD = ', summary_format)
 
-        data_sheet.write_formula('E8', '=AVERAGE(A:A)')
-        data_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
-        data_sheet.write_formula('E10', '=STDEV(A:A)')
+        characterization_sheet.write_formula('E8', '=AVERAGE(A:A)')
+        characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
+        characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
         workbook.close()
         writer.save()
