@@ -421,7 +421,7 @@ class Report():
                                         np.asarray(dataIn[column]), 1)
                              for column in dataIn.columns[:-1]])
 
-    def make_chart(self, workbook: xls.book,
+    def make_chart(self, workbook: xls,
                    data: pd.DataFrame,
                    data_name: str,
                    start_row: int) -> None:
@@ -540,10 +540,10 @@ class Report():
         self.make_chart(workbook, msd, "MSD", 1)
         self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
-        workbook.close()
+        # workbook.close()
         writer.save()
 
-    def make_chart_LOG(self, workbook: xls.book,
+    def make_chart_LOG(self, workbook: xls,
                        data: pd.DataFrame,
                        data_name: str,
                        start_row: int) -> None:
@@ -851,7 +851,7 @@ class Report():
         characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        workbook.close()
+        # workbook.close()
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
@@ -1162,5 +1162,5 @@ class Report():
         #                             summary_val_1d_format)
         # --------------------------------------------------------------------
 
-        workbook.close()
+        # workbook.close()
         writer.save()
