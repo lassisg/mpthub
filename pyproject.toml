@@ -19,6 +19,7 @@ dash = "^1.17.0"
 dash-bootstrap-components = "^0.10.7"
 briefcase = "^0.2.10"
 trackpy = "^0.4.2"
+setuptools = "^53.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
