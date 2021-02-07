@@ -11,11 +11,10 @@
 import wx
 import wx.xrc
 import wx.dataview
+import os
+import locale
 import mpt
 from .settings import Settings
-import os
-import time
-import locale
 
 
 class mainWindow (wx.Frame):
@@ -140,6 +139,7 @@ class mainWindow (wx.Frame):
 
         self.update_list_view()
         # TODO: Find a way to avoid using text as parameters
+
         self.toggle_menu_item(
             self.MenuBar.FindMenuItem("Edit", "Start analysis"),
             not self.analysis.summary.empty)
@@ -162,54 +162,57 @@ class mainWindow (wx.Frame):
 
             self.statusBar.SetStatusText("File(s) selected...")
             file_list = fileDialog.GetPaths()
-            self.analysis.load_reports(self, file_list)
+            self.analysis.load_reports(file_list)
+            # ------------------------------------------------------------ TEST
+            self.statusBar.SetStatusText("Filtering valid trajectories...")
+            self.analysis.get_valid_trajectories()
+            self.statusBar.SetStatusText("Creating summary...")
+            self.analysis.summarize()
+            # -----------------------------------------------------------------
 
             self.general.config.open_folder = fileDialog.GetDirectory()
-            self.general.update(self.general.config)
+            # self.general.update(self.general.config)
+            self.general.update()
             self.statusBar.SetStatusText("Data fetched!")
 
     def update_summary(self) -> None:
+        self.statusBar.SetStatusText("Filtering valid trajectories...")
+        self.analysis.get_valid_trajectories()
         self.SetStatusText("Updating summary...")
-        self.analysis.update_valid_trajectories(self)
+        # self.analysis.update_valid_trajectories(self)
+        self.analysis.summarize()
         self.update_list_view()
         self.SetStatusText("Summary updated!")
 
     def update_list_view(self) -> None:
-        total_trajectories = 0
-        total_valid_trajectories = 0
+        summary_total = self.analysis.summary.iloc[:, 1:].sum()
 
         self.dataListView.DeleteAllItems()
         for index, report in self.analysis.summary.iterrows():
-            total_trajectories += report.trajectories
-            total_valid_trajectories += report.valid
             self.dataListView.AppendItem([False,
-                                          report.full_path,
-                                          str(int(report.trajectories)),
-                                          str(int(report.valid))])
+                                          report.file_name,
+                                          str(report.trajectories),
+                                          str(report.valid)])
 
         self.dataListView.AppendItem([False,
                                       "Total",
-                                      str(int(total_trajectories)),
-                                      str(int(total_valid_trajectories))])
+                                      str(summary_total.trajectories),
+                                      str(summary_total.valid)])
 
     def toggle_menu_item(self, menu_item_id: int, enable: bool) -> None:
         self.MenuBar.FindItem(menu_item_id)[0].Enable(enable)
 
     def on_mnuAnalysis(self, event):
-        self.statusBar.SetStatusText(
-            "Starting multiple particle analysis...")
+        self.statusBar.SetStatusText("Starting trajectory analysis...")
 
-        start = time.time()
-        print(f"Start time: {start}")
-        self.analysis.start(self)
-        end = time.time()
-        print(f"End time: {end}")
-        print(f"Elapsed time: {end - start}")
+        wx.BeginBusyCursor()
+        self.analysis.start()
+        wx.EndBusyCursor()
 
         self.toggle_menu_item(
             self.MenuBar.FindMenuItem("File", "Save reports"),
             not self.analysis.msd.empty)
-        self.statusBar.SetStatusText("Analysis complete...")
+        self.statusBar.SetStatusText("Trajectory analysis complete...")
 
     def on_mnuExport(self, event):
 
@@ -222,7 +225,7 @@ class mainWindow (wx.Frame):
                 self.statusBar.SetStatusText("Canceling report saving...")
 
             self.general.config.save_folder = saveDialog.GetPath()
-            self.general.update(self.general.config)
+            self.general.update()
             self.statusBar.SetStatusText(
                 f"Saving reports to {self.general.config.save_folder}...")
             self.analysis.export(self)
@@ -261,11 +264,11 @@ class mainWindow (wx.Frame):
         self.dataListView.DeleteAllItems()
 
     def on_mnuDiffusivity(self, event) -> None:
-        self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
+        # self.statusBar.SetStatusText("Open dialog for diffusivity setup...")
         diffusivityWindow(self).ShowModal()
 
     def on_mnuGeneral(self, event) -> None:
-        self.statusBar.SetStatusText("Open dialog for general setup...")
+        # self.statusBar.SetStatusText("Open dialog for general setup...")
         analysisWindow(self).ShowModal()
 
         if self.summary_is_outdated:
@@ -278,7 +281,7 @@ class mainWindow (wx.Frame):
         self.statusBar.SetStatusText("Open About window...")
 
     def on_close(self, event) -> None:
-        self.analysis.clear_trajectories()
+        # self.analysis.clear_trajectories()
         self.Destroy()
 
 
@@ -488,8 +491,6 @@ class analysisWindow (wx.Dialog):
         self.ctrl_buttonSave.Bind(wx.EVT_BUTTON, self.on_save_analysis)
         self.ctrl_buttonCancel.Bind(wx.EVT_BUTTON, self.on_cancel_analysis)
 
-    # Virtual event handlers, overide them in your derived class
-
     def filter_changed(self, event):
         previous_filter = int(event.GetEventObject().Label)
         new_filter = int(event.GetEventObject().Value)
@@ -510,7 +511,7 @@ class analysisWindow (wx.Dialog):
     def on_save_analysis(self, event):
         self.Parent.statusBar.SetStatusText("Saving changes...")
         self.config_update()
-        self.Parent.analysis.update(self.Parent.analysis.config)
+        self.Parent.analysis.update()
         self.Parent.statusBar.SetStatusText("Changes saved.")
 
         self.Parent.summary_is_outdated = (
@@ -723,7 +724,6 @@ class diffusivityWindow (wx.Dialog):
     def __del__(self):
         pass
 
-    # Virtual event handlers, overide them in your derived class
     def on_subdiffusive_range_change(self, event):
         self.Parent.diffusivity.config.sub_diffusive[0] = float(
             self.txt_subdiffusive_min.Value.replace(',', '.'))

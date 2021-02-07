@@ -6,6 +6,8 @@ import os
 import locale
 import trackpy as tp
 
+conn = db.connect()
+
 
 class General():
 
@@ -14,21 +16,13 @@ class General():
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a Series with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a Series with data from database."""
         config_df = pd.read_sql_table("app_config", con=conn)
         self.config = config_df.iloc[0]
 
-    def update(self, new_config: pd.Series) -> None:
-        """Updates diffusivity ranges data on database.
-
-        Arguments:
-            new_config {pd.Series} -- New data to be updated in \
-                diffusivity table.
-        """
-        conn = db.connect()
-        new_config_df = new_config.to_frame(0).T
+    def update(self) -> None:
+        """Updates diffusivity ranges data on database."""
+        new_config_df = self.config.to_frame(0).T
         new_config_df.to_sql('app_config', con=conn,
                              index=False, if_exists='replace')
 
@@ -36,25 +30,16 @@ class General():
 class Diffusivity:
 
     def __init__(self) -> None:
-        # print("Initializing Diffusivity configuration object...")
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a DataFrame with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a DataFrame with data from database."""
         self.config = pd.read_sql_table("diffusivity", con=conn)
 
     def update(self, new_config: pd.DataFrame) -> None:
-        """Updates diffusivity ranges data on database.
-
-        Arguments:
-            new_config {pd.DataFrame} -- New data to be updated in \
-                diffusivity table.
-        """
-        conn = db.connect()
-        new_config.to_sql('diffusivity', con=conn,
-                          index=False, if_exists='replace')
+        """Updates diffusivity ranges data on database."""
+        self.config.to_sql('diffusivity', con=conn,
+                           index=False, if_exists='replace')
 
 
 class Analysis():
@@ -64,24 +49,16 @@ class Analysis():
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a Series with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a Series with data from database."""
         self.config = pd.read_sql_table("analysis_config", con=conn).squeeze()
 
-    def update(self, new_config: pd.Series) -> None:
-        """Updates analysis_config ranges data on database.
-
-        Arguments:
-            new_config {pd.Series} -- New data to be updated in \
-                analysis_config table.
-        """
-        conn = db.connect()
-        new_config_df = new_config.to_frame(0).T
+    def update(self) -> None:
+        """Updates analysis_config ranges data on database."""
+        new_config_df = self.config.to_frame(0).T
         new_config_df.to_sql('analysis_config', con=conn,
                              index=False, if_exists='replace')
 
-    def load_reports(self, parent, file_list: list) -> None:
+    def load_reports(self, file_list: list) -> None:
         """Loads '.csv' files into DB table 'trajectories' after filtering \
             by valid trajectories.
 
@@ -89,10 +66,9 @@ class Analysis():
             file_list {list} -- File path list to be imported.
         """
         self.trajectories = pd.DataFrame(
-            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
+            columns=['file_name', 'particle', 'frame', 'x', 'y'])
         self.valid_trajectories = self.trajectories.copy()
 
-        parent.statusBar.SetStatusText("Loading report(s)...")
         i = 0
         for file in file_list:
             if not self.summary.empty:
@@ -104,89 +80,44 @@ class Analysis():
             file_name, _ = os.path.splitext(os.path.basename(file))
             if set(['Trajectory', 'Frame', 'x', 'y']).issubset(
                     full_data.columns):
-                parent.statusBar.SetStatusText(f"File {file_name} ok!")
+
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
-
-                full_path = file
-
-                parent.statusBar.SetStatusText(
-                    f"Importing file {file_name}...")
-                trajectories = len(raw_data.groupby("Trajectory").count())
-                # valid = self.get_valid_trajectories(
-                #     parent, file_name, raw_data)
-                valid, i = self.get_valid_trajectories(
-                    parent, file_name, raw_data, i)
-
-                self.summary = self.summary.append({
-                    'full_path': full_path, 'file_name': file_name,
-                    'trajectories': trajectories, 'valid': valid},
-                    ignore_index=True)
-            else:
-                parent.statusBar.SetStatusText("Wrong file format.")
-                parent.statusBar.SetStatusText(
-                    f"Aborting import of file: '{file_name}'")
-
-        # if not self.trajectories.empty:
-        self.add_trajectories(self.trajectories)
-
-    def add_trajectories(self, data):
-        conn = db.connect()
-        data.to_sql('trajectories', con=conn,
-                    index=False, if_exists='replace')
+                raw_data, i = self.prepare_for_track_py(raw_data, i)
+                raw_data.insert(loc=0, column='file_name', value=file_name)
+                self.trajectories = self.trajectories.append(
+                    raw_data, ignore_index=True)
 
     def clear_summary(self):
         self.summary.drop(
             self.summary.index, inplace=True)
 
-    def clear_trajectories(self) -> None:
-        conn = db.connect()
-        empty_data = pd.DataFrame(
-            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
-        empty_data.to_sql('trajectories', con=conn,
-                          index=False, if_exists='replace')
+    def get_valid_trajectories(self) -> None:
+        grouped_data = self.trajectories.groupby(
+            ['file_name', 'particle'], as_index=False)['frame'].count()
 
-    def update_valid_trajectories(self, parent):
-        summary_files = sorted(
-            set(self.trajectories.loc[:, 'file_name'].values))
+        valid_grouped_data = grouped_data[grouped_data['frame']
+                                          >= int(self.config.min_frames)]
+        self.valid_trajectories = self.trajectories[
+            self.trajectories['particle'].isin(valid_grouped_data['particle'])]
 
-        for file_name in summary_files:
-            parent.statusBar.SetStatusText(
-                f"Updating valid trajectories on {file_name}...")
+    def summarize(self) -> None:
+        particles_per_file = (
+            self.trajectories.groupby('file_name')['particle']
+            .nunique()
+            .to_frame()
+            .rename(columns={"particle": "trajectories"}))
 
-            valid_trajectories_data = self.trajectories[
-                self.trajectories['file_name'] == file_name].groupby(
-                ['file_name', 'Trajectory']).filter(
-                lambda x: len(x['Trajectory']) > self.config.min_frames)
+        valid_particles_per_file = (
+            self.valid_trajectories.groupby('file_name')['particle']
+            .nunique()
+            .to_frame()
+            .rename(columns={"particle": "valid"}))
 
-            valid_trajectories_count = len(valid_trajectories_data.groupby(
-                'Trajectory')['Trajectory'])
-
-            self.summary.loc[self.summary['file_name'] ==
-                             file_name, "valid"] = valid_trajectories_count
-
-    def get_valid_trajectories(self, parent,
-                               file_name: str,
-                               data_in: pd.DataFrame,
-                               i: int) -> int:
-        parent.statusBar.SetStatusText(
-            f"Filtering valid trajectories on {file_name}...")
-
-        data_in, i = self.prepare_for_track_py(data_in, i)
-
-        valid_trajectories_data = data_in.groupby('Trajectory').filter(
-            lambda x: len(x['Trajectory']) > self.config.min_frames)
-
-        valid_trajectories_data.insert(0, 'file_name', file_name)
-        data_in.insert(0, 'file_name', file_name)
-
-        self.trajectories = self.trajectories.append(
-            data_in, ignore_index=True)
-
-        self.valid_trajectories = self.valid_trajectories.append(
-            valid_trajectories_data, ignore_index=True)
-
-        return len(
-            valid_trajectories_data.groupby('Trajectory')['Trajectory']), i
+        self.summary = (
+            pd.concat([particles_per_file, valid_particles_per_file], axis=1)
+              .fillna(0)
+              .astype(int)
+              .reset_index())
 
     def prepare_for_track_py(self, data_in, i):
         data_out = data_in.copy()
@@ -196,153 +127,53 @@ class Analysis():
             zip(original_particle, range(i, len(original_particle) + i)))
 
         data_out['Trajectory'] = data_in['Trajectory'].map(new_particle_ref)
+
+        data_out.rename(columns={"Trajectory": "particle",
+                                 "Frame": "frame"}, inplace=True)
         i += len(original_particle)
 
         return data_out, i
 
-    def start(self, parent):
-        parent.statusBar.SetStatusText(
-            "Computing MSD (mean squared displacement)...")
+    def start(self):
+        self.compute_msd()
+        self.compute_msd_log()
+        self.compute_deff()
 
-        # self.msd = self.compute_msd(parent)
-        self.msd = self.compute_msd_tp(parent)
-        self.msd_log = self.compute_msd_log(self.msd)
-
-        parent.statusBar.SetStatusText(
-            "Computing Deff (diffusivity coefficient)...")
-        self.deff = self.compute_deff(self.msd)
-
-        parent.statusBar.SetStatusText(
-            "Adjusting data labels...")
         self.msd = self.rename_columns(self.msd, "MSD")
         self.msd_log = self.rename_columns(self.msd_log, "MSD-LOG")
         self.deff = self.rename_columns(self.deff, "Deff")
 
-    def compute_msd_tp(self, parent):
-
-        full_data_tp = self.trajectories.copy()
-        full_data_tp.rename(columns={"Trajectory": "particle",
-                                     "Frame": "frame"}, inplace=True)
-
-        full_valid_data = tp.filter_stubs(full_data_tp,
-                                          self.config.min_frames+1)
-        self.valid_trajectories = full_valid_data.copy()
-        self.valid_trajectories.rename(columns={"particle": "Trajectory",
-                                                "frame": "Frame"},
-                                       inplace=True)
+    def compute_msd(self):
 
         max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
-        fps = self.config.delta_t * self.config.total_frames
-        msd = tp.imsd(traj=full_valid_data,
-                      mpp=self.config.width_si/self.config.width_px,
-                      fps=fps,
-                      max_lagtime=max_lagtime)
+        fps = 1000 / self.config.delta_t
+        self.msd = tp.imsd(traj=self.valid_trajectories,
+                           mpp=self.config.width_si/self.config.width_px,
+                           fps=fps,
+                           max_lagtime=max_lagtime)
+
         # msd.name = "MSD"
-        # emsd = tp.emsd(traj=full_valid_data,
-        #                mpp=self.config.width_si/self.config.width_px,
-        #                fps=fps,
-        #                max_lagtime=max_lagtime)
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        self.msd.columns = [f'MSD {col}' for col in range(
+            1, len(self.msd.columns)+1)]
 
-        msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        # msd.columns = [f'MSD {col}' for col in msd.columns.values]
-        msd.columns = [f'MSD {col}' for col in range(1, len(msd.columns)+1)]
+        self.msd['MSD mean'] = self.msd.mean(axis=1)
 
-        msd['MSD mean'] = msd.mean(axis=1)
-        # msd['<EMSD>'] = emsd.values
+        self.msd = self.msd.iloc[:max_lagtime, :]
 
-        msd = msd.iloc[:max_lagtime, :]
-        # emsd = emsd.iloc[:max_lagtime]
-
-        return msd
-
-    def compute_msd(self, parent) -> pd.DataFrame:
-        """Computes the Mean-squared Displacement (MSD).
-        It is mandatory to have configuration data previously loaded.
-
-        Returns:
-            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
-        """
-        # TODO: Raise error if anything goes wrong
-        # time_step = 1 / self.config.fps
-        # max_time = self.config.total_frames / self.config.fps
-        # tau = np.linspace(time_step, max_time, int(self.config.total_frames))
-
-        time_step = float(self.config.delta_t) / 1000
-        max_time = int(self.config.total_frames) * time_step
-        tau = np.linspace(time_step, max_time, int(self.config.total_frames))
-
-        msd = pd.DataFrame()
-        trajectories_group = self.valid_trajectories.groupby(
-            ['file_name', 'Trajectory'])
-
-        i = 0
-        for (file, trajectory), trajectory_data in trajectories_group:
-            parent.statusBar.SetStatusText(
-                f"Computing MSD for trajectory {trajectory} of file {file}...")
-
-            pixel_size = int(self.config.width_px) / \
-                float(self.config.width_si)
-            frames = len(trajectory_data)
-            t = tau[:frames]
-            xy = trajectory_data.values
-
-            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
-            shifts = position["t"].index.values + 1
-            msdp = self.compute_msdp(position, shifts)
-            msdm = msdp * (1 / (pixel_size ** 2))
-            msdm = msdm[:int(self.config.min_frames)]
-            msd[i] = msdm
-
-            i += 1
-
-        tau = tau[:int(self.config.min_frames)]
-        # tau = tau[tau < self.config.time]
-
-        msd.insert(0, "tau", tau, True)
-        msd = msd[msd[msd.columns[0]] < float(self.config.time)]
-
-        msd.name = "MSD"
-        msd.set_index('tau', inplace=True)
-        msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        msd['mean'] = msd.mean(axis=1)
-
-        return msd
-
-    def compute_msdp(self, position, shifts):
-        msdp = np.zeros(shifts.size)
-        for k, shift in enumerate(shifts):
-            diffs_x = position['x'] - position['x'].shift(-shift)
-            diffs_y = position['y'] - position['y'].shift(-shift)
-            square_sum = np.square(diffs_x) + np.square(diffs_y)
-            msdp[k] = square_sum.mean()
-
-        return msdp
-
-    def compute_msd_log(self, msd: pd.DataFrame) -> pd.DataFrame:
+    def compute_msd_log(self) -> None:
         """Computes the log version of Mean-squared Displacement.
         It is mandatory that the MSD is already computed.
-
-        Arguments:
-            msd {pd.DataFrame} -- Pandas DataFrame containing analysis MSD.
-
-        Returns:
-            pd.DataFrame -- Pandas DataFrame containing MSD values in \
-                logarithm scale. Returns an empty Pandas DataFrame if \
-                MSD DataFrame is empty.
         """
-        if msd.empty:
-            return pd.DataFrame()
+        if not self.msd.empty:
+            self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
+            # msd_log.reset_index()
+            self.msd_log.set_index(
+                f'Timescale ({chr(120591)}) (s)', inplace=True)
+            self.msd_log.name = "MSD-LOG"
+            self.msd_log['mean'] = self.msd_log.mean(axis=1)
 
-        msd_log = np.log10(msd.reset_index().iloc[:, :-1])
-        # msd_log.reset_index()
-        msd_log.set_index(
-            f'Timescale ({chr(120591)}) (s)', inplace=True)
-        msd_log.name = "MSD-LOG"
-        msd_log['mean'] = msd_log.mean(axis=1)
-
-        return msd_log
-
-    def compute_deff(self, msd: pd.DataFrame) -> pd.DataFrame:
+    def compute_deff(self) -> None:
         """Calculate Diffusivity efficiency coefficient (Deff).
         It is mandatory that the Mean-squared Displacement (MSD) \
             is already computed.
@@ -355,14 +186,12 @@ class Analysis():
                 coefficients values. Returns an empty Pandas DataFrame \
                 if MSD DataFrame is empty.
         """
-        if self.msd.empty:
-            return pd.DataFrame()
+        if not self.msd.empty:
+            # return pd.DataFrame()
 
-        deff = msd.iloc[:, :-1].div((4*msd.index), axis=0)
-        deff.name = "Deff"
-        deff["mean"] = deff.mean(axis=1)
-
-        return deff
+            self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
+            # self.deff.name = "Deff"
+            self.deff["mean"] = self.deff.mean(axis=1)
 
     def rename_columns(self, data: pd.DataFrame, header) -> pd.DataFrame:
         """Rename Pandas DataFrame columns to meaningfull names according \
@@ -398,12 +227,12 @@ class Analysis():
             parent.general.config.save_folder, self.msd, self.deff)
 
         parent.statusBar.SetStatusText(
-            "Exporting transport mode sheet...")
+            "Exporting 'Transport Mode Characterization' report...")
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
         parent.statusBar.SetStatusText(
-            "Exporting Einstein-Stokes sheet...")
+            "Exporting 'Stokes-Einstein' report...")
 
         report_data = {'deff': self.deff.iloc[:, -1].mean(),
                        'p_size': self.config.p_size,
@@ -559,7 +388,6 @@ class Report():
         self.make_chart(workbook, msd, "MSD", 1)
         self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
-        # workbook.close()
         writer.save()
 
     def make_chart_LOG(self, workbook: xls,
@@ -601,17 +429,6 @@ class Report():
                 'trendline': trendLine,
             })
 
-        # i = 1
-        # for column in data.columns[0:-2]:
-        #     chart.add_series({
-        #         'name': ['Data', startrow, i],
-        #         'categories': ['Data', startrow+1, 0, startrow+len(data), 0],
-        #         'values': ['Data', startrow+1, i, startrow+len(data), i],
-        #         'trendline': trendLine,
-        #     })
-        #     i += 1
-
-        # Add guides series
         chart.add_series({
             'name': ['Data', 3, columns+3],
             'categories': ['Data', 4, columns+2, 5, columns+2],
@@ -870,12 +687,11 @@ class Report():
         characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        # workbook.close()
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
 
-        file_name = "Einstein-Stokes Calculations (D0_Dw & microviscosity)"
+        file_name = "Stokes-Einstein Calculations (D0_Dw & microviscosity)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
@@ -1181,5 +997,4 @@ class Report():
         #                             summary_val_1d_format)
         # --------------------------------------------------------------------
 
-        # workbook.close()
         writer.save()
