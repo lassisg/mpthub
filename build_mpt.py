@@ -5,7 +5,9 @@ def main():
     data_options = [
         'README.md;.',
         'LICENSE;.',
-        'mpt/assets/*;./mpt/assets/']
+        'mpt/assets/*;./mpt/assets/'
+    ]
+    # The following hidden-import were added only because of TrackPy
     hidden = [
         'scipy.spatial.transform._rotation_groups',
         'scipy.special.cython_special'
