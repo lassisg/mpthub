@@ -310,31 +310,52 @@ class Report():
         })
 
         # Add a chart title, style and some axis labels.
-        chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        chart.set_x_axis({
+            'num_format': '0.00',
+            'min': 0.01,
+            'max': 21.00,
+            'crossing': 0.01,
+            'log_base': 10,
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        chart.set_y_axis({
+            'num_format': '0E-00',
+            'min': 1E-05,
+            'max': 1E02,
+            'crossing': 1E-05,
+            'log_base': 10,
+            'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Add a chart title, style and some axis labels.
         mean_chart.set_title(
-            # {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
             {'name': f'Ensemble Data - <{data_name}> vs. Time Scale'})
-        mean_chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        mean_chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        mean_chart.set_x_axis({
+            'num_format': '0.00',
+            'min': 0.01,
+            'max': 21.00,
+            'crossing': 0.01,
+            'log_base': 10,
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        mean_chart.set_y_axis({
+            'num_format': '0E-00',
+            'min': 1E-05,
+            'max': 1E1,
+            'crossing': 1E-05,
+            'log_base': 10,
+            'name': f'{data_name} ({chr(956)}m²)'})
         mean_chart.set_legend({'none': True})
         mean_chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        # mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
         mean_time_chart = workbook.add_chartsheet(f'<{data_name}> vs Time')
         mean_time_chart.set_chart(mean_chart)
+        mean_time_chart.set_zoom(88)
 
         # Insert the chart into the worksheet.
-        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
+        time_chart.set_zoom(88)
 
     def export_individual_particle_analysis(self,
                                             path: str,
@@ -412,8 +433,8 @@ class Report():
         if data_name in ("MSD", "MSD-LOG"):
             trendLine = {
                 'type': 'linear',
-                'display_equation': True,
-                'display_r_squared': True,
+                # 'display_equation': True,
+                # 'display_r_squared': True,
                 'line': {'none': True},
                 'data_labels': {'position': True}
             }
@@ -459,16 +480,25 @@ class Report():
         # ----------------
 
         # Add a chart title, style and some axis labels.
-        chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        chart.set_x_axis({
+            'num_format': '0.00',
+            'min': -2.5,
+            'max': 2.5,
+            'crossing': -2.5,
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        chart.set_y_axis({
+            'num_format': '0.00',
+            'min': -5.0,
+            'max': 2.0,
+            'crossing': -5.0,
+            'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
+        time_chart.set_zoom(88)
 
     def export_transport_mode(self, path: str, msd: pd.DataFrame):
         """Export 'Transport Mode Characterization' report.
