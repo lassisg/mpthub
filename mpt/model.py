@@ -233,7 +233,6 @@ class Analysis():
 
         parent.statusBar.SetStatusText(
             "Exporting 'Stokes-Einstein' report...")
-
         report_data = {'deff': self.deff.iloc[:, -1].mean(),
                        'p_size': self.config.p_size,
                        'temperature_C': self.config.temperature_C}
@@ -298,43 +297,66 @@ class Report():
                                start_row + len(data), 0],
                 'values': ['Data', start_row + 1, i,
                            start_row + len(data), i],
-                'trendline': False,
-            })
+                'trendline': False})
 
         mean_chart.add_series({
             'name': ['Data', start_row, columns],
             'categories': ['Data', start_row+1, 0,
                            start_row+len(data), 0],
             'values': ['Data', start_row+1, columns,
-                       start_row+len(data), columns],
-        })
+                       start_row+len(data), columns]})
 
         # Add a chart title, style and some axis labels.
-        chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        axis_digits = np.ceil(-np.log10(
+            np.abs(np.min(data.values)) -
+            np.abs(np.floor(np.min(data.values))))) - 1
+        y_axis_min = 1 / (10**(axis_digits+1))
+        chart.set_x_axis({
+            'num_format': '0.00',
+            'max': round(max(data.index.values)*3),
+            'min': 0.01,
+            'crossing': 0.01,
+            'log_base': 10,
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        chart.set_y_axis({
+            'num_format': '0E-00',
+            'min': y_axis_min,
+            'max': round(max(data.index.values)*5),
+            'crossing': y_axis_min,
+            'log_base': 10,
+            'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Add a chart title, style and some axis labels.
         mean_chart.set_title(
-            # {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
             {'name': f'Ensemble Data - <{data_name}> vs. Time Scale'})
-        mean_chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        mean_chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        mean_chart.set_x_axis({
+            'num_format': '0.00',
+            'min': 0.01,
+            'max': round(max(data.index.values)*3),
+            'crossing': 0.01,
+            'log_base': 10,
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        mean_chart.set_y_axis({
+            'num_format': '0E-00',
+            'min': y_axis_min,
+            'max': round(max(data.index.values)*10),
+            'crossing': y_axis_min,
+            'log_base': 10,
+            'name': f'{data_name} ({chr(956)}m²)'})
         mean_chart.set_legend({'none': True})
         mean_chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        # mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
         mean_time_chart = workbook.add_chartsheet(f'<{data_name}> vs Time')
         mean_time_chart.set_chart(mean_chart)
+        mean_time_chart.set_zoom(88)
 
         # Insert the chart into the worksheet.
-        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
+        time_chart.set_zoom(84)
 
     def export_individual_particle_analysis(self,
                                             path: str,
@@ -408,12 +430,11 @@ class Report():
 
         # Configure the series of the chart from the dataframe data.
         trendLine = False
-        # if data.name in ("MSD", "MSD-LOG"):
         if data_name in ("MSD", "MSD-LOG"):
             trendLine = {
                 'type': 'linear',
-                'display_equation': True,
-                'display_r_squared': True,
+                'display_equation': False,
+                'display_r_squared': False,
                 'line': {'none': True},
                 'data_labels': {'position': True}
             }
@@ -459,16 +480,25 @@ class Report():
         # ----------------
 
         # Add a chart title, style and some axis labels.
-        chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
-        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
+        chart.set_x_axis({
+            'num_format': '0.00',
+            'min': np.floor(np.min(data.index.values)),
+            'max': np.ceil(np.max(data.index.values)*2),
+            'crossing': np.ceil(np.min(data.index.values)*2),
+            'name': f'Time Scale ({chr(120591)}) (s)'})
+        chart.set_y_axis({
+            'num_format': '0.00',
+            'min': np.floor(np.min(data.values)),
+            'max': np.ceil(np.max(data.values)),
+            'crossing': np.floor(np.min(data.values)),
+            'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
         time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
+        time_chart.set_zoom(84)
 
     def export_transport_mode(self, path: str, msd: pd.DataFrame):
         """Export 'Transport Mode Characterization' report.
