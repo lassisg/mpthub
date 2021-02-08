@@ -4,6 +4,9 @@ from pandas import ExcelWriter as xls
 import numpy as np
 import os
 import locale
+import trackpy as tp
+
+conn = db.connect()
 
 
 class General():
@@ -13,21 +16,13 @@ class General():
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a Series with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a Series with data from database."""
         config_df = pd.read_sql_table("app_config", con=conn)
         self.config = config_df.iloc[0]
 
-    def update(self, new_config: pd.Series) -> None:
-        """Updates diffusivity ranges data on database.
-
-        Arguments:
-            new_config {pd.Series} -- New data to be updated in \
-                diffusivity table.
-        """
-        conn = db.connect()
-        new_config_df = new_config.to_frame(0).T
+    def update(self) -> None:
+        """Updates diffusivity ranges data on database."""
+        new_config_df = self.config.to_frame(0).T
         new_config_df.to_sql('app_config', con=conn,
                              index=False, if_exists='replace')
 
@@ -35,25 +30,16 @@ class General():
 class Diffusivity:
 
     def __init__(self) -> None:
-        # print("Initializing Diffusivity configuration object...")
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a DataFrame with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a DataFrame with data from database."""
         self.config = pd.read_sql_table("diffusivity", con=conn)
 
     def update(self, new_config: pd.DataFrame) -> None:
-        """Updates diffusivity ranges data on database.
-
-        Arguments:
-            new_config {pd.DataFrame} -- New data to be updated in \
-                diffusivity table.
-        """
-        conn = db.connect()
-        new_config.to_sql('diffusivity', con=conn,
-                          index=False, if_exists='replace')
+        """Updates diffusivity ranges data on database."""
+        self.config.to_sql('diffusivity', con=conn,
+                           index=False, if_exists='replace')
 
 
 class Analysis():
@@ -63,24 +49,16 @@ class Analysis():
         self.load_config()
 
     def load_config(self) -> None:
-        """Loads configuration into a Series with data from database.
-        """
-        conn = db.connect()
+        """Loads configuration into a Series with data from database."""
         self.config = pd.read_sql_table("analysis_config", con=conn).squeeze()
 
-    def update(self, new_config: pd.Series) -> None:
-        """Updates analysis_config ranges data on database.
-
-        Arguments:
-            new_config {pd.Series} -- New data to be updated in \
-                analysis_config table.
-        """
-        conn = db.connect()
-        new_config_df = new_config.to_frame(0).T
+    def update(self) -> None:
+        """Updates analysis_config ranges data on database."""
+        new_config_df = self.config.to_frame(0).T
         new_config_df.to_sql('analysis_config', con=conn,
                              index=False, if_exists='replace')
 
-    def load_reports(self, parent, file_list: list) -> None:
+    def load_reports(self, file_list: list) -> None:
         """Loads '.csv' files into DB table 'trajectories' after filtering \
             by valid trajectories.
 
@@ -88,10 +66,10 @@ class Analysis():
             file_list {list} -- File path list to be imported.
         """
         self.trajectories = pd.DataFrame(
-            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
+            columns=['file_name', 'particle', 'frame', 'x', 'y'])
         self.valid_trajectories = self.trajectories.copy()
 
-        parent.statusBar.SetStatusText("Loading report(s)...")
+        i = 0
         for file in file_list:
             if not self.summary.empty:
                 masked_df = self.summary.full_path == file
@@ -102,189 +80,100 @@ class Analysis():
             file_name, _ = os.path.splitext(os.path.basename(file))
             if set(['Trajectory', 'Frame', 'x', 'y']).issubset(
                     full_data.columns):
-                parent.statusBar.SetStatusText(f"File {file_name} ok!")
+
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
-
-                full_path = file
-
-                parent.statusBar.SetStatusText(
-                    f"Importing file {file_name}...")
-                trajectories = len(raw_data.groupby("Trajectory").count())
-                valid = self.get_valid_trajectories(
-                    parent, file_name, raw_data)
-
-                self.summary = self.summary.append({
-                    'full_path': full_path, 'file_name': file_name,
-                    'trajectories': trajectories, 'valid': valid},
-                    ignore_index=True)
-            else:
-                parent.statusBar.SetStatusText("Wrong file format.")
-                parent.statusBar.SetStatusText(
-                    f"Aborting import of file: '{file_name}'")
-
-        # if not self.trajectories.empty:
-        self.add_trajectories(self.trajectories)
-
-    def add_trajectories(self, data):
-        conn = db.connect()
-        data.to_sql('trajectories', con=conn,
-                    index=False, if_exists='replace')
+                raw_data, i = self.prepare_for_track_py(raw_data, i)
+                raw_data.insert(loc=0, column='file_name', value=file_name)
+                self.trajectories = self.trajectories.append(
+                    raw_data, ignore_index=True)
 
     def clear_summary(self):
         self.summary.drop(
             self.summary.index, inplace=True)
 
-    def clear_trajectories(self) -> None:
-        conn = db.connect()
-        empty_data = pd.DataFrame(
-            columns=['file_name', 'Trajectory', 'Frame', 'x', 'y'])
-        empty_data.to_sql('trajectories', con=conn,
-                          index=False, if_exists='replace')
+    def get_valid_trajectories(self) -> None:
+        grouped_data = self.trajectories.groupby(
+            ['file_name', 'particle'], as_index=False)['frame'].count()
 
-    def update_valid_trajectories(self, parent):
-        summary_files = sorted(
-            set(self.trajectories.loc[:, 'file_name'].values))
+        valid_grouped_data = grouped_data[grouped_data['frame']
+                                          >= int(self.config.min_frames)]
+        self.valid_trajectories = self.trajectories[
+            self.trajectories['particle'].isin(valid_grouped_data['particle'])]
 
-        for file_name in summary_files:
-            parent.statusBar.SetStatusText(
-                f"Updating valid trajectories on {file_name}...")
+    def summarize(self) -> None:
+        particles_per_file = (
+            self.trajectories.groupby('file_name')['particle']
+            .nunique()
+            .to_frame()
+            .rename(columns={"particle": "trajectories"}))
 
-            valid_trajectories_data = self.trajectories[
-                self.trajectories['file_name'] == file_name].groupby(
-                ['file_name', 'Trajectory']).filter(
-                lambda x: len(x['Trajectory']) > self.config.min_frames)
+        valid_particles_per_file = (
+            self.valid_trajectories.groupby('file_name')['particle']
+            .nunique()
+            .to_frame()
+            .rename(columns={"particle": "valid"}))
 
-            valid_trajectories_count = len(valid_trajectories_data.groupby(
-                'Trajectory')['Trajectory'])
+        self.summary = (
+            pd.concat([particles_per_file, valid_particles_per_file], axis=1)
+              .fillna(0)
+              .astype(int)
+              .reset_index())
 
-            self.summary.loc[self.summary['file_name'] ==
-                             file_name, "valid"] = valid_trajectories_count
+    def prepare_for_track_py(self, data_in, i):
+        data_out = data_in.copy()
+        original_particle = data_in.groupby(
+            ['Trajectory'], as_index=False).count()['Trajectory'].values
+        new_particle_ref = dict(
+            zip(original_particle, range(i, len(original_particle) + i)))
 
-    def get_valid_trajectories(self, parent,
-                               file_name: str,
-                               data_in: pd.DataFrame) -> int:
-        parent.statusBar.SetStatusText(
-            f"Filtering valid trajectories on {file_name}...")
-        valid_trajectories_data = data_in.groupby('Trajectory').filter(
-            lambda x: len(x['Trajectory']) > self.config.min_frames)
+        data_out['Trajectory'] = data_in['Trajectory'].map(new_particle_ref)
 
-        valid_trajectories_data.insert(0, 'file_name', file_name)
-        data_in.insert(0, 'file_name', file_name)
+        data_out.rename(columns={"Trajectory": "particle",
+                                 "Frame": "frame"}, inplace=True)
+        i += len(original_particle)
 
-        self.trajectories = self.trajectories.append(
-            data_in, ignore_index=True)
+        return data_out, i
 
-        self.valid_trajectories = self.valid_trajectories.append(
-            valid_trajectories_data, ignore_index=True)
+    def start(self):
+        self.compute_msd()
+        self.compute_msd_log()
+        self.compute_deff()
 
-        return len(
-            valid_trajectories_data.groupby('Trajectory')['Trajectory'])
+        self.msd = self.rename_columns(self.msd, "MSD")
+        self.msd_log = self.rename_columns(self.msd_log, "MSD-LOG")
+        self.deff = self.rename_columns(self.deff, "Deff")
 
-    def start(self, parent):
-        parent.statusBar.SetStatusText(
-            "Computing MSD (mean squared displacement)...")
+    def compute_msd(self):
 
-        self.msd = self.compute_msd(parent)
-        self.msd_log = self.compute_msd_log(self.msd)
+        max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
+        fps = 1000 / self.config.delta_t
+        self.msd = tp.imsd(traj=self.valid_trajectories,
+                           mpp=self.config.width_si/self.config.width_px,
+                           fps=fps,
+                           max_lagtime=max_lagtime)
 
-        parent.statusBar.SetStatusText(
-            "Computing Deff (diffusivity coefficient)...")
-        self.deff = self.compute_deff(self.msd)
+        # msd.name = "MSD"
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        self.msd.columns = [f'MSD {col}' for col in range(
+            1, len(self.msd.columns)+1)]
 
-        parent.statusBar.SetStatusText(
-            "Adjusting data labels...")
-        self.msd = self.rename_columns(self.msd)
-        self.msd_log = self.rename_columns(self.msd_log)
-        self.deff = self.rename_columns(self.deff)
+        self.msd['MSD mean'] = self.msd.mean(axis=1)
 
-    def compute_msd(self, parent) -> pd.DataFrame:
-        """Computes the Mean-squared Displacement (MSD).
-        It is mandatory to have configuration data previously loaded.
+        self.msd = self.msd.iloc[:max_lagtime, :]
 
-        Returns:
-            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
-        """
-        # TODO: Raise error if anything goes wrong
-        # time_step = 1 / self.config.fps
-        # max_time = self.config.total_frames / self.config.fps
-        # tau = np.linspace(time_step, max_time, int(self.config.total_frames))
-
-        time_step = float(self.config.delta_t) / 1000
-        max_time = int(self.config.total_frames) * time_step
-        tau = np.linspace(time_step, max_time, int(self.config.total_frames))
-
-        msd = pd.DataFrame()
-        trajectories_group = self.valid_trajectories.groupby(
-            ['file_name', 'Trajectory'])
-
-        i = 0
-        for (file, trajectory), trajectory_data in trajectories_group:
-            parent.statusBar.SetStatusText(
-                f"Computing MSD for trajectory {trajectory} of file {file}...")
-
-            pixel_size = int(self.config.width_px) / \
-                float(self.config.width_si)
-            frames = len(trajectory_data)
-            t = tau[:frames]
-            xy = trajectory_data.values
-
-            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
-            shifts = position["t"].index.values + 1
-            msdp = self.compute_msdp(position, shifts)
-            msdm = msdp * (1 / (pixel_size ** 2))
-            msdm = msdm[:int(self.config.min_frames)]
-            msd[i] = msdm
-
-            i += 1
-
-        tau = tau[:int(self.config.min_frames)]
-        # tau = tau[tau < self.config.time]
-
-        msd.insert(0, "tau", tau, True)
-        msd = msd[msd[msd.columns[0]] < float(self.config.time)]
-
-        msd.name = "MSD"
-        msd.set_index('tau', inplace=True)
-        msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        msd['mean'] = msd.mean(axis=1)
-
-        return msd
-
-    def compute_msdp(self, position, shifts):
-        msdp = np.zeros(shifts.size)
-        for k, shift in enumerate(shifts):
-            diffs_x = position['x'] - position['x'].shift(-shift)
-            diffs_y = position['y'] - position['y'].shift(-shift)
-            square_sum = np.square(diffs_x) + np.square(diffs_y)
-            msdp[k] = square_sum.mean()
-
-        return msdp
-
-    def compute_msd_log(self, msd: pd.DataFrame) -> pd.DataFrame:
+    def compute_msd_log(self) -> None:
         """Computes the log version of Mean-squared Displacement.
         It is mandatory that the MSD is already computed.
-
-        Arguments:
-            msd {pd.DataFrame} -- Pandas DataFrame containing analysis MSD.
-
-        Returns:
-            pd.DataFrame -- Pandas DataFrame containing MSD values in \
-                logarithm scale. Returns an empty Pandas DataFrame if \
-                MSD DataFrame is empty.
         """
-        if msd.empty:
-            return pd.DataFrame()
+        if not self.msd.empty:
+            self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
+            # msd_log.reset_index()
+            self.msd_log.set_index(
+                f'Timescale ({chr(120591)}) (s)', inplace=True)
+            self.msd_log.name = "MSD-LOG"
+            self.msd_log['mean'] = self.msd_log.mean(axis=1)
 
-        msd_log = np.log10(msd.reset_index().iloc[:, :-1])
-        # msd_log.reset_index()
-        msd_log.set_index(
-            f'Timescale ({chr(120591)}) (s)', inplace=True)
-        msd_log.name = "MSD-LOG"
-        msd_log['mean'] = msd_log.mean(axis=1)
-
-        return msd_log
-
-    def compute_deff(self, msd: pd.DataFrame) -> pd.DataFrame:
+    def compute_deff(self) -> None:
         """Calculate Diffusivity efficiency coefficient (Deff).
         It is mandatory that the Mean-squared Displacement (MSD) \
             is already computed.
@@ -297,16 +186,14 @@ class Analysis():
                 coefficients values. Returns an empty Pandas DataFrame \
                 if MSD DataFrame is empty.
         """
-        if self.msd.empty:
-            return pd.DataFrame()
+        if not self.msd.empty:
+            # return pd.DataFrame()
 
-        deff = msd.iloc[:, :-1].div((4*msd.index), axis=0)
-        deff.name = "Deff"
-        deff["mean"] = deff.mean(axis=1)
+            self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
+            # self.deff.name = "Deff"
+            self.deff["mean"] = self.deff.mean(axis=1)
 
-        return deff
-
-    def rename_columns(self, data: pd.DataFrame) -> pd.DataFrame:
+    def rename_columns(self, data: pd.DataFrame, header) -> pd.DataFrame:
         """Rename Pandas DataFrame columns to meaningfull names according \
             with the input's Pandas DataFrame name.
 
@@ -318,7 +205,7 @@ class Analysis():
             pd.DataFrame -- Input Pandas DataFrame with renamed \
                 columns. No data changed.
         """
-        header = data.name
+        # header = data.name
         unit = f"{chr(956)}m{chr(178)}"
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
@@ -340,12 +227,12 @@ class Analysis():
             parent.general.config.save_folder, self.msd, self.deff)
 
         parent.statusBar.SetStatusText(
-            "Exporting transport mode sheet...")
+            "Exporting 'Transport Mode Characterization' report...")
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
         parent.statusBar.SetStatusText(
-            "Exporting Einstein-Stokes sheet...")
+            "Exporting 'Stokes-Einstein' report...")
 
         report_data = {'deff': self.deff.iloc[:, -1].mean(),
                        'p_size': self.config.p_size,
@@ -382,8 +269,9 @@ class Report():
                                         np.asarray(dataIn[column]), 1)
                              for column in dataIn.columns[:-1]])
 
-    def make_chart(self, workbook: xls.book,
+    def make_chart(self, workbook: xls,
                    data: pd.DataFrame,
+                   data_name: str,
                    start_row: int) -> None:
         # TODO: Make function generic so it can be used for any chart
         """Create a chart for individual particle analysis.
@@ -423,24 +311,29 @@ class Report():
 
         # Add a chart title, style and some axis labels.
         chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Add a chart title, style and some axis labels.
         mean_chart.set_title(
-            {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
+            # {'name': f'Ensemble Data - <{data.name}> vs. Time Scale'})
+            {'name': f'Ensemble Data - <{data_name}> vs. Time Scale'})
         mean_chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # mean_chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        mean_chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         mean_chart.set_legend({'none': True})
         mean_chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
+        # mean_time_chart = workbook.add_chartsheet(f'<{data.name}> vs Time')
+        mean_time_chart = workbook.add_chartsheet(f'<{data_name}> vs Time')
         mean_time_chart.set_chart(mean_chart)
 
         # Insert the chart into the worksheet.
-        time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
 
     def export_individual_particle_analysis(self,
@@ -478,26 +371,28 @@ class Report():
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{msd.name} Data'
+        msd_title = 'MSD Data'
+        # msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, len(msd.columns),
                                msd_title, header_format)
 
-        deff_title = f'{deff.name} Data'
+        deff_title = 'Deff Data'
+        # deff_title = f'{deff.name} Data'
         data_sheet.merge_range(len(msd)+3,
                                0,
                                len(msd) + 3,
                                len(msd.columns),
                                deff_title, header_format)
 
-        self.make_chart(workbook, msd, 1)
-        self.make_chart(workbook, deff, len(msd)+4)
+        self.make_chart(workbook, msd, "MSD", 1)
+        self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
-        workbook.close()
         writer.save()
 
-    def make_chart_LOG(self, workbook: xls.book,
+    def make_chart_LOG(self, workbook: xls,
                        data: pd.DataFrame,
+                       data_name: str,
                        start_row: int) -> None:
         """Creates a log-log plot from given data.
 
@@ -513,7 +408,8 @@ class Report():
 
         # Configure the series of the chart from the dataframe data.
         trendLine = False
-        if data.name in ("MSD", "MSD-LOG"):
+        # if data.name in ("MSD", "MSD-LOG"):
+        if data_name in ("MSD", "MSD-LOG"):
             trendLine = {
                 'type': 'linear',
                 'display_equation': True,
@@ -533,17 +429,6 @@ class Report():
                 'trendline': trendLine,
             })
 
-        # i = 1
-        # for column in data.columns[0:-2]:
-        #     chart.add_series({
-        #         'name': ['Data', startrow, i],
-        #         'categories': ['Data', startrow+1, 0, startrow+len(data), 0],
-        #         'values': ['Data', startrow+1, i, startrow+len(data), i],
-        #         'trendline': trendLine,
-        #     })
-        #     i += 1
-
-        # Add guides series
         chart.add_series({
             'name': ['Data', 3, columns+3],
             'categories': ['Data', 4, columns+2, 5, columns+2],
@@ -575,12 +460,14 @@ class Report():
 
         # Add a chart title, style and some axis labels.
         chart.set_x_axis({'name': f'Time Scale ({chr(120591)}) (s)'})
-        chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        # chart.set_y_axis({'name': f'{data.name} ({chr(956)}m²)'})
+        chart.set_y_axis({'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
         # Insert the chart into the worksheet.
-        time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        # time_chart = workbook.add_chartsheet(f'{data.name} vs Time')
+        time_chart = workbook.add_chartsheet(f'{data_name} vs Time')
         time_chart.set_chart(chart)
 
     def export_transport_mode(self, path: str, msd: pd.DataFrame):
@@ -617,7 +504,8 @@ class Report():
 
         data_sheet = writer.sheets['Data']
 
-        msd_title = f'{msd.name} Data'
+        msd_title = 'MSD Data'
+        # msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, columns,
                                msd_title, header_format)
@@ -679,7 +567,7 @@ class Report():
             num_format)
         # ----------------------------
 
-        self.make_chart_LOG(workbook, msd, 1)
+        self.make_chart_LOG(workbook, msd, "MSD", 1)
 
         slope_data[0].to_excel(writer, index=False,
                                sheet_name='Characterization')
@@ -695,22 +583,57 @@ class Report():
         header_format = workbook.add_format(
             {'align': 'center', 'bold': 1})
 
-        data_sheet = writer.sheets['Characterization']
-        data_sheet.set_column(0, 0, 4, header_format)
-        data_sheet.set_column(0, 0, 12, sheet_format)
-        data_sheet.set_column(3, 3, 18, sheet_format)
-        data_sheet.set_column(4, 4, 12, sheet_format)
-        data_sheet.set_column(5, 5, 7, sheet_format)
+        characterization_sheet = writer.sheets['Characterization']
+        characterization_sheet.set_column(0, 0, 4, header_format)
+        characterization_sheet.set_column(0, 0, 12, sheet_format)
+        characterization_sheet.set_column(3, 3, 18, sheet_format)
+        characterization_sheet.set_column(4, 4, 12, sheet_format)
+        characterization_sheet.set_column(5, 5, 7, sheet_format)
 
-        data_sheet.write('A1', 'Slopes', header_format)
-        data_sheet.write('D1', 'Transport Mode', header_format)
-        data_sheet.write('E1', 'Slope', header_format)
-        data_sheet.write('F1', 'Count', header_format)
+        characterization_sheet.write('A1', 'Slopes', header_format)
+        characterization_sheet.write('D1', 'Transport Mode', header_format)
+        characterization_sheet.write('E1', 'Slope', header_format)
+        characterization_sheet.write('F1', 'Count', header_format)
 
-        data_sheet.write('D2', 'Immobile')
-        data_sheet.write('D3', 'Sub-diffusive')
-        data_sheet.write('D4', 'Diffusive')
-        data_sheet.write('D5', 'Active')
+        characterization_sheet.write('D2', 'Immobile')
+        characterization_sheet.write('D3', 'Sub-diffusive')
+        characterization_sheet.write('D4', 'Diffusive')
+        characterization_sheet.write('D5', 'Active')
+
+        # -------------------------------------------------------- SLOPE and R2
+        import string
+        import itertools
+        min_row = 2
+        total_trajectories = len(msd.columns)-1
+
+        column_list = list(
+            itertools.chain(string.ascii_uppercase,
+                            (''.join(pair) for pair in itertools.product(
+                                string.ascii_uppercase, repeat=2))
+                            ))[1:total_trajectories+1]
+
+        # --------------------------------------------------------------- SLOPE
+        characterization_sheet.write(
+            'B1', 'Slopes (Excel)', header_format)
+        excel_slopes = [f'B{x+min_row}' for x in list(
+            range(total_trajectories))]
+        slope_formulas = [
+            f'=SLOPE(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
+
+        for cell, formula in zip(excel_slopes, slope_formulas):
+            characterization_sheet.write_formula(cell, formula)
+
+        # ------------------------------------------------------------------ R2
+        characterization_sheet.write(
+            'C1', f'R{chr(178)} (Excel)', header_format)
+        excel_r2 = [f'C{x+min_row}' for x in list(
+            range(total_trajectories))]
+        r2_formulas = [
+            f'=RSQ(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
+
+        for cell, formula in zip(excel_r2, r2_formulas):
+            characterization_sheet.write_formula(cell, formula)
+        # ---------------------------------------------------------------------
 
         immobile_low = locale.format_string(
             "%.1f", self.config.immobile['min'])
@@ -727,13 +650,13 @@ class Report():
         active_low = locale.format_string(
             "%.1f", self.config.active['min'])
 
-        data_sheet.write(
+        characterization_sheet.write(
             'E2', f'{str(immobile_low)}-{str(immobile_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E3', f'{str(subdiffusive_low)}-{str(subdiffusive_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E4', f'{str(diffusive_low)}-{str(diffusive_high)}')
-        data_sheet.write(
+        characterization_sheet.write(
             'E5', f'{str(active_low)}+')
 
         immobile_formula = f'=COUNTIF(A:A,"<{subdiffusive_low}")'
@@ -743,29 +666,32 @@ class Report():
         diffusive_formula += f'A:A,"<{active_low}")'
         active_formula = f'=COUNTIF(A:A,">={active_low}")'
 
-        data_sheet.write_formula('F2', immobile_formula, count_format)
-        data_sheet.write_formula('F3', subdiffusive_formula, count_format)
-        data_sheet.write_formula('F4', diffusive_formula, count_format)
-        data_sheet.write_formula('F5', active_formula, count_format)
+        characterization_sheet.write_formula(
+            'F2', immobile_formula, count_format)
+        characterization_sheet.write_formula(
+            'F3', subdiffusive_formula, count_format)
+        characterization_sheet.write_formula(
+            'F4', diffusive_formula, count_format)
+        characterization_sheet.write_formula(
+            'F5', active_formula, count_format)
 
         # Statistical info
         summary_format = workbook.add_format(
             {'align': 'right',
              'valign': 'vcenter'})
-        data_sheet.write('D8', '<slope> = ', summary_format)
-        data_sheet.write('D9', 'N = ', summary_format)
-        data_sheet.write('D10', 'STD = ', summary_format)
+        characterization_sheet.write('D8', '<slope> = ', summary_format)
+        characterization_sheet.write('D9', 'N = ', summary_format)
+        characterization_sheet.write('D10', 'STD = ', summary_format)
 
-        data_sheet.write_formula('E8', '=AVERAGE(A:A)')
-        data_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
-        data_sheet.write_formula('E10', '=STDEV(A:A)')
+        characterization_sheet.write_formula('E8', '=AVERAGE(A:A)')
+        characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
+        characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        workbook.close()
         writer.save()
 
     def export_einstein_stokes(self, path: str, data):
 
-        file_name = "Einstein-Stokes Calculations (D0_Dw & microviscosity)"
+        file_name = "Stokes-Einstein Calculations (D0_Dw & microviscosity)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
@@ -1071,5 +997,4 @@ class Report():
         #                             summary_val_1d_format)
         # --------------------------------------------------------------------
 
-        workbook.close()
         writer.save()
