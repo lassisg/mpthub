@@ -1,10 +1,11 @@
 import mpt.database as db
 import pandas as pd
-from pandas import ExcelWriter as xls
 import numpy as np
 import os
 import locale
 import trackpy as tp
+import string
+import itertools
 
 conn = db.connect()
 
@@ -268,7 +269,7 @@ class Report():
                                         np.asarray(dataIn[column]), 1)
                              for column in dataIn.columns[:-1]])
 
-    def make_chart(self, workbook: xls,
+    def make_chart(self, workbook: pd.ExcelWriter,
                    data: pd.DataFrame,
                    data_name: str,
                    start_row: int) -> None:
@@ -276,7 +277,7 @@ class Report():
         """Create a chart for individual particle analysis.
 
         Arguments:
-            workbook {xls.book} -- Excel spreadsheet object that will hod the \
+            workbook {pd.ExcelWriter} -- Excel spreadsheet object that will hod the \
                 chart.
             data {pd.DataFrame} -- Data to be used for chart creation.
             start_row {int} -- Initial row to start the data series of the \
@@ -394,13 +395,11 @@ class Report():
         data_sheet = writer.sheets['Data']
 
         msd_title = 'MSD Data'
-        # msd_title = f'{msd.name} Data'
         data_sheet.merge_range(0, 0,
                                0, len(msd.columns),
                                msd_title, header_format)
 
         deff_title = 'Deff Data'
-        # deff_title = f'{deff.name} Data'
         data_sheet.merge_range(len(msd)+3,
                                0,
                                len(msd) + 3,
@@ -412,14 +411,14 @@ class Report():
 
         writer.save()
 
-    def make_chart_LOG(self, workbook: xls,
+    def make_chart_LOG(self, workbook: pd.ExcelWriter,
                        data: pd.DataFrame,
                        data_name: str,
                        start_row: int) -> None:
         """Creates a log-log plot from given data.
 
         Arguments:
-            workbook {ExcelWriter.book} -- Excel file to add the chart.
+            workbook {pd.ExcelWriter} -- Excel file to add the chart.
             data {Dataframe} -- Data do populate the chart.
             data_name {str} -- Title of the data.
             startrow {int} -- Starting row for data entry.
@@ -429,68 +428,46 @@ class Report():
         chart = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
 
         # Configure the series of the chart from the dataframe data.
-        trendLine = False
-        if data_name in ("MSD", "MSD-LOG"):
-            trendLine = {
-                'type': 'linear',
-                'display_equation': False,
-                'display_r_squared': False,
-                'line': {'none': True},
-                'data_labels': {'position': True}
-            }
-
-        columns = len(data.columns)
-        for i in range(1, columns):
+        columns = data.shape[1]
+        for i in range(1, columns + 1):
             chart.add_series({
                 'name': ['Data', start_row, i],
-                'categories': ['Data', start_row + 1, 0,
+                'categories': ['Data',
+                               start_row + 1, 0,
                                start_row + len(data), 0],
-                'values': ['Data', start_row + 1, i,
-                           start_row + len(data), i],
-                'trendline': trendLine,
-            })
+                'values':     ['Data',
+                               start_row + 1, i,
+                               start_row + len(data), i]})
 
-        chart.add_series({
-            'name': ['Data', 3, columns+3],
-            'categories': ['Data', 4, columns+2, 5, columns+2],
-            'values': ['Data', 4, columns+3, 5, columns+3],
-            'line': {
-                'color': 'black',
-                'width': 1.25,
-                'dash_type': 'square_dot'},
-        })
-        chart.add_series({
-            'name': ['Data', 3, columns+4],
-            'categories': ['Data', 4, columns+2, 5, columns+2],
-            'values': ['Data', 4, columns+4, 5, columns+4],
-            'line': {
-                'color': 'red',
-                'width': 1.25,
-                'dash_type': 'square_dot'},
-        })
-        chart.add_series({
-            'name': ['Data', 3, columns+5],
-            'categories': ['Data', 4, columns+2, 5, columns+2],
-            'values': ['Data', 4, columns+5, 5, columns+5],
-            'line': {
-                'color': 'black',
-                'width': 1.25,
-                'dash_type': 'square_dot'},
-        })
-        # ----------------
+        line_colors = ['black', 'red', 'black']
+        for i, line_color in zip(range(columns+3, columns+6),
+                                 line_colors):
+            chart.add_series({
+                'name': ['Data', 3, i],
+                'categories': ['Data', 4, columns+2, 5, columns+2],
+                'values': ['Data', 4, i, 5, i],
+                'line': {
+                    'color': line_color,
+                    'width': 1.25,
+                    'dash_type': 'square_dot'}})
 
         # Add a chart title, style and some axis labels.
+        axis_min_x = np.round(np.min(data.index.values)) - 1
+        axis_max_x = np.round(np.max(data.index.values)) + 1
+        axis_min_y = np.round(np.min(data.values)) - 1
+        axis_max_y = np.round(np.max(data.values)) + 1
+
         chart.set_x_axis({
             'num_format': '0.00',
-            'min': np.floor(np.min(data.index.values)),
-            'max': np.ceil(np.max(data.index.values)*2),
-            'crossing': np.ceil(np.min(data.index.values)*2),
+            'min': axis_min_x,
+            'max': axis_max_x,
+            'crossing': axis_min_x,
             'name': f'Time Scale ({chr(120591)}) (s)'})
         chart.set_y_axis({
             'num_format': '0.00',
-            'min': np.floor(np.min(data.values)),
-            'max': np.ceil(np.max(data.values)),
-            'crossing': np.floor(np.min(data.values)),
+            'min': axis_min_y,
+            'max': axis_max_y,
+            'crossing': axis_min_y,
             'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)
@@ -568,33 +545,26 @@ class Report():
 
         col = columns + 2
         line = 4
-        ref_cell = f'INDIRECT(ADDRESS({line+1}, {col+1}))'
-        data_sheet.write(line, col, '=-2', num_format)
-        data_sheet.write_formula(
-            line, col+1,
-            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}', num_format)
-        data_sheet.write_formula(
-            line, col+2,
-            f'={ref_cell}+{intercept}', num_format)
-        data_sheet.write_formula(
-            line, col+3,
-            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
-            num_format)
+        x_axis_value = -2
+        subdiffusive_y = alpha09*x_axis_value - alpha02 + intercept
+        diffusive_y = x_axis_value + intercept
+        active_y = alpha11*x_axis_value + alpha02 + intercept
+
+        data_sheet.write(line, col, x_axis_value, num_format)
+        data_sheet.write(line, col+1, subdiffusive_y, num_format)
+        data_sheet.write(line, col+2, diffusive_y, num_format)
+        data_sheet.write(line, col+3, active_y, num_format)
 
         line += 1
-        ref_cell = f'INDIRECT(ADDRESS({line+1},{col+1}))'
-        data_sheet.write(line, col, '=2', num_format)
-        data_sheet.write_formula(
-            line, col+1,
-            f'={alpha09}*{ref_cell}-{alpha02}+{intercept}',
-            num_format)
-        data_sheet.write_formula(
-            line, col+2,
-            f'={ref_cell}+{intercept}', num_format)
-        data_sheet.write_formula(
-            line, col+3,
-            f'={alpha11}*{ref_cell}+{alpha02}+{intercept}',
-            num_format)
+        x_axis_value = 1.5
+        subdiffusive_y = alpha09*x_axis_value - alpha02 + intercept
+        diffusive_y = x_axis_value + intercept
+        active_y = alpha11*x_axis_value + alpha02 + intercept
+
+        data_sheet.write(line, col, x_axis_value, num_format)
+        data_sheet.write(line, col+1, subdiffusive_y, num_format)
+        data_sheet.write(line, col+2, diffusive_y, num_format)
+        data_sheet.write(line, col+3, active_y, num_format)
         # ----------------------------
 
         self.make_chart_LOG(workbook, msd, "MSD", 1)
@@ -631,8 +601,6 @@ class Report():
         characterization_sheet.write('D5', 'Active')
 
         # -------------------------------------------------------- SLOPE and R2
-        import string
-        import itertools
         min_row = 2
         total_trajectories = len(msd.columns)-1
 
