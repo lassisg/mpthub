@@ -277,8 +277,8 @@ class Report():
         """Create a chart for individual particle analysis.
 
         Arguments:
-            workbook {pd.ExcelWriter} -- Excel spreadsheet object that will hod the \
-                chart.
+            workbook {pd.ExcelWriter} -- Excel spreadsheet object that will \
+                hold the chart.
             data {pd.DataFrame} -- Data to be used for chart creation.
             start_row {int} -- Initial row to start the data series of the \
                 chart.
