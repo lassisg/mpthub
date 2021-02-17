@@ -428,24 +428,16 @@ class Report():
         chart = workbook.add_chart({'type': 'scatter', 'subtype': 'smooth'})
 
         # Configure the series of the chart from the dataframe data.
-        trendLine = False
-        if data_name in ("MSD", "MSD-LOG"):
-            trendLine = {
-                'type': 'linear',
-                'display_equation': False,
-                'display_r_squared': False,
-                'line': {'none': True},
-                'data_labels': {'position': True}}
-
-        columns = len(data.columns)
-        for i in range(1, columns):
+        columns = data.shape[1]
+        for i in range(1, columns + 1):
             chart.add_series({
                 'name': ['Data', start_row, i],
-                'categories': ['Data', start_row + 1, 0,
+                'categories': ['Data',
+                               start_row + 1, 0,
                                start_row + len(data), 0],
-                'values': ['Data', start_row + 1, i,
-                           start_row + len(data), i],
-                'trendline': trendLine})
+                'values':     ['Data',
+                               start_row + 1, i,
+                               start_row + len(data), i]})
 
         line_colors = ['black', 'red', 'black']
         for i, line_color in zip(range(columns+3, columns+6),
@@ -460,17 +452,22 @@ class Report():
                     'dash_type': 'square_dot'}})
 
         # Add a chart title, style and some axis labels.
+        axis_min_x = np.round(np.min(data.index.values)) - 1
+        axis_max_x = np.round(np.max(data.index.values)) + 1
+        axis_min_y = np.round(np.min(data.values)) - 1
+        axis_max_y = np.round(np.max(data.values)) + 1
+
         chart.set_x_axis({
             'num_format': '0.00',
-            'min': np.floor(np.min(data.index.values)),
-            'max': np.ceil(np.max(data.index.values)*2),
-            'crossing': np.floor(np.min(data.index.values)),
+            'min': axis_min_x,
+            'max': axis_max_x,
+            'crossing': axis_min_x,
             'name': f'Time Scale ({chr(120591)}) (s)'})
         chart.set_y_axis({
             'num_format': '0.00',
-            'min': np.ceil(np.min(data.values)*1.5),
-            'max': np.floor(np.max(data.values)*1.5),
-            'crossing': np.ceil(np.min(data.values)*1.5),
+            'min': axis_min_y,
+            'max': axis_max_y,
+            'crossing': axis_min_y,
             'name': f'{data_name} ({chr(956)}m²)'})
         chart.set_legend({'none': True})
         chart.set_style(1)

@@ -1,4 +1,4 @@
-__version__ = "0.6.9"
+__version__ = "0.6.10"
 
 from .model import Analysis, Diffusivity, General
 import mpt.database as db
