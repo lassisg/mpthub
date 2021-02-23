@@ -1,21 +1,29 @@
 @startuml
 
-' skinparam Monochrome true
+scale 512*512
+
+skinparam Monochrome true
+skinparam actorStyle awesome
 skinparam linetype ortho
 
 left to right direction
-:user: --> (View summary)
-:user: --> (Import files)
-:user: --> (Start analysis)
-:user: --> (Export reports)
 
-(View summary) ..> (Import files) : <<includes>>
-(Start analysis) ..> (Import files) : <<includes>>
-(Export reports) ..> (Import files) : <<includes>>
+title MPT Analysis\nUse Case Diagram\n
 
-note top of (View summary) : On screen information\nabout each imported\nfile.
-note right of (Import files) : ImageJ result files,\nin '.csv' format.
-note bottom of (Start analysis) : Starts the data analysis\nfor the imported files,\ncomputing MSD, <MSD>,\nDeff, <Deff> and diffusivity\n of the valid trajectories.
-note bottom of (Export reports) : Export analysis reports in\n'.xlsx' format.
+:researcher: --> (Import files) 
+:researcher: --> (View summary)
+:researcher: --> (Start analysis)
+:researcher: --> (View results)
+:researcher: --> (Export reports)
+
+(View summary)   .> (Import files)
+(Start analysis) <. (Export reports)
+(Import files)   <. (Start analysis)
+(View results)   .> (Start analysis)
+
+' note right of (View summary) : On screen information\nabout each imported\nfile.
+' note right of (Import files) : ImageJ result files,\nin '.csv' format.
+' note right of (Start analysis) : Starts the data analysis\nfor the imported files,\ncomputing MSD, <MSD>,\nDeff, <Deff> and diffusivity\n of the valid trajectories.
+' note right of (Export reports) : Export analysis reports in\n'.xlsx' format.
 
 @enduml
