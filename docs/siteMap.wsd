@@ -1,0 +1,23 @@
+@startuml
+
+skinparam Monochrome true
+skinparam linetype ortho
+
+title Site map\n
+
+agent "  HOME  " as HOME
+agent "  CONFIG  " as CONFIG
+agent SUMMARY
+agent RESULTS
+agent " GRAPHS " as GRAPHS
+agent "  ABOUT  " as ABOUT
+agent "   HELP   " as HELP
+
+HOME -- CONFIG
+HOME -- SUMMARY
+HOME -- RESULTS
+HOME -- ABOUT
+HOME -- HELP
+RESULTS -- GRAPHS
+
+@enduml
