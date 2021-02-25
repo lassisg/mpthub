@@ -9,7 +9,7 @@ skinparam BoxPadding 100
 
 left to right direction
 
-title MPT Analysis\nUse Case Diagram\n
+title Use Case Diagram\n
 
 :researcher: --> (Change diffusivity\nparameters)
 :researcher: --> ( Change analysis\n parameters )
@@ -28,5 +28,6 @@ title MPT Analysis\nUse Case Diagram\n
 ' note right of (       Import files       ) : ImageJ result files,\nin '.csv' format.
 ' note right of (      Start analysis      ) : Starts the data analysis\nfor the imported files,\ncomputing MSD, <MSD>,\nDeff, <Deff> and diffusivity\n of the valid trajectories.
 ' note right of (      Export reports      ) : Export analysis reports in\n'.xlsx' format.
+
 
 @enduml
