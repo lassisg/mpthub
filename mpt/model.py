@@ -933,23 +933,23 @@ class Report():
                                     subscript_format, 'W',
                                     summary_format)
 
-        worksheet.merge_range('M1:M2', '', summary_format)
-        worksheet.write_rich_string('M1',
-                                    summary_format, 'Viscosity\n',
-                                    summary_format, '(Pa.s)',
-                                    summary_format)
+        # worksheet.merge_range('M1:M2', '', summary_format)
+        # worksheet.write_rich_string('M1',
+        #                             summary_format, 'Viscosity\n',
+        #                             summary_format, '(Pa.s)',
+        #                             summary_format)
 
-        worksheet.merge_range('N1:N2', '', summary_format)
-        worksheet.write_rich_string('N1',
-                                    summary_format, 'Viscosity\n',
-                                    summary_format, '(Po)',
-                                    summary_format)
+        # worksheet.merge_range('N1:N2', '', summary_format)
+        # worksheet.write_rich_string('N1',
+        #                             summary_format, 'Viscosity\n',
+        #                             summary_format, '(Po)',
+        #                             summary_format)
 
-        worksheet.merge_range('O1:O2', '', summary_format)
-        worksheet.write_rich_string('O1',
-                                    summary_format, 'Viscosity\n',
-                                    summary_format, '(cPo)',
-                                    summary_format)
+        # worksheet.merge_range('O1:O2', '', summary_format)
+        # worksheet.write_rich_string('O1',
+        #                             summary_format, 'Viscosity\n',
+        #                             summary_format, '(cPo)',
+        #                             summary_format)
 
         worksheet.write('J3',
                         data['deff'],
@@ -960,15 +960,15 @@ class Report():
         worksheet.write_formula('L3',
                                 '=$J3/$E$5',
                                 summary_val_4d_format)
-        worksheet.write_formula('M3',
-                                '=($B$6*$B$7)/(6*$B$8*$K3*$B$10)',
-                                summary_val_9d_format)
-        worksheet.write_formula('N3',
-                                '=$M3*10',
-                                summary_val_9d_format)
-        worksheet.write_formula('O3',
-                                '=$N3*100',
-                                summary_val_1d_format)
+        # worksheet.write_formula('M3',
+        #                         '=($B$6*$B$7)/(6*$B$8*$K3*$B$10)',
+        #                         summary_val_9d_format)
+        # worksheet.write_formula('N3',
+        #                         '=$M3*10',
+        #                         summary_val_9d_format)
+        # worksheet.write_formula('O3',
+        #                         '=$N3*100',
+        #                         summary_val_1d_format)
         # TODO: For each file, write the next lines
         # for key, item in enumerate(data['summary'].values):
         #     i = key+3
@@ -984,15 +984,15 @@ class Report():
         #     worksheet.write_formula(f'L{i}',
         #                             f'=$J{i}/$E$5',
         #                             summary_val_4d_format)
-        #     worksheet.write_formula(f'M{i}',
-        #                             f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
-        #                             summary_val_9d_format)
-        #     worksheet.write_formula(f'N{i}',
-        #                             f'=$M{i}*10',
-        #                             summary_val_9d_format)
-        #     worksheet.write_formula(f'O{i}',
-        #                             f'=$N{i}*100',
-        #                             summary_val_1d_format)
+        #     # worksheet.write_formula(f'M{i}',
+        #     #                         f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
+        #     #                         summary_val_9d_format)
+        #     # worksheet.write_formula(f'N{i}',
+        #     #                         f'=$M{i}*10',
+        #     #                         summary_val_9d_format)
+        #     # worksheet.write_formula(f'O{i}',
+        #     #                         f'=$N{i}*100',
+        #     #                         summary_val_1d_format)
         # --------------------------------------------------------------------
 
         writer.save()
