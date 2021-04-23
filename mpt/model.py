@@ -217,6 +217,17 @@ class Analysis():
 
         return data
 
+    def get_timestamp_deffs(self):
+        deff_index = self.deff.index.values
+
+        analysis_timestamp = deff_index.flat[np.abs(
+            deff_index - self.config.time).argmin()]
+
+        analysis_d0 = self.deff.loc[analysis_timestamp][-1]
+
+        return {'time': analysis_timestamp,
+                'deff': analysis_d0}
+
     def export(self, parent):
         """Call specific export functions.
         """
@@ -234,7 +245,8 @@ class Analysis():
 
         parent.statusBar.SetStatusText(
             "Exporting 'Stokes-Einstein' report...")
-        report_data = {'deff': self.deff.iloc[:, -1].mean(),
+
+        report_data = {'deffs': self.get_timestamp_deffs(),
                        'p_size': self.config.p_size,
                        'temperature_C': self.config.temperature_C}
         report.export_einstein_stokes(
@@ -696,7 +708,6 @@ class Report():
 
         workbook = writer.book
 
-        # --------------------------------------------------------------------
         worksheet = workbook.add_worksheet('Microviscosity calculation')
         worksheet.hide_gridlines(2)
 
@@ -735,6 +746,12 @@ class Report():
             {'align': 'right',
              'valign': 'vcenter',
              'bg_color': '#e6b8b7',
+             'num_format': '0.0000000',
+             'border': 1})
+        input_val_7d_format = workbook.add_format(
+            {'align': 'right',
+             'valign': 'vcenter',
+             'bg_color': '#b8cce4',
              'num_format': '0.0000000',
              'border': 1})
         note_format = workbook.add_format(
@@ -799,6 +816,11 @@ class Report():
              'valign': 'vcenter',
              'border': 1,
              'num_format': '0.0000'})
+        summary_val_5d_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1,
+             'num_format': '0.00000'})
         summary_val_E_format = workbook.add_format(
             {'align': 'center',
              'valign': 'vcenter',
@@ -810,8 +832,9 @@ class Report():
              'border': 1,
              'num_format': '0.000000000'})
 
-        worksheet.set_column('A:A', 16, sheet_format)
-        worksheet.set_column('B:Z', 12, sheet_format)
+        # worksheet.set_column('A:A', 16, sheet_format)
+        # worksheet.set_column('B:Z', 12, sheet_format)
+        worksheet.set_column('A:Z', 16, sheet_format)
         worksheet.set_column('C:C', 7)
         worksheet.set_column('E:E', 7)
 
@@ -858,7 +881,7 @@ class Report():
         worksheet.write_formula('B8', '=PI()',
                                 intermediate_val_7d_format)
         worksheet.write_formula('B9', '=0.0006913',
-                                intermediate_val_7d_format)
+                                input_val_7d_format)
         worksheet.write_formula('B10', '=($E$10*0.000000001)/2',
                                 intermediate_val_7d_format)
         worksheet.merge_range('A11:B11', '', note_format)
@@ -902,9 +925,13 @@ class Report():
         worksheet.write('E7', data['temperature_C'], input_val_format)
         worksheet.write('E10', data['p_size'], input_val_format)
 
-        # worksheet.merge_range('G1:I2', 'ImageJ report file', summary_format)
-        worksheet.merge_range('J1:J2', '', summary_format)
-        worksheet.write_rich_string('J1',
+        worksheet.merge_range('G1:G2', '', summary_format)
+        worksheet.write_rich_string('G1',
+                                    summary_format, 'Timestamp\n',
+                                    summary_format, '(s)',
+                                    summary_format)
+        worksheet.merge_range('H1:H2', '', summary_format)
+        worksheet.write_rich_string('H1',
                                     summary_format, 'D',
                                     subscript_format, '0\n',
                                     summary_format, f'({chr(956)}m',
@@ -914,8 +941,8 @@ class Report():
                                     summary_format, ')',
                                     summary_format)
 
-        worksheet.merge_range('K1:K2', '', summary_format)
-        worksheet.write_rich_string('K1',
+        worksheet.merge_range('I1:I2', '', summary_format)
+        worksheet.write_rich_string('I1',
                                     summary_format, 'D',
                                     subscript_format, '0\n',
                                     summary_format, '(m',
@@ -925,74 +952,25 @@ class Report():
                                     summary_format, ')',
                                     summary_format)
 
-        worksheet.merge_range('L1:L2', '', summary_format)
-        worksheet.write_rich_string('L1',
+        worksheet.merge_range('J1:J2', '', summary_format)
+        worksheet.write_rich_string('J1',
                                     summary_format, 'D',
                                     subscript_format, '0',
                                     summary_format, ' / D',
                                     subscript_format, 'W',
                                     summary_format)
 
-        # worksheet.merge_range('M1:M2', '', summary_format)
-        # worksheet.write_rich_string('M1',
-        #                             summary_format, 'Viscosity\n',
-        #                             summary_format, '(Pa.s)',
-        #                             summary_format)
-
-        # worksheet.merge_range('N1:N2', '', summary_format)
-        # worksheet.write_rich_string('N1',
-        #                             summary_format, 'Viscosity\n',
-        #                             summary_format, '(Po)',
-        #                             summary_format)
-
-        # worksheet.merge_range('O1:O2', '', summary_format)
-        # worksheet.write_rich_string('O1',
-        #                             summary_format, 'Viscosity\n',
-        #                             summary_format, '(cPo)',
-        #                             summary_format)
-
-        worksheet.write('J3',
-                        data['deff'],
-                        summary_val_4d_format)
-        worksheet.write_formula('K3',
-                                '=$J3/10^12',
+        worksheet.write('G3',
+                        data['deffs']['time'],
+                        summary_val_5d_format)
+        worksheet.write('H3',
+                        data['deffs']['deff'],
+                        summary_val_9d_format)
+        worksheet.write_formula('I3',
+                                '=$H3/10^12',
                                 summary_val_E_format)
-        worksheet.write_formula('L3',
-                                '=$J3/$E$5',
+        worksheet.write_formula('J3',
+                                '=$H3/$E$5',
                                 summary_val_4d_format)
-        # worksheet.write_formula('M3',
-        #                         '=($B$6*$B$7)/(6*$B$8*$K3*$B$10)',
-        #                         summary_val_9d_format)
-        # worksheet.write_formula('N3',
-        #                         '=$M3*10',
-        #                         summary_val_9d_format)
-        # worksheet.write_formula('O3',
-        #                         '=$N3*100',
-        #                         summary_val_1d_format)
-        # TODO: For each file, write the next lines
-        # for key, item in enumerate(data['summary'].values):
-        #     i = key+3
-        #     worksheet.merge_range(f'G{i}:I{i}',
-        #                           item[0],
-        #                           summary_file_format)
-        #     worksheet.write(f'J{i}',
-        #                     item[1],
-        #                     summary_val_4d_format)
-        #     worksheet.write_formula(f'K{i}',
-        #                             f'=$J{i}/10^12',
-        #                             summary_val_E_format)
-        #     worksheet.write_formula(f'L{i}',
-        #                             f'=$J{i}/$E$5',
-        #                             summary_val_4d_format)
-        #     # worksheet.write_formula(f'M{i}',
-        #     #                         f'=($B$6*$B$7)/(6*$B$8*$K{i}*$B$10)',
-        #     #                         summary_val_9d_format)
-        #     # worksheet.write_formula(f'N{i}',
-        #     #                         f'=$M{i}*10',
-        #     #                         summary_val_9d_format)
-        #     # worksheet.write_formula(f'O{i}',
-        #     #                         f'=$N{i}*100',
-        #     #                         summary_val_1d_format)
-        # --------------------------------------------------------------------
 
         writer.save()
