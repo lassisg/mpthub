@@ -818,11 +818,11 @@ class Report():
         #     {'align': 'left',
         #      'valign': 'vcenter',
         #      'border': 1})
-        summary_val_1d_format = workbook.add_format(
-            {'align': 'center',
-             'valign': 'vcenter',
-             'border': 1,
-             'num_format': '0.0'})
+        # summary_val_1d_format = workbook.add_format(
+        #     {'align': 'center',
+        #      'valign': 'vcenter',
+        #      'border': 1,
+        #      'num_format': '0.0'})
         summary_val_4d_format = workbook.add_format(
             {'align': 'center',
              'valign': 'vcenter',
