@@ -708,12 +708,14 @@ class Report():
 
         workbook = writer.book
 
-        worksheet = workbook.add_worksheet('Microviscosity calculation')
-        worksheet.hide_gridlines(2)
-
         sheet_format = workbook.add_format(
             {'align': 'center',
              'valign': 'vcenter'})
+        title_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'text_wrap': True,
+             'bold': True})
         left_format = workbook.add_format(
             {'align': 'left',
              'valign': 'vcenter'})
@@ -725,6 +727,22 @@ class Report():
             {'align': 'left',
              'bold': True,
              'valign': 'vcenter'})
+
+        h20_table_header_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'border': 1})
+        h20_table_subscript_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'bold': True,
+             'font_script': 2,
+             'border': 1})
+        h2o_variable_format = workbook.add_format(
+            {'align': 'center',
+             'valign': 'vcenter',
+             'border': 1})
 
         variable_format = workbook.add_format(
             {'align': 'left',
@@ -746,12 +764,6 @@ class Report():
             {'align': 'right',
              'valign': 'vcenter',
              'bg_color': '#e6b8b7',
-             'num_format': '0.0000000',
-             'border': 1})
-        input_val_7d_format = workbook.add_format(
-            {'align': 'right',
-             'valign': 'vcenter',
-             'bg_color': '#b8cce4',
              'num_format': '0.0000000',
              'border': 1})
         note_format = workbook.add_format(
@@ -832,8 +844,56 @@ class Report():
              'border': 1,
              'num_format': '0.000000000'})
 
-        # worksheet.set_column('A:A', 16, sheet_format)
-        # worksheet.set_column('B:Z', 12, sheet_format)
+        worksheet = workbook.add_worksheet('Microviscosity calculation')
+        h2o_viscosity_sheet = workbook.add_worksheet('H2O viscosity')
+
+        h2o_viscosity_sheet.hide_gridlines(2)
+        h2o_viscosity_sheet.set_column('A:Z', 10, sheet_format)
+        h2o_viscosity_sheet.set_default_row(21)
+        h2o_viscosity_sheet.set_row(0, 42)
+
+        h2o_viscosity_sheet_title = 'Dimensionless viscosity of liquid '
+        h2o_viscosity_sheet_title += 'water at 0.1 MPa'
+        h2o_viscosity_sheet.merge_range('A1:C1',
+                                        h2o_viscosity_sheet_title,
+                                        title_format)
+
+        h2o_viscosity_sheet.merge_range('A2:C4', '', sheet_format)
+        formula_image = './mpt/assets/h2o_viscosity_equation.png'
+        h2o_viscosity_sheet.insert_image('A2',
+                                         formula_image,
+                                         {'x_offset': 52, 'y_offset': 12,
+                                          'x_scale': 1.0, 'y_scale': 1.0})
+
+        h2o_viscosity_sheet.write('A5', 'i', h20_table_header_format)
+        h2o_viscosity_sheet.write('A6', 1, h2o_variable_format)
+        h2o_viscosity_sheet.write('A7', 2, h2o_variable_format)
+        h2o_viscosity_sheet.write('A8', 3, h2o_variable_format)
+        h2o_viscosity_sheet.write('A9', 4, h2o_variable_format)
+
+        h2o_viscosity_sheet.write_rich_string('B5',
+                                              h20_table_header_format, 'a',
+                                              h20_table_subscript_format, 'i',
+                                              h20_table_header_format)
+        h2o_viscosity_sheet.write('B6', 280.68, h2o_variable_format)
+        h2o_viscosity_sheet.write('B7', 511.45, h2o_variable_format)
+        h2o_viscosity_sheet.write('B8', 61.131, h2o_variable_format)
+        h2o_viscosity_sheet.write('B9', 0.45903, h2o_variable_format)
+
+        h2o_viscosity_sheet.write_rich_string('C5',
+                                              h20_table_header_format, 'b',
+                                              h20_table_subscript_format, 'i',
+                                              h20_table_header_format)
+        h2o_viscosity_sheet.write('C6', -1.9, h2o_variable_format)
+        h2o_viscosity_sheet.write('C7',  -7.7, h2o_variable_format)
+        h2o_viscosity_sheet.write('C8',  -19.6, h2o_variable_format)
+        h2o_viscosity_sheet.write('C9', -40, h2o_variable_format)
+
+        h2o_viscosity_sheet.merge_range('A10:C10',
+                                        'https://doi.org/10.1063/1.3088050',
+                                        caption_format)
+
+        worksheet.hide_gridlines(2)
         worksheet.set_column('A:Z', 16, sheet_format)
         worksheet.set_column('C:C', 7)
         worksheet.set_column('E:E', 7)
@@ -880,8 +940,17 @@ class Report():
                                 intermediate_val_2d_format)
         worksheet.write_formula('B8', '=PI()',
                                 intermediate_val_7d_format)
-        worksheet.write_formula('B9', '=0.0006913',
-                                input_val_7d_format)
+
+        h2o_1 = "'H2O viscosity'!B6*($B$7/300)^'H2O viscosity'!C6"
+        h2o_2 = "'H2O viscosity'!B7*($B$7/300)^'H2O viscosity'!C7"
+        h2o_3 = "'H2O viscosity'!B8*($B$7/300)^'H2O viscosity'!C8"
+        h2o_4 = "'H2O viscosity'!B9*($B$7/300)^'H2O viscosity'!C9"
+        h2o_viscosity_formula = f'=({h2o_1}+{h2o_2}+{h2o_3}+{h2o_4})*0.000001'
+
+        worksheet.write_formula('B9',
+                                h2o_viscosity_formula,
+                                intermediate_val_7d_format)
+
         worksheet.write_formula('B10', '=($E$10*0.000000001)/2',
                                 intermediate_val_7d_format)
         worksheet.merge_range('A11:B11', '', note_format)
