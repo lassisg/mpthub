@@ -6,7 +6,6 @@ import locale
 import trackpy as tp
 import string
 import itertools
-import time
 
 conn = db.connect()
 
@@ -38,7 +37,7 @@ class Diffusivity:
         """Loads configuration into a DataFrame with data from database."""
         self.config = pd.read_sql_table("diffusivity", con=conn)
 
-    def update(self) -> None:
+    def update(self, new_config: pd.DataFrame) -> None:
         """Updates diffusivity ranges data on database."""
         self.config.to_sql('diffusivity', con=conn,
                            index=False, if_exists='replace')
@@ -49,8 +48,6 @@ class Analysis():
     def __init__(self) -> None:
         self.summary = pd.DataFrame()
         self.load_config()
-        self.trajectories = pd.DataFrame(
-            columns=['file_name', 'particle', 'frame', 'x', 'y'])
 
     def load_config(self) -> None:
         """Loads configuration into a Series with data from database."""
@@ -69,13 +66,14 @@ class Analysis():
         Arguments:
             file_list {list} -- File path list to be imported.
         """
+        self.trajectories = pd.DataFrame(
+            columns=['file_name', 'particle', 'frame', 'x', 'y'])
         self.valid_trajectories = self.trajectories.copy()
 
         i = 0
         for file in file_list:
             if not self.summary.empty:
-                new_file_name, _ = os.path.splitext(os.path.basename(file))
-                masked_df = self.summary['file_name'] == new_file_name
+                masked_df = self.summary.full_path == file
                 if masked_df.any():
                     continue
 
@@ -85,9 +83,6 @@ class Analysis():
                     full_data.columns):
 
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
-                i = len(self.trajectories.groupby(
-                    ['particle'], as_index=False).count()['particle'])
-
                 raw_data, i = self.prepare_for_track_py(raw_data, i)
                 raw_data.insert(loc=0, column='file_name', value=file_name)
                 self.trajectories = self.trajectories.append(
@@ -96,21 +91,6 @@ class Analysis():
     def clear_summary(self):
         self.summary.drop(
             self.summary.index, inplace=True)
-        self.trajectories.drop(
-            self.summary.index, inplace=True)
-        self.valid_trajectories.drop(
-            self.summary.index, inplace=True)
-
-    def remove_file_trajectories(self, file_name):
-        trajectories_filter = self.trajectories['file_name'] != file_name
-        valid_filter = self.valid_trajectories['file_name'] != file_name
-        summary_filter = self.summary['file_name'] != file_name
-
-        self.trajectories = (
-            self.trajectories[trajectories_filter].reset_index(drop=True))
-        self.valid_trajectories = (
-            self.valid_trajectories[valid_filter].reset_index(drop=True))
-        self.summary = self.summary[summary_filter].reset_index(drop=True)
 
     def get_valid_trajectories(self) -> None:
         grouped_data = self.trajectories.groupby(
@@ -121,15 +101,7 @@ class Analysis():
         self.valid_trajectories = self.trajectories[
             self.trajectories['particle'].isin(valid_grouped_data['particle'])]
 
-        # self.valid_trajectories = self.trajectories[(
-        #     self.trajectories['file_name'].isin(
-        #         valid_grouped_data['file_name']) &
-        #     self.trajectories['particle'].isin(
-        #         valid_grouped_data['particle'])
-        # )]
-
     def summarize(self) -> None:
-
         particles_per_file = (
             self.trajectories.groupby('file_name')['particle']
             .nunique()
@@ -163,7 +135,7 @@ class Analysis():
 
         return data_out, i
 
-    def start_trackpy(self):
+    def start(self):
         self.compute_msd()
         self.compute_msd_log()
         self.compute_deff()
@@ -173,6 +145,7 @@ class Analysis():
         self.deff = self.rename_columns(self.deff, "Deff")
 
     def compute_msd(self):
+
         max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
         fps = 1000 / self.config.delta_t
         self.msd = tp.imsd(traj=self.valid_trajectories,
@@ -260,18 +233,18 @@ class Analysis():
         """
         report = Report()
 
-        parent.show_message(
-            "Exporting 'Individual Particle Analysis' report...", 1000)
+        parent.statusBar.SetStatusText(
+            "Exporting 'Individual Particle Analysis' report...")
         report.export_individual_particle_analysis(
             parent.general.config.save_folder, self.msd, self.deff)
 
-        parent.show_message(
-            "Exporting 'Transport Mode Characterization' report...", 1000)
+        parent.statusBar.SetStatusText(
+            "Exporting 'Transport Mode Characterization' report...")
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
-        parent.show_message(
-            "Exporting 'Stokes-Einstein' report...", 1000)
+        parent.statusBar.SetStatusText(
+            "Exporting 'Stokes-Einstein' report...")
 
         report_data = {'deffs': self.get_timestamp_deffs(),
                        'p_size': self.config.p_size,
@@ -640,7 +613,6 @@ class Report():
         characterization_sheet.write('D5', 'Active')
 
         # -------------------------------------------------------- SLOPE and R2
-        # TODO: Fix constrain at ZZ column
         min_row = 2
         total_trajectories = len(msd.columns)-1
 

@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/ui-slider-050.png</file>
+  </qresource>
+</RCC>
