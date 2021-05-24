@@ -1,14 +1,19 @@
 import subprocess
+from os.path import join as path_join
+from os import environ as read_env
 
 
 def main():
     env_path = "D:/virtualenvs/mpt-CrFBuUTO-py3.8/"
     paths = f'{env_path}Lib/site-packages'
+    gui_platform_path = path_join(read_env.get('PROGRAMFILES(X86)'),
+                                  "Qt Designer", 'platforms', '*')
     data_options = [
         'README.md;.',
         'LICENSE;.',
         'mpt/assets/*;./mpt/assets/',
         'ui/*;./ui/',
+        f'{gui_platform_path};./platforms/'
         f'{env_path}Lib/site-packages/PySide6/plugins/platforms/*;./platforms/'
     ]
     # The following hidden-import were added only because of TrackPy
