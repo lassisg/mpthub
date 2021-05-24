@@ -157,7 +157,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
+  <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
     <rect>
      <x>0</x>
@@ -167,11 +167,19 @@
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="tearOffEnabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>File</string>
     </property>
     <addaction name="actionImport_files"/>
     <addaction name="actionExport_files"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -185,9 +193,11 @@
      <addaction name="actionApplication_configuration"/>
     </widget>
     <addaction name="actionStart_analysis"/>
+    <addaction name="separator"/>
     <addaction name="menuConfiguration"/>
-    <addaction name="actionClear_summary"/>
+    <addaction name="separator"/>
     <addaction name="actionRemove_selected"/>
+    <addaction name="actionClear_summary"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -199,7 +209,7 @@
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusBar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
     <string>toolBar</string>
@@ -229,6 +239,9 @@
      <normaloff>:/icons/icons/document-import.png</normaloff>:/icons/icons/document-import.png</iconset>
    </property>
    <property name="text">
+    <string>Import files</string>
+   </property>
+   <property name="toolTip">
     <string>Import files</string>
    </property>
    <property name="shortcut">
@@ -297,6 +310,9 @@
    <property name="shortcut">
     <string>F1</string>
    </property>
+   <property name="menuRole">
+    <enum>QAction::AboutRole</enum>
+   </property>
   </action>
   <action name="actionClear_summary">
    <property name="enabled">
@@ -320,6 +336,14 @@
    </property>
    <property name="text">
     <string>Remove selected</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>Exit</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::QuitRole</enum>
    </property>
   </action>
  </widget>
