@@ -13,7 +13,7 @@ def main():
         'LICENSE;.',
         'mpt/assets/*;./mpt/assets/',
         'ui/*;./ui/',
-        f'{gui_platform_path};./platforms/'
+        # f'{gui_platform_path};./platforms/'
         f'{env_path}Lib/site-packages/PySide6/plugins/platforms/*;./platforms/'
     ]
     # The following hidden-import were added only because of TrackPy
