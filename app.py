@@ -272,8 +272,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.threadpool.start(worker)
 
     def on_export_files(self):
-        # startTime = time.time()
-
         selected_folder = QFileDialog.getExistingDirectory(
             parent=self, caption='Chose folder to save report files',
             dir=self.general.config.save_folder)
@@ -287,13 +285,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_message(
             f"Saving reports to {self.general.config.save_folder}...")
 
-        # worker = Worker(self.export_reports)
-        # self.threadpool.start(worker)
-        self.export_reports()
-
-        # executionTime = (time.time() - startTime)
-        # elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
-        # self.show_message(f"Reports saved. {elapsed_time_message}")
+        worker = Worker(self.export_reports)
+        self.threadpool.start(worker)
+        # self.export_reports()
 
     def on_about(self):
         QMessageBox.about(
