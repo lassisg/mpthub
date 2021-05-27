@@ -68,7 +68,7 @@ class Analysis():
         Arguments:
             file_list {list} -- File path list to be imported.
         """
-        self.valid_trajectories = self.trajectories.copy()
+        # self.valid_trajectories = self.trajectories.copy()
 
         i = 0
         for file in file_list:
@@ -93,12 +93,9 @@ class Analysis():
                     raw_data, ignore_index=True)
 
     def clear_summary(self):
-        self.summary.drop(
-            self.summary.index, inplace=True)
-        self.trajectories.drop(
-            self.summary.index, inplace=True)
-        self.valid_trajectories.drop(
-            self.summary.index, inplace=True)
+        self.summary = self.summary.iloc[0:0]
+        self.trajectories = self.trajectories.iloc[0:0]
+        self.valid_trajectories = self.valid_trajectories.iloc[0:0]
 
     def remove_file_trajectories(self, file_name):
         trajectories_filter = self.trajectories['file_name'] != file_name
