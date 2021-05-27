@@ -180,8 +180,6 @@ class Analysis():
 
         i = 0
         for (file, trajectory), trajectory_data in trajectories_group:
-            # parent.statusBar.SetStatusText(
-            #     f"Computing MSD for trajectory {trajectory} of file {file}...")
 
             pixel_size = self.config.width_px / self.config.width_si
             frames = len(trajectory_data)
@@ -202,12 +200,9 @@ class Analysis():
         self.msd.insert(0, "tau", tau, True)
         self.msd = self.msd[self.msd[self.msd.columns[0]] < self.config.time]
 
-        # msd.name = "MSD"
         self.msd.set_index('tau', inplace=True)
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
         self.msd['mean'] = self.msd.mean(axis=1)
-
-        # return msd
 
     def compute_msdp(self, position, shifts):
         msdp = np.zeros(shifts.size)
@@ -236,7 +231,6 @@ class Analysis():
                            fps=fps,
                            max_lagtime=max_lagtime)
 
-        # msd.name = "MSD"
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
         self.msd.columns = [f'MSD {col}' for col in range(
             1, len(self.msd.columns)+1)]
@@ -251,7 +245,6 @@ class Analysis():
         """
         if not self.msd.empty:
             self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
-            # msd_log.reset_index()
             self.msd_log.set_index(
                 f'Timescale ({chr(120591)}) (s)', inplace=True)
             self.msd_log.name = "MSD-LOG"
@@ -271,10 +264,7 @@ class Analysis():
                 if MSD DataFrame is empty.
         """
         if not self.msd.empty:
-            # return pd.DataFrame()
-
             self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
-            # self.deff.name = "Deff"
             self.deff["mean"] = self.deff.mean(axis=1)
 
     def rename_columns(self, data: pd.DataFrame, header) -> pd.DataFrame:
@@ -289,7 +279,6 @@ class Analysis():
             pd.DataFrame -- Input Pandas DataFrame with renamed \
                 columns. No data changed.
         """
-        # header = data.name
         unit = f"{chr(956)}m{chr(178)}"
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
