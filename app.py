@@ -271,8 +271,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.general.config.save_folder = os.path.abspath(selected_folder)
         self.general.update()
-        # self.show_message(
-        #     f"Saving reports to {self.general.config.save_folder}...")
+        self.show_message(
+            f"Saving reports to {self.general.config.save_folder}...")
 
         worker = Worker(self.export_reports)
         self.threadpool.start(worker)
@@ -351,8 +351,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.general.config.open_folder = os.path.dirname(file_list[0])
         self.general.update()
         executionTime = (time.time() - startTime)
-        self.show_message(
-            f"Data fetched! Elapsed time: {executionTime:.2f} s", 5000)
+
+        elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
+        self.show_message(f"Data fetched! {elapsed_time_message}", 5000)
 
     def update_summary_view(self):
         self.summary_view.clearContents()
