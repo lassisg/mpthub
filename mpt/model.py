@@ -4,8 +4,8 @@ import numpy as np
 import os
 import locale
 import trackpy as tp
-import string
-import itertools
+from string import ascii_uppercase
+from itertools import chain, product, islice
 
 conn = db.connect()
 
@@ -682,15 +682,22 @@ class Report():
         characterization_sheet.write('D5', 'Active')
 
         # -------------------------------------------------------- SLOPE and R2
-        # TODO: Fix constrain at ZZ column
         min_row = 2
         total_trajectories = len(msd.columns)-1
 
         column_list = list(
-            itertools.chain(string.ascii_uppercase,
-                            (''.join(pair) for pair in itertools.product(
-                                string.ascii_uppercase, repeat=2))
-                            ))[1:total_trajectories+1]
+            chain(ascii_uppercase,
+                  (''.join(pair)
+                   for pair in product(ascii_uppercase, repeat=2))))
+
+        columns_xxx = list(
+            chain(ascii_uppercase,
+                  (''.join(pair)
+                   for pair in product(ascii_uppercase, repeat=3))))
+        columns_xxx = columns_xxx[len(ascii_uppercase):]
+
+        column_list.extend(columns_xxx)
+        column_list = column_list[1:total_trajectories+1]
 
         # --------------------------------------------------------------- SLOPE
         characterization_sheet.write(
