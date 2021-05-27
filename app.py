@@ -1,7 +1,8 @@
 import os
 import sys
 import time
-# import locale
+import datetime
+import locale
 from pandas import DataFrame
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, Qt
@@ -171,7 +172,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.appName = "NPT Hub"
         self.setWindowTitle(
-            f"{self.appName} - Multiple Tracking Analysis software")
+            f"{self.appName} - Multiple Particle Tracking Analysis software")
 
         # settings = Settings()
         self.summary_is_outdated = False
@@ -199,11 +200,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.total.setTextAlignment(0, Qt.AlignRight)
         self.total.setTextAlignment(1, Qt.AlignRight)
         self.total.setTextAlignment(2, Qt.AlignRight)
+        self.actionRemove_selected.setEnabled(False)
+        self.actionStart_analysis.setEnabled(False)
+        self.actionClear_summary.setEnabled(False)
+        self.actionExport_files.setEnabled(False)
 
     def load_project_setup(self) -> None:
+        locale.setlocale(locale.LC_ALL, '')
         self.analysis = mpt.analysis
         self.diffusivity = mpt.diffusivity
         self.general = mpt.general
+        self.USE_TRACKPY = True
 
     def connectSignalsSlots(self):
         self.actionImport_files.triggered.connect(self.on_import_files)
@@ -255,7 +262,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_message("Summary cleared")
 
     def on_start_analysis(self):
-        worker = Worker(self.mpt_analysis)
+        if self.USE_TRACKPY:
+            worker = Worker(self.mpt_analysis_tp)
+            # self.mpt_analysis_tp()
+        else:
+            worker = Worker(self.mpt_analysis)
+            # self.mpt_analysis()
+
         self.threadpool.start(worker)
 
     def on_export_files(self):
@@ -274,9 +287,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_message(
             f"Saving reports to {self.general.config.save_folder}...")
 
-        worker = Worker(self.export_reports)
-        self.threadpool.start(worker)
-        # self.export_reports()
+        # worker = Worker(self.export_reports)
+        # self.threadpool.start(worker)
+        self.export_reports()
 
         # executionTime = (time.time() - startTime)
         # elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
@@ -330,17 +343,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             dir=self.general.config.open_folder,
             filter="ImageJ full report files (*.csv)")
 
-        startTime = time.time()
+        start_time = time.time()
 
         if not file_list:
             self.show_message("No file selected...")
             return None
 
-        partTime = time.time()
+        part_time = time.time()
         self.show_message("File(s) selected...")
 
         self.analysis.load_reports(file_list)
-        print(time.time() - partTime)
+        print(time.time() - part_time)
 
         self.show_message("Filtering valid trajectories...")
         self.analysis.get_valid_trajectories()
@@ -350,9 +363,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.general.config.open_folder = os.path.dirname(file_list[0])
         self.general.update()
-        executionTime = (time.time() - startTime)
 
-        elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
+        execution_time = (time.time() - start_time)
+
+        if execution_time > 60:
+            execution_time_min = int(execution_time/60)
+            execution_time_sec = execution_time - 60 * execution_time_min
+            elapsed_time_formatted = (
+                f"{execution_time_min} min, {execution_time_sec:.2f} s")
+        else:
+            elapsed_time_formatted = f"{execution_time:.2f} s"
+
+        elapsed_time_message = f"Elapsed time: {elapsed_time_formatted}"
         self.show_message(f"Data fetched! {elapsed_time_message}", 5000)
 
     def update_summary_view(self):
@@ -404,6 +426,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionRemove_selected.setDisabled(self.analysis.summary.empty)
 
     def mpt_analysis(self):
+        self.show_message(
+            "Computing MSD (mean squared displacement)...")
+
+        self.setCursor(Qt.BusyCursor)
+
+        startTime = time.time()
+
+        self.show_message("Starting trajectory analysis...")
+        self.analysis.compute_msd()
+        self.analysis.compute_msd_log()
+
+        self.show_message(
+            "Computing Deff (diffusivity coefficient)...")
+        self.analysis.compute_deff()
+
+        self.show_message(
+            "Adjusting data labels...")
+
+        self.analysis.msd = self.analysis.rename_columns(
+            self.analysis.msd, "MSD")
+        self.analysis.msd_log = self.analysis.rename_columns(
+            self.analysis.msd_log, "MSD-LOG")
+        self.analysis.deff = self.analysis.rename_columns(
+            self.analysis.deff, "Deff")
+        executionTime = (time.time() - startTime)
+
+        self.setCursor(Qt.ArrowCursor)
+        self.actionExport_files.setDisabled(self.analysis.msd.empty)
+
+        elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
+        self.show_message(
+            f"Trajectory analysis complete... {elapsed_time_message}")
+
+    def mpt_analysis_tp(self):
         self.show_message("Starting trajectory analysis...")
         self.setCursor(Qt.BusyCursor)
 
