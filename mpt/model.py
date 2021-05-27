@@ -163,8 +163,65 @@ class Analysis():
 
         return data_out, i
 
+    def compute_msd(self) -> pd.DataFrame:
+        """Computes the Mean-squared Displacement (MSD).
+        It is mandatory to have configuration data previously loaded.
+
+        Returns:
+            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
+        """
+        # TODO: Raise error if anything goes wrong
+        time_step = 1 / self.config.fps
+        max_time = self.config.total_frames / self.config.fps
+        tau = np.linspace(time_step, max_time, int(self.config.total_frames))
+
+        self.msd = pd.DataFrame()
+        trajectories_group = self.valid_trajectories.groupby(
+            ['file_name', 'particle'])
+
+        i = 0
+        for (file, trajectory), trajectory_data in trajectories_group:
+            # parent.statusBar.SetStatusText(
+            #     f"Computing MSD for trajectory {trajectory} of file {file}...")
+
+            pixel_size = self.config.width_px / self.config.width_si
+            frames = len(trajectory_data)
+            t = tau[:frames]
+            xy = trajectory_data.values
+
+            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
+            shifts = position["t"].index.values + 1
+            msdp = self.compute_msdp(position, shifts)
+            msdm = msdp * (1 / (pixel_size ** 2))
+            msdm = msdm[:int(self.config.min_frames)]
+            self.msd[i] = msdm
+
+            i += 1
+
+        tau = tau[:int(self.config.min_frames)]
+
+        self.msd.insert(0, "tau", tau, True)
+        self.msd = self.msd[self.msd[self.msd.columns[0]] < self.config.time]
+
+        # msd.name = "MSD"
+        self.msd.set_index('tau', inplace=True)
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        self.msd['mean'] = self.msd.mean(axis=1)
+
+        # return msd
+
+    def compute_msdp(self, position, shifts):
+        msdp = np.zeros(shifts.size)
+        for k, shift in enumerate(shifts):
+            diffs_x = position['x'] - position['x'].shift(-shift)
+            diffs_y = position['y'] - position['y'].shift(-shift)
+            square_sum = np.square(diffs_x) + np.square(diffs_y)
+            msdp[k] = square_sum.mean()
+
+        return msdp
+
     def start_trackpy(self):
-        self.compute_msd()
+        self.compute_msd_tp()
         self.compute_msd_log()
         self.compute_deff()
 
@@ -172,7 +229,7 @@ class Analysis():
         self.msd_log = self.rename_columns(self.msd_log, "MSD-LOG")
         self.deff = self.rename_columns(self.deff, "Deff")
 
-    def compute_msd(self):
+    def compute_msd_tp(self):
         max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
         fps = 1000 / self.config.delta_t
         self.msd = tp.imsd(traj=self.valid_trajectories,
@@ -1052,9 +1109,9 @@ class Report():
         worksheet.merge_range('J1:J2', '', summary_format)
         worksheet.write_rich_string('J1',
                                     summary_format, 'D',
-                                    subscript_format, '0',
-                                    summary_format, ' / D',
                                     subscript_format, 'W',
+                                    summary_format, ' / D',
+                                    subscript_format, '0',
                                     summary_format)
 
         worksheet.write('G3',
@@ -1067,7 +1124,7 @@ class Report():
                                 '=$H3/10^12',
                                 summary_val_E_format)
         worksheet.write_formula('J3',
-                                '=$H3/$E$5',
+                                '=$E$5/$H3',
                                 summary_val_4d_format)
 
         writer.save()
