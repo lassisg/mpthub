@@ -6,7 +6,6 @@ import locale
 import trackpy as tp
 import string
 import itertools
-import time
 
 conn = db.connect()
 
