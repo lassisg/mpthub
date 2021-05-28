@@ -3,7 +3,7 @@ import sys
 import time
 import datetime
 import locale
-from pandas import DataFrame
+import pandas as pd
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, Qt
 from PySide6.QtUiTools import QUiLoader
@@ -50,7 +50,7 @@ class Worker(QRunnable):
 
 class ApplicationConfiguration(QDialog):
 
-    update_application = Signal(DataFrame)
+    update_application = Signal(pd.DataFrame)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -114,7 +114,7 @@ class ApplicationConfiguration(QDialog):
 
 class DiffusivityRanges(QDialog):
 
-    update_diffusivity = Signal(DataFrame)
+    update_diffusivity = Signal(pd.DataFrame)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -172,7 +172,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.appName = "NPT Hub"
         self.setWindowTitle(
-            f"{self.appName} - Multiple Particle Tracking Analysis software")
+            f"{self.appName} - Multiple Particle Tracking Analysis")
 
         # settings = Settings()
         self.summary_is_outdated = False
@@ -180,6 +180,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.load_ui_setup()
 
     def load_ui_setup(self) -> None:
+        # ------------------------------------------------------- General setup
+        self.toolBar.setMovable(False)
+
         # -------------------------------------------------------- Table Widget
         self.summary_view.setColumnWidth(0, 43)
         self.summary_view.setColumnWidth(1, 678)
@@ -479,13 +482,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
         self.show_message(f"Reports saved. {elapsed_time_message}")
 
-    @Slot(DataFrame)
+    @Slot(pd.DataFrame)
     def update_diffusivity_config(self, config):
         self.show_message("Saving changes...")
         self.diffusivity.config = config
         self.diffusivity.update()
 
-    @Slot(DataFrame)
+    @Slot(pd.DataFrame)
     def update_app_config(self, config):
         self.show_message("Saving changes...")
         if self.analysis.config != config:
