@@ -140,3 +140,9 @@ src/data/config.db
 data/config.db
 .vscode/settings.json
 >>>>>>> redesign
+
+# Poetry
+poetry.lock
+
+# Qt
+.qt_for_python/*

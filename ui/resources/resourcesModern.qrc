@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/gear-outlined-symbol.png</file>
+    <file>icons/up-arrow-with-house-shape-outlined-symbol.png</file>
+    <file>icons/download-down-arrow-symbol.png</file>
+    <file>icons/equalization.png</file>
+    <file>icons/play-triangle-outline.png</file>
+    <file>icons/upload.png</file>
+    <file>icons/men.png</file>
+  </qresource>
+</RCC>

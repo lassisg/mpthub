@@ -1,0 +1,20 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/application-task.png</file>
+    <file>icons/book-question.png</file>
+    <file>icons/broom.png</file>
+    <file>icons/control.png</file>
+    <file>icons/control-double.png</file>
+    <file>icons/document-import.png</file>
+    <file>icons/document-export.png</file>
+    <file>icons/information.png</file>
+    <file>icons/minus.png</file>
+    <file>icons/node-magnifier.png</file>
+    <file>icons/table--minus.png</file>
+    <file>icons/ui-slider-050.png</file>
+  </qresource>
+  <qresource prefix="ui">
+    <file>../app_config.ui</file>
+    <file>../diffusivity.ui</file>
+  </qresource>
+</RCC>

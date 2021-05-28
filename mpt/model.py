@@ -4,8 +4,8 @@ import numpy as np
 import os
 import locale
 import trackpy as tp
-import string
-import itertools
+from string import ascii_uppercase
+from itertools import chain, product, islice
 
 conn = db.connect()
 
@@ -37,7 +37,7 @@ class Diffusivity:
         """Loads configuration into a DataFrame with data from database."""
         self.config = pd.read_sql_table("diffusivity", con=conn)
 
-    def update(self, new_config: pd.DataFrame) -> None:
+    def update(self) -> None:
         """Updates diffusivity ranges data on database."""
         self.config.to_sql('diffusivity', con=conn,
                            index=False, if_exists='replace')
@@ -48,6 +48,8 @@ class Analysis():
     def __init__(self) -> None:
         self.summary = pd.DataFrame()
         self.load_config()
+        self.trajectories = pd.DataFrame(
+            columns=['file_name', 'particle', 'frame', 'x', 'y'])
 
     def load_config(self) -> None:
         """Loads configuration into a Series with data from database."""
@@ -66,14 +68,13 @@ class Analysis():
         Arguments:
             file_list {list} -- File path list to be imported.
         """
-        self.trajectories = pd.DataFrame(
-            columns=['file_name', 'particle', 'frame', 'x', 'y'])
-        self.valid_trajectories = self.trajectories.copy()
+        # self.valid_trajectories = self.trajectories.copy()
 
         i = 0
         for file in file_list:
             if not self.summary.empty:
-                masked_df = self.summary.full_path == file
+                new_file_name, _ = os.path.splitext(os.path.basename(file))
+                masked_df = self.summary['file_name'] == new_file_name
                 if masked_df.any():
                     continue
 
@@ -83,14 +84,29 @@ class Analysis():
                     full_data.columns):
 
                 raw_data = full_data.loc[:, ['Trajectory', 'Frame', 'x', 'y']]
+                i = len(self.trajectories.groupby(
+                    ['particle'], as_index=False).count()['particle'])
+
                 raw_data, i = self.prepare_for_track_py(raw_data, i)
                 raw_data.insert(loc=0, column='file_name', value=file_name)
                 self.trajectories = self.trajectories.append(
                     raw_data, ignore_index=True)
 
     def clear_summary(self):
-        self.summary.drop(
-            self.summary.index, inplace=True)
+        self.summary = self.summary.iloc[0:0]
+        self.trajectories = self.trajectories.iloc[0:0]
+        self.valid_trajectories = self.valid_trajectories.iloc[0:0]
+
+    def remove_file_trajectories(self, file_name):
+        trajectories_filter = self.trajectories['file_name'] != file_name
+        valid_filter = self.valid_trajectories['file_name'] != file_name
+        summary_filter = self.summary['file_name'] != file_name
+
+        self.trajectories = (
+            self.trajectories[trajectories_filter].reset_index(drop=True))
+        self.valid_trajectories = (
+            self.valid_trajectories[valid_filter].reset_index(drop=True))
+        self.summary = self.summary[summary_filter].reset_index(drop=True)
 
     def get_valid_trajectories(self) -> None:
         grouped_data = self.trajectories.groupby(
@@ -101,7 +117,15 @@ class Analysis():
         self.valid_trajectories = self.trajectories[
             self.trajectories['particle'].isin(valid_grouped_data['particle'])]
 
+        # self.valid_trajectories = self.trajectories[(
+        #     self.trajectories['file_name'].isin(
+        #         valid_grouped_data['file_name']) &
+        #     self.trajectories['particle'].isin(
+        #         valid_grouped_data['particle'])
+        # )]
+
     def summarize(self) -> None:
+
         particles_per_file = (
             self.trajectories.groupby('file_name')['particle']
             .nunique()
@@ -135,8 +159,60 @@ class Analysis():
 
         return data_out, i
 
-    def start(self):
-        self.compute_msd()
+    def compute_msd(self) -> pd.DataFrame:
+        """Computes the Mean-squared Displacement (MSD).
+        It is mandatory to have configuration data previously loaded.
+
+        Returns:
+            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
+        """
+        # TODO: Raise error if anything goes wrong
+        time_step = 1 / self.config.fps
+        max_time = self.config.total_frames / self.config.fps
+        tau = np.linspace(time_step, max_time, int(self.config.total_frames))
+
+        self.msd = pd.DataFrame()
+        trajectories_group = self.valid_trajectories.groupby(
+            ['file_name', 'particle'])
+
+        i = 0
+        for (file, trajectory), trajectory_data in trajectories_group:
+
+            pixel_size = self.config.width_px / self.config.width_si
+            frames = len(trajectory_data)
+            t = tau[:frames]
+            xy = trajectory_data.values
+
+            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
+            shifts = position["t"].index.values + 1
+            msdp = self.compute_msdp(position, shifts)
+            msdm = msdp * (1 / (pixel_size ** 2))
+            msdm = msdm[:int(self.config.min_frames)]
+            self.msd[i] = msdm
+
+            i += 1
+
+        tau = tau[:int(self.config.min_frames)]
+
+        self.msd.insert(0, "tau", tau, True)
+        self.msd = self.msd[self.msd[self.msd.columns[0]] < self.config.time]
+
+        self.msd.set_index('tau', inplace=True)
+        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
+        self.msd['mean'] = self.msd.mean(axis=1)
+
+    def compute_msdp(self, position, shifts):
+        msdp = np.zeros(shifts.size)
+        for k, shift in enumerate(shifts):
+            diffs_x = position['x'] - position['x'].shift(-shift)
+            diffs_y = position['y'] - position['y'].shift(-shift)
+            square_sum = np.square(diffs_x) + np.square(diffs_y)
+            msdp[k] = square_sum.mean()
+
+        return msdp
+
+    def start_trackpy(self):
+        self.compute_msd_tp()
         self.compute_msd_log()
         self.compute_deff()
 
@@ -144,8 +220,7 @@ class Analysis():
         self.msd_log = self.rename_columns(self.msd_log, "MSD-LOG")
         self.deff = self.rename_columns(self.deff, "Deff")
 
-    def compute_msd(self):
-
+    def compute_msd_tp(self):
         max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
         fps = 1000 / self.config.delta_t
         self.msd = tp.imsd(traj=self.valid_trajectories,
@@ -153,7 +228,6 @@ class Analysis():
                            fps=fps,
                            max_lagtime=max_lagtime)
 
-        # msd.name = "MSD"
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
         self.msd.columns = [f'MSD {col}' for col in range(
             1, len(self.msd.columns)+1)]
@@ -168,7 +242,6 @@ class Analysis():
         """
         if not self.msd.empty:
             self.msd_log = np.log10(self.msd.reset_index().iloc[:, :-1])
-            # msd_log.reset_index()
             self.msd_log.set_index(
                 f'Timescale ({chr(120591)}) (s)', inplace=True)
             self.msd_log.name = "MSD-LOG"
@@ -188,10 +261,7 @@ class Analysis():
                 if MSD DataFrame is empty.
         """
         if not self.msd.empty:
-            # return pd.DataFrame()
-
             self.deff = self.msd.iloc[:, :-1].div((4*self.msd.index), axis=0)
-            # self.deff.name = "Deff"
             self.deff["mean"] = self.deff.mean(axis=1)
 
     def rename_columns(self, data: pd.DataFrame, header) -> pd.DataFrame:
@@ -206,7 +276,6 @@ class Analysis():
             pd.DataFrame -- Input Pandas DataFrame with renamed \
                 columns. No data changed.
         """
-        # header = data.name
         unit = f"{chr(956)}m{chr(178)}"
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
@@ -233,18 +302,18 @@ class Analysis():
         """
         report = Report()
 
-        parent.statusBar.SetStatusText(
-            "Exporting 'Individual Particle Analysis' report...")
+        parent.show_message(
+            "Exporting 'Individual Particle Analysis' report...", 1000)
         report.export_individual_particle_analysis(
             parent.general.config.save_folder, self.msd, self.deff)
 
-        parent.statusBar.SetStatusText(
-            "Exporting 'Transport Mode Characterization' report...")
+        parent.show_message(
+            "Exporting 'Transport Mode Characterization' report...", 1000)
         report.export_transport_mode(
             parent.general.config.save_folder, self.msd_log)
 
-        parent.statusBar.SetStatusText(
-            "Exporting 'Stokes-Einstein' report...")
+        parent.show_message(
+            "Exporting 'Stokes-Einstein' report...", 1000)
 
         report_data = {'deffs': self.get_timestamp_deffs(),
                        'p_size': self.config.p_size,
@@ -617,10 +686,18 @@ class Report():
         total_trajectories = len(msd.columns)-1
 
         column_list = list(
-            itertools.chain(string.ascii_uppercase,
-                            (''.join(pair) for pair in itertools.product(
-                                string.ascii_uppercase, repeat=2))
-                            ))[1:total_trajectories+1]
+            chain(ascii_uppercase,
+                  (''.join(pair)
+                   for pair in product(ascii_uppercase, repeat=2))))
+
+        columns_xxx = list(
+            chain(ascii_uppercase,
+                  (''.join(pair)
+                   for pair in product(ascii_uppercase, repeat=3))))
+        columns_xxx = columns_xxx[len(ascii_uppercase):]
+
+        column_list.extend(columns_xxx)
+        column_list = column_list[1:total_trajectories+1]
 
         # --------------------------------------------------------------- SLOPE
         characterization_sheet.write(
@@ -1024,9 +1101,9 @@ class Report():
         worksheet.merge_range('J1:J2', '', summary_format)
         worksheet.write_rich_string('J1',
                                     summary_format, 'D',
-                                    subscript_format, '0',
-                                    summary_format, ' / D',
                                     subscript_format, 'W',
+                                    summary_format, ' / D',
+                                    subscript_format, '0',
                                     summary_format)
 
         worksheet.write('G3',
@@ -1039,7 +1116,7 @@ class Report():
                                 '=$H3/10^12',
                                 summary_val_E_format)
         worksheet.write_formula('J3',
-                                '=$H3/$E$5',
+                                '=$E$5/$H3',
                                 summary_val_4d_format)
 
         writer.save()
