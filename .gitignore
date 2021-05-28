@@ -140,3 +140,5 @@ src/data/config.db
 data/config.db
 .vscode/settings.json
 >>>>>>> redesign
+
+.qt_for_python/*
