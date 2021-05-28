@@ -204,6 +204,7 @@
      <addaction name="actionDiffusivity_ranges"/>
      <addaction name="actionApplication_configuration"/>
     </widget>
+    <addaction name="actionStart_analysis_tp"/>
     <addaction name="actionStart_analysis"/>
     <addaction name="separator"/>
     <addaction name="menuConfigurations"/>
@@ -239,6 +240,7 @@
    <addaction name="actionClear_summary"/>
    <addaction name="separator"/>
    <addaction name="actionStart_analysis"/>
+   <addaction name="actionStart_analysis_tp"/>
    <addaction name="separator"/>
    <addaction name="actionDiffusivity_ranges"/>
    <addaction name="actionApplication_configuration"/>
@@ -267,10 +269,10 @@
     <string>Ctrl+E</string>
    </property>
   </action>
-  <action name="actionStart_analysis">
+  <action name="actionStart_analysis_tp">
    <property name="icon">
     <iconset resource="resources/resources.qrc">
-     <normaloff>:/icons/icons/control.png</normaloff>:/icons/icons/control.png</iconset>
+     <normaloff>:/icons/icons/control-double.png</normaloff>:/icons/icons/control-double.png</iconset>
    </property>
    <property name="text">
     <string>&amp;Start analysis</string>
@@ -330,6 +332,15 @@
    </property>
    <property name="menuRole">
     <enum>QAction::QuitRole</enum>
+   </property>
+  </action>
+  <action name="actionStart_analysis">
+   <property name="icon">
+    <iconset resource="resources/resources.qrc">
+     <normaloff>:/icons/icons/control.png</normaloff>:/icons/icons/control.png</iconset>
+   </property>
+   <property name="text">
+    <string>Start Analysis (without TrackPy)</string>
    </property>
   </action>
  </widget>

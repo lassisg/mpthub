@@ -203,23 +203,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.total.setTextAlignment(0, Qt.AlignRight)
         self.total.setTextAlignment(1, Qt.AlignRight)
         self.total.setTextAlignment(2, Qt.AlignRight)
+        self.lock_actions()
+
+    def lock_actions(self):
         self.actionRemove_selected.setEnabled(False)
         self.actionStart_analysis.setEnabled(False)
+        self.actionStart_analysis_tp.setEnabled(False)
         self.actionClear_summary.setEnabled(False)
         self.actionExport_files.setEnabled(False)
+
+    def unlock_actions(self):
+        self.actionRemove_selected.setEnabled(True)
+        self.actionStart_analysis.setEnabled(True)
+        self.actionStart_analysis_tp.setEnabled(True)
+        self.actionClear_summary.setEnabled(True)
+        self.actionExport_files.setEnabled(True)
 
     def load_project_setup(self) -> None:
         locale.setlocale(locale.LC_ALL, '')
         self.analysis = mpt.analysis
         self.diffusivity = mpt.diffusivity
         self.general = mpt.general
-        self.USE_TRACKPY = True
 
     def connectSignalsSlots(self):
         self.actionImport_files.triggered.connect(self.on_import_files)
         self.actionRemove_selected.triggered.connect(self.on_remove_selected)
         self.actionClear_summary.triggered.connect(self.on_clear_summary)
         self.actionStart_analysis.triggered.connect(self.on_start_analysis)
+        self.actionStart_analysis_tp.triggered.connect(
+            self.on_start_analysis_tp)
         self.actionExport_files.triggered.connect(self.on_export_files)
         self.actionAbout.triggered.connect(self.on_about)
 
@@ -242,6 +254,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.actionRemove_selected.setEnabled(True)
         self.actionStart_analysis.setEnabled(True)
+        self.actionStart_analysis_tp.setEnabled(True)
         self.actionClear_summary.setEnabled(True)
 
     def on_remove_selected(self):
@@ -260,18 +273,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.actionRemove_selected.setEnabled(False)
         self.actionStart_analysis.setEnabled(False)
+        self.actionStart_analysis_tp.setEnabled(False)
         self.actionClear_summary.setEnabled(False)
         self.actionExport_files.setEnabled(False)
         self.show_message("Summary cleared")
 
     def on_start_analysis(self):
-        if self.USE_TRACKPY:
-            worker = Worker(self.mpt_analysis_tp)
-            # self.mpt_analysis_tp()
-        else:
-            worker = Worker(self.mpt_analysis)
-            # self.mpt_analysis()
+        worker = Worker(self.mpt_analysis)
+        self.threadpool.start(worker)
 
+    def on_start_analysis_tp(self):
+        worker = Worker(self.mpt_analysis_tp)
         self.threadpool.start(worker)
 
     def on_export_files(self):
@@ -423,6 +435,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionRemove_selected.setDisabled(self.analysis.summary.empty)
 
     def mpt_analysis(self):
+        self.actionImport_files.setEnabled(False)
+        self.lock_actions()
         self.show_message(
             "Computing MSD (mean squared displacement)...")
 
@@ -455,6 +469,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
         self.show_message(
             f"Trajectory analysis complete... {elapsed_time_message}")
+        self.unlock_actions()
+        self.actionImport_files.setEnabled(True)
 
     def mpt_analysis_tp(self):
         self.show_message("Starting trajectory analysis...")
