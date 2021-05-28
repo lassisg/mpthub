@@ -13,7 +13,7 @@ def main():
         'mpt/assets/*;./mpt/assets/',
         'ui/*;./ui/',
         # 'platforms/*;./platforms/'
-        # f'{paths}/PySide6/plugins/platforms/*;./platforms/'
+        f'{paths}/PySide6/plugins/platforms/*;./platforms/'
     ]
     # The following hidden-import were added only because of TrackPy
     hidden = [
@@ -30,13 +30,13 @@ def main():
     #                 --paths={path_libs} \
     #                 --debug=all \
     #                 --debug=imports \
-    #                 --add-data={data_options[4]} \
     subprocess.run(f"python -m PyInstaller --clean -D --noconfirm -w \
                     --paths={paths} \
                     --add-data={data_options[0]} \
                     --add-data={data_options[1]} \
                     --add-data={data_options[2]} \
                     --add-data={data_options[3]} \
+                    --add-data={data_options[4]} \
                     --hidden-import={hidden[0]} \
                     --hidden-import={hidden[1]} \
                     --hidden-import={hidden[2]} \
