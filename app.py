@@ -234,6 +234,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.on_start_analysis_tp)
         self.actionExport_files.triggered.connect(self.on_export_files)
         self.actionAbout.triggered.connect(self.on_about)
+        self.actionExit.triggered.connect(self.close)
 
         self.actionApplication_configuration.triggered.connect(
             self.on_application_configuration)
