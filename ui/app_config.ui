@@ -234,10 +234,10 @@
           </font>
          </property>
          <property name="inputMask">
-          <string>0.##</string>
+          <string/>
          </property>
          <property name="text">
-          <string>0.00</string>
+          <string/>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -431,10 +431,10 @@
           </font>
          </property>
          <property name="inputMask">
-          <string>##.##</string>
+          <string/>
          </property>
          <property name="text">
-          <string>00.00</string>
+          <string/>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
