@@ -365,9 +365,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.analysis.load_reports(file_list)
         print(time.time() - part_time)
 
-        self.show_message("Filtering valid trajectories...")
-        self.analysis.get_valid_trajectories()
-
         self.show_message("Creating summary...")
         self.analysis.summarize()
 
@@ -508,14 +505,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     @Slot(pd.DataFrame)
     def update_app_config(self, config):
         self.show_message("Saving changes...")
-        if self.analysis.config != config:
+        current_filter = int(self.analysis.config['min_frames'])
+        if (self.analysis.config != config).any():
             self.analysis.config = config
             self.analysis.update()
 
-            # current_filter = int(self.analysis.config['min_frames'])
-            # new_filter = int(config['min_frames'])
-            # if current_filter == new_filter:
-            #     self.update_summary_view()
+            new_filter = int(config['min_frames'])
+            if current_filter != new_filter:
+                self.show_message("Updating summary...")
+                self.analysis.summarize()
+                self.update_summary_view()
 
     def discard_config_changes(self):
         self.show_message("Discarding changes...")

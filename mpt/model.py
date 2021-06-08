@@ -126,6 +126,8 @@ class Analysis():
 
     def summarize(self) -> None:
 
+        self.get_valid_trajectories()
+
         particles_per_file = (
             self.trajectories.groupby('file_name')['particle']
             .nunique()
