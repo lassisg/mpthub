@@ -232,6 +232,7 @@ class Analysis():
                            fps=fps,
                            max_lagtime=max_lagtime)
 
+        self.msd = self.msd[self.msd.index.values < self.config.time]
         self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
         self.msd.columns = [f'MSD {col}' for col in range(
             1, len(self.msd.columns)+1)]
