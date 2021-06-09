@@ -508,6 +508,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         current_filter = int(self.analysis.config['min_frames'])
         if (self.analysis.config != config).any():
             self.analysis.config = config
+            self.analysis.config.fps = 1000 / self.analysis.config.delta_t
             self.analysis.update()
 
             new_filter = int(config['min_frames'])
