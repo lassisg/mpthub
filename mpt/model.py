@@ -225,7 +225,8 @@ class Analysis():
 
     def compute_msd_tp(self):
         max_lagtime = int(self.config.time / (self.config.delta_t / 1000))
-        fps = 1000 / self.config.delta_t
+        # fps = 1000 / self.config.delta_t
+        fps = self.config.fps
         self.msd = tp.imsd(traj=self.valid_trajectories,
                            mpp=self.config.width_si/self.config.width_px,
                            fps=fps,
