@@ -68,7 +68,6 @@ class Analysis():
         Arguments:
             file_list {list} -- File path list to be imported.
         """
-        # self.valid_trajectories = self.trajectories.copy()
 
         i = 0
         for file in file_list:
@@ -91,6 +90,11 @@ class Analysis():
                 raw_data.insert(loc=0, column='file_name', value=file_name)
                 self.trajectories = self.trajectories.append(
                     raw_data, ignore_index=True)
+
+        self.remove_gaps()
+
+    def remove_gaps(self):
+        self.trajectories['frame'] = self.trajectories.index.values
 
     def clear_summary(self):
         self.summary = self.summary.iloc[0:0]
@@ -169,7 +173,6 @@ class Analysis():
             pd.DataFrame -- Pandas DataFrame containing analysis MSD.
         """
         # TODO: Raise error if anything goes wrong
-        # time_step = 1 / self.config.fps
         time_step = self.config.delta_t/1000
         max_time = self.config.total_frames / self.config.fps
         tau = np.linspace(time_step, max_time, int(self.config.total_frames))
