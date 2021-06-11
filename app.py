@@ -1,8 +1,8 @@
 import os
 import sys
 import time
-import datetime
 import locale
+import datetime
 import pandas as pd
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, Qt
@@ -12,10 +12,7 @@ from PySide6.QtWidgets import (
     QDialog, QFileDialog, QCheckBox, QTableWidgetItem,  QTreeWidgetItem
 )
 
-# import resources_rc
 import mpt
-# from mpt.model import Analysis
-# from mpt.settings import Settings
 from ui.MainWindow import Ui_MainWindow
 
 
