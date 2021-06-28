@@ -22,7 +22,7 @@ def main():
         'scipy.spatial.transform._rotation_groups',
         'scipy.special.cython_special'
     ]
-    app_name = 'MPT_Analysis'
+    app_name = 'MPT_Hub'
     # icon_path = './mpt/assets/icon.ico'
     icon_path = './ui/resources/icons/node-magnifier.ico'
 

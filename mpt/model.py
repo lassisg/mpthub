@@ -165,58 +165,6 @@ class Analysis():
 
         return data_out, i
 
-    def compute_msd(self) -> pd.DataFrame:
-        """Computes the Mean-squared Displacement (MSD).
-        It is mandatory to have configuration data previously loaded.
-
-        Returns:
-            pd.DataFrame -- Pandas DataFrame containing analysis MSD.
-        """
-        # TODO: Raise error if anything goes wrong
-        time_step = self.config.delta_t/1000
-        max_time = self.config.total_frames / self.config.fps
-        tau = np.linspace(time_step, max_time, int(self.config.total_frames))
-
-        self.msd = pd.DataFrame()
-        trajectories_group = self.valid_trajectories.groupby(
-            ['file_name', 'particle'])
-
-        i = 0
-        for (file, trajectory), trajectory_data in trajectories_group:
-
-            pixel_size = self.config.width_px / self.config.width_si
-            frames = len(trajectory_data)
-            t = tau[:frames]
-            xy = trajectory_data.values
-
-            position = pd.DataFrame({"t": t, "x": xy[:, -2], "y": xy[:, -1]})
-            shifts = position["t"].index.values + 1
-            msdp = self.compute_msdp(position, shifts)
-            msdm = msdp * (1 / (pixel_size ** 2))
-            msdm = msdm[:int(self.config.min_frames)]
-            self.msd[i] = msdm
-
-            i += 1
-
-        tau = tau[:int(self.config.min_frames)]
-
-        self.msd.insert(0, "tau", tau, True)
-        self.msd = self.msd[self.msd[self.msd.columns[0]] < self.config.time]
-
-        self.msd.set_index('tau', inplace=True)
-        self.msd.index.name = f'Timescale ({chr(120591)}) (s)'
-        self.msd['mean'] = self.msd.mean(axis=1)
-
-    def compute_msdp(self, position, shifts):
-        msdp = np.zeros(shifts.size)
-        for k, shift in enumerate(shifts):
-            diffs_x = position['x'] - position['x'].shift(-shift)
-            diffs_y = position['y'] - position['y'].shift(-shift)
-            square_sum = np.square(diffs_x) + np.square(diffs_y)
-            msdp[k] = square_sum.mean()
-
-        return msdp
-
     def start_trackpy(self):
         self.compute_msd_tp()
         self.compute_msd_log()

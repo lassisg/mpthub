@@ -2,7 +2,6 @@ import os
 import sys
 import time
 import locale
-import datetime
 import pandas as pd
 from PySide6.QtGui import QFont
 from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, Qt
@@ -167,7 +166,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.connectSignalsSlots()
 
-        self.appName = "NPT Hub"
+        self.appName = "MPT Hub"
         self.setWindowTitle(
             f"{self.appName} - Multiple Particle Tracking Analysis")
 
@@ -204,14 +203,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def lock_actions(self):
         self.actionRemove_selected.setEnabled(False)
-        self.actionStart_analysis.setEnabled(False)
         self.actionStart_analysis_tp.setEnabled(False)
         self.actionClear_summary.setEnabled(False)
         self.actionExport_files.setEnabled(False)
 
     def unlock_actions(self):
         self.actionRemove_selected.setEnabled(True)
-        self.actionStart_analysis.setEnabled(True)
         self.actionStart_analysis_tp.setEnabled(True)
         self.actionClear_summary.setEnabled(True)
         self.actionExport_files.setEnabled(True)
@@ -226,7 +223,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionImport_files.triggered.connect(self.on_import_files)
         self.actionRemove_selected.triggered.connect(self.on_remove_selected)
         self.actionClear_summary.triggered.connect(self.on_clear_summary)
-        self.actionStart_analysis.triggered.connect(self.on_start_analysis)
         self.actionStart_analysis_tp.triggered.connect(
             self.on_start_analysis_tp)
         self.actionExport_files.triggered.connect(self.on_export_files)
@@ -251,7 +247,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_summary_view()
 
         self.actionRemove_selected.setEnabled(True)
-        self.actionStart_analysis.setEnabled(True)
         self.actionStart_analysis_tp.setEnabled(True)
         self.actionClear_summary.setEnabled(True)
 
@@ -270,7 +265,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_totals()
 
         self.actionRemove_selected.setEnabled(False)
-        self.actionStart_analysis.setEnabled(False)
         self.actionStart_analysis_tp.setEnabled(False)
         self.actionClear_summary.setEnabled(False)
         self.actionExport_files.setEnabled(False)
@@ -428,44 +422,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.update_summary_view()
         self.actionRemove_selected.setDisabled(self.analysis.summary.empty)
-
-    def mpt_analysis(self):
-        self.actionImport_files.setEnabled(False)
-        self.lock_actions()
-        self.show_message(
-            "Computing MSD (mean squared displacement)...")
-
-        self.setCursor(Qt.BusyCursor)
-
-        startTime = time.time()
-
-        self.show_message("Starting trajectory analysis...")
-        self.analysis.compute_msd()
-        self.analysis.compute_msd_log()
-
-        self.show_message(
-            "Computing Deff (diffusivity coefficient)...")
-        self.analysis.compute_deff()
-
-        self.show_message(
-            "Adjusting data labels...")
-
-        self.analysis.msd = self.analysis.rename_columns(
-            self.analysis.msd, "MSD")
-        self.analysis.msd_log = self.analysis.rename_columns(
-            self.analysis.msd_log, "MSD-LOG")
-        self.analysis.deff = self.analysis.rename_columns(
-            self.analysis.deff, "Deff")
-        executionTime = (time.time() - startTime)
-
-        self.setCursor(Qt.ArrowCursor)
-        self.actionExport_files.setDisabled(self.analysis.msd.empty)
-
-        elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
-        self.show_message(
-            f"Trajectory analysis complete... {elapsed_time_message}")
-        self.unlock_actions()
-        self.actionImport_files.setEnabled(True)
 
     def mpt_analysis_tp(self):
         self.show_message("Starting trajectory analysis...")
