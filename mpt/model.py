@@ -5,7 +5,7 @@ import os
 import locale
 import trackpy as tp
 from string import ascii_uppercase
-from itertools import chain, product, islice
+from itertools import chain, product
 
 conn = db.connect()
 
