@@ -1,6 +1,8 @@
 # import sqlite3
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Table, MetaData
 import pandas as pd
+from sqlalchemy.schema import DropTable
+from sqlalchemy.sql.expression import table
 from .settings import Settings
 from pathlib import Path
 
@@ -52,19 +54,21 @@ def persist() -> str:
         'temperature_C': [settings.DEFAULT_TEMPERATURE_C]
     })
 
-    trajectories_df = pd.DataFrame(
-        columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
+    # trajectories_df = pd.DataFrame(
+    #     columns=['file_name', 'trajectory', 'frame', 'x', 'y'])
 
-    summary_df = pd.DataFrame(
-        columns=['full_path', 'file_name', 'trajectories', 'valid', 'deff'])
+    # summary_df = pd.DataFrame(
+    #     columns=['full_path', 'file_name', 'trajectories', 'valid', 'deff'])
 
     msg = create_table('app_config', app_config_df)
     msg += f"\n{create_table('diffusivity', diffusivity_df)}"
     msg += f"\n{create_table('analysis_config', analysis_config_df)}"
-    msg += f"\n{create_table('trajectories', trajectories_df)}"
-    msg += f"\n{create_table('summary', summary_df)}"
     msg += f"\n{update_table('analysis_config', analysis_config_df)}"
-    msg += f"\n{update_table('summary', summary_df)}"
+    # msg += f"\n{create_table('trajectories', trajectories_df)}"
+    # msg += f"\n{create_table('summary', summary_df)}"
+    # msg += f"\n{update_table('summary', summary_df)}"
+    msg += f"\n{drop_table('summary')}"
+    msg += f"\n{drop_table('trajectories')}"
     return msg
 
 
@@ -116,6 +120,29 @@ def create_table(table_name: str, data: pd.DataFrame) -> str:
         msg = f"Table '{table_name}' created."
     except ValueError:
         msg = f"Table '{table_name}' already exists. Aborting."
+    except Exception:
+        msg = "Exception."
+    finally:
+        return msg
+
+
+def drop_table(table_name: str) -> str:
+    """Drops a table if it extists.
+
+    Arguments:
+        table_name {str} -- Name of the table to be dropped.
+    """
+    conn = connect()
+    msg = ""
+
+    try:
+        if conn.has_table(table_name):
+            conn.execute(
+                DropTable(Table(table_name, MetaData())))
+            msg = f"Table '{table_name}' dropped."
+        else:
+            msg = f"Table '{table_name}' not found. Aborting."
+
     except Exception:
         msg = "Exception."
     finally:
