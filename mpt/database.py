@@ -2,7 +2,6 @@
 from sqlalchemy import create_engine, Table, MetaData
 import pandas as pd
 from sqlalchemy.schema import DropTable
-from sqlalchemy.sql.expression import table
 from .settings import Settings
 from pathlib import Path
 
