@@ -4,25 +4,28 @@
 
 skinparam Monochrome true
 skinparam actorStyle awesome
-skinparam linetype ortho
+' skinparam linetype ortho
 skinparam BoxPadding 100
 
 left to right direction
 
 title Use Case Diagram\n
 
-:researcher: --> (Change diffusivity\nparameters)
-:researcher: --> ( Change analysis\n parameters )
+:researcher: --> ( Change  \nconfigurations )
+' :researcher: --> (Change diffusivity\nparameters)
+' :researcher: --> ( Change analysis\n parameters )
 :researcher: --> (       Import files       )
-:researcher: --> (       View summary       )
+:researcher: --> (    View summary    )
 :researcher: --> (      Start analysis      )
 ' :researcher: --> (       View results       )
 :researcher: --> (      Export reports      )
 
-(       View summary       ) .> (       Import files       )
-(       Import files       ) <. (      Start analysis      )
-(      Start analysis      ) <. (      Export reports      )
+(    View summary    ) .> (       Import files       ) : "                        <<requires>>"
+(       Import files       ) <. (      Start analysis      ) : "                        <<requires>>"
+(      Start analysis      ) <. (      Export reports      ) : "                        <<requires>>"
 ' (      Start analysis      ) <. (       View results       )
+( Change  \nconfigurations ) ..> (Change diffusivity\nparameters) : <<includes>>
+( Change  \nconfigurations ) ..> ( Change analysis\n parameters ) : <<includes>>
 
 
 @enduml
