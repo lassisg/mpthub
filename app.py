@@ -166,9 +166,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.connectSignalsSlots()
 
-        self.appName = "MPT Hub"
-        self.setWindowTitle(
-            f"{self.appName} - Multiple Particle Tracking Analysis")
+        self.appName = "MPTHub"
+        self.setWindowTitle(f"{self.appName}")
+        # - Multiple Particle Tracking Analysis"
 
         # settings = Settings()
         self.summary_is_outdated = False
