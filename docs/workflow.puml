@@ -1,0 +1,46 @@
+@startuml
+
+skinparam Monochrome true
+skinparam linetype ortho
+
+title Application flow\n
+
+rectangle "(i) Import data" as IMPORT{
+    rectangle "1. Load files" as import1
+    rectangle "2. Sanitize data" as import2
+    rectangle "3. Find valid trajectories" as import3
+    rectangle "4. Build summary" as import4
+
+    import1 --> import2
+    import2 --> import3
+    import3 --> import4
+}
+rectangle "(ii) Analyze data" as ANALYSIS{
+    rectangle "1. Compute MSD" as analysis1
+    rectangle "2. Compute <MSD>" as analysis2
+    rectangle "3. Compute Deff" as analysis3
+    rectangle "4. Compute <Deff>" as analysis4
+
+    analysis1 --> analysis2
+    analysis2 --> analysis3
+    analysis3 --> analysis4
+}
+rectangle "(iii) Export results" as EXPORT{
+    rectangle "1. Create 'Individual Analysis' report" as export1
+    rectangle "2. Save 'Individual Analysis' report" as export2
+    rectangle "3. Create 'Characterization Mode' report" as export3
+    rectangle "4. Save 'Characterization Mode' report" as export4
+    rectangle "5. Create 'Stokes-Einstein (Dw_D0)' report" as export5
+    rectangle "6. Save 'Stokes-Einstein (Dw_D0)' report" as export6
+
+    export1 --> export2
+    export2 --> export3
+    export3 --> export4
+    export4 --> export5
+    export5 --> export6
+}
+
+IMPORT -r-> ANALYSIS
+ANALYSIS -r-> EXPORT
+
+@enduml
