@@ -955,6 +955,8 @@ class Report():
                                     superscript_format, '2',
                                     variable_format, ' kg s',
                                     superscript_format, '-2',
+                                    variable_format, ' K',
+                                    superscript_format, '-1',
                                     variable_format, ')', variable_format)
         worksheet.write('A7', 'T (K)', variable_format)
         worksheet.write('A8', 'Pi', variable_format)
