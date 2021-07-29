@@ -606,8 +606,7 @@ class Report():
 
         self.make_chart_LOG(workbook, msd, "MSD", 1)
 
-        slope_data[0].to_excel(writer, index=False,
-                               sheet_name='Characterization')
+        characterization_sheet = workbook.add_worksheet('Characterization')
 
         sheet_format = workbook.add_format(
             {'align': 'center',
@@ -620,14 +619,13 @@ class Report():
         header_format = workbook.add_format(
             {'align': 'center', 'bold': 1})
 
-        characterization_sheet = writer.sheets['Characterization']
         characterization_sheet.set_column(0, 0, 4, header_format)
-        characterization_sheet.set_column(0, 0, 12, sheet_format)
+        characterization_sheet.set_column(0, 1, 12, sheet_format)
         characterization_sheet.set_column(3, 3, 18, sheet_format)
         characterization_sheet.set_column(4, 4, 12, sheet_format)
         characterization_sheet.set_column(5, 5, 7, sheet_format)
 
-        characterization_sheet.write('A1', 'Slopes', header_format)
+        # characterization_sheet.write('A1', 'Slopes', header_format)
         characterization_sheet.write('D1', 'Transport Mode', header_format)
         characterization_sheet.write('E1', 'Slope', header_format)
         characterization_sheet.write('F1', 'Count', header_format)
@@ -657,8 +655,8 @@ class Report():
 
         # --------------------------------------------------------------- SLOPE
         characterization_sheet.write(
-            'B1', 'Slopes (Excel)', header_format)
-        excel_slopes = [f'B{x+min_row}' for x in list(
+            'A1', 'Slopes', header_format)
+        excel_slopes = [f'A{x+min_row}' for x in list(
             range(total_trajectories))]
         slope_formulas = [
             f'=SLOPE(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
@@ -668,8 +666,8 @@ class Report():
 
         # ------------------------------------------------------------------ R2
         characterization_sheet.write(
-            'C1', f'R{chr(178)} (Excel)', header_format)
-        excel_r2 = [f'C{x+min_row}' for x in list(
+            'B1', f'R{chr(178)}', header_format)
+        excel_r2 = [f'B{x+min_row}' for x in list(
             range(total_trajectories))]
         r2_formulas = [
             f'=RSQ(Data!{x}3:{x}305,Data!A3:A305)' for x in column_list]
