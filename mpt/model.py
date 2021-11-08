@@ -1059,7 +1059,7 @@ class Report():
                                     summary_format, 'D',
                                     subscript_format, 'W',
                                     summary_format, ' / D',
-                                    subscript_format, '0',
+                                    subscript_format, 'eff',
                                     summary_format)
 
         worksheet.write('G3',
