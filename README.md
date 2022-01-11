@@ -94,9 +94,11 @@ Configuration reviewed, reports loaded to app, it is time to make some math.
 Under 'Tools' menu, 'Start analysis' sub-menu starts analysis. This sub-menu is disable at startup and only becomes enabled if the previous step occurs with no errors.
 
 Disabled menu:
+
 ![start_analysis-disabled](./docs/assets/Start_analysis-disabled.png "Start analysis (disabled)")
 
 Enabled menu:
+
 ![start_analysis-enabled](./docs/assets/Start_analysis-enabled.png "Start analysis (enabled)")
 
 As the 'Start analysis' sub-menu, both 'Remove selected' and 'Clear summary' sub-menus are also enabled/disabled according to data imported.
@@ -119,9 +121,11 @@ When the analysis process is complete, the status bar will show a message to inf
 Now that analysis has been done, the user may export the reports. As before, the 'Save' sub-menu, under 'File' menu is disabled at startup. It becomes enabled only after analysis, if ok.
 
 Disabled menu:
+
 ![export_results-disabled](./docs/assets/File_menu_export-disabled.png "Export results (disabled)")
 
 Enabled menu:
+
 ![export_results-enabled](./docs/assets/File_menu_export-enabled.png "Export results (enabled)")
 
 There are currently 3 reports available:
