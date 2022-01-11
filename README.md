@@ -43,14 +43,14 @@ _**The values are saved each time the user uses the App.**_
 This configurations relate to the video acquisition parameters (except for the particle size, that usually comes from known particle size provided by manufacturer).
 
 The default values are:
-| Configuration   | Description                                                                                      | Default value |
-| --------------- | ------------------------------------------------------------------------------------------------ | :-----------: |
-| Size            | Particle size (in SI unit $nm$)                                                                  |      200      |
-| Filter          | Minimum number of consecutive frames a trajectory must have to be considered valid for analysis. |      590      |
-| FPS             | Frames per second used during video acquisition.                                                 |      30       |
-| Total frames    | Total number of frames in video.                                                                 |      606      |
-| Width ($px$)    | Width of the acquired video, in pixels.                                                          |      512      |
-| Width ($\mu m$) | Width of the acquired video, in SI unit $\mu m$.                                                 |      160      |
+| Configuration          | Description                                                                                      | Default value |
+| ---------------------- | ------------------------------------------------------------------------------------------------ | :-----------: |
+| Size                   | Particle size (in SI unit <em>nm</em>)                                                           |      200      |
+| Filter                 | Minimum number of consecutive frames a trajectory must have to be considered valid for analysis. |      590      |
+| FPS                    | Frames per second used during video acquisition.                                                 |      30       |
+| Total frames           | Total number of frames in video.                                                                 |      606      |
+| Width (<em>px</em>)    | Width of the acquired video, in pixels.                                                          |      512      |
+| Width (<em>&mu;m</em>) | Width of the acquired video, in SI unit <em>&mu;m</em>.                                          |      160      |
 
 Those values are pre-defined based on previous experiment and can be changed in the App.
 
@@ -105,8 +105,8 @@ The app must process the data from those files and perform a series of calculati
 
 - Keep only those trajectories longer than the minimum frame number defined by the filter configuration.
 - Compute MSD (mean squared displacement) for the group of results (near 100 trajectories)
-- Compute $D_{eff}$ (effective diffusivity) for the group of results (near 100 trajectories)
-- Compute the slope ($\alpha$) for each trajectory
+- Compute <em>D<sub>eff</sub></em> (effective diffusivity) for the group of results (near 100 trajectories)
+- Compute the slope (<em>&alpha;</em>) for each trajectory
 
 When the analysis process is complete, the status bar will show a message to inform the user.
 
@@ -134,7 +134,7 @@ This report contains 5 sheets, described bellow:
 
 ##### 4.1.1. Data
 
-This sheet contains the data from each valid trajectory Mean-squared Displacement (MSD) and Diffusivity efficiency coefficient ($D_{eff}$).
+This sheet contains the data from each valid trajectory Mean-squared Displacement (MSD) and Diffusivity efficiency coefficient (<em>D<sub>eff</sub></em>).
 
 ![mode_data](./docs/assets/Individual_Particle_Analysis-data.png "Individual Particle Analysis report data")
 
@@ -150,15 +150,15 @@ This sheet contains the MSD (Mean-squared Displacement) plot with all trajectori
 
 ![individual_msd_plot](./docs/assets/Individual_MSD_plot.png "Individual MSD plot")
 
-##### 4.1.4. \<$D_{eff}$> vs Time
+##### 4.1.4. \<<em>D<sub>eff</sub></em>> vs Time
 
-This sheet contains the Ensemble effective diffusivity (\<$D_{eff}$>) chart.
+This sheet contains the Ensemble effective diffusivity (\<<em>D<sub>eff</sub></em>>) chart.
 
 ![ensemble_deff](./docs/assets/Ensemble_Deff_plot.png "Ensemble Deff plot")
 
-##### 4.1.5. $D_{eff}$ vs Time
+##### 4.1.5. <em>D<sub>eff</sub></em> vs Time
 
-This sheet contains the effective diffusivity ($D_{eff}$) plot with all trajectories.
+This sheet contains the effective diffusivity (<em>D<sub>eff</sub></em>) plot with all trajectories.
 
 ![individual_deff_plot](./docs/assets/Individual_Deff_plot.png "Individual Deff plot")
 
@@ -196,8 +196,9 @@ This sheet contains:
 #### 4.3. Einstein-Stokes Calculation - D0_Dw-Microviscosity
 
 This report has only 1 sheet, named _**Microviscosity**_.
-It contains the data for calculating microviscosity, $D_0/D_W$ ratio and some other intermediate calculations.
-For the Einstein-Stokes, the particle size is considered to be of $\ 200 \ nm$\*.
+It contains the data for calculating microviscosity, <em>D<sub>0</sub>/D<sub>W</sub></em> ratio and some other intermediate calculations.
+For the Einstein-Stokes, the particle size is considered to be of <em>200 nm</em>\*.
+
 **\*The particle size can be changed, as mentioned on item _1.2. Analysis configuration_**
 
 ![Einstein-Stokes](./docs/assets/Einstein-Stokes.png "Einstein-Stokes")
