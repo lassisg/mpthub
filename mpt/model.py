@@ -732,7 +732,7 @@ class Report():
 
     def export_einstein_stokes(self, path: str, data):
 
-        file_name = "Stokes-Einstein Calculations (D0_Dw)"
+        file_name = "Stokes-Einstein Calculations (Deff_Dw)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
@@ -1035,7 +1035,7 @@ class Report():
         worksheet.merge_range('H1:H2', '', summary_format)
         worksheet.write_rich_string('H1',
                                     summary_format, 'D',
-                                    subscript_format, '0\n',
+                                    subscript_format, 'eff\n',
                                     summary_format, f'({chr(956)}m',
                                     superscript_format, '2',
                                     summary_format, '-s',
@@ -1046,7 +1046,7 @@ class Report():
         worksheet.merge_range('I1:I2', '', summary_format)
         worksheet.write_rich_string('I1',
                                     summary_format, 'D',
-                                    subscript_format, '0\n',
+                                    subscript_format, 'eff\n',
                                     summary_format, '(m',
                                     superscript_format, '2',
                                     summary_format, '-s',
