@@ -732,7 +732,7 @@ class Report():
 
     def export_einstein_stokes(self, path: str, data):
 
-        file_name = "Stokes-Einstein Calculations (D0_Dw)"
+        file_name = "Stokes-Einstein Calculations (Deff_Dw)"
         full_path = os.path.join(path, file_name+'.xlsx')
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
