@@ -233,6 +233,9 @@ class Analysis():
                 columns. No data changed.
         """
         unit = f"{chr(956)}m{chr(178)}"
+        
+        if(header == "Deff"):
+            unit = f'{unit}/s'
 
         columns_names = pd.Series(range(1, len(data.columns)+1))-1
         columns_names = [f'{header} {x+1} ({unit})' for x in columns_names]
@@ -345,6 +348,11 @@ class Report():
                        start_row+len(data), columns]})
 
         # Add a chart title, style and some axis labels.
+        if(data_name == "Deff"):
+            y_axis_label = f'{data_name} ({chr(956)}m²/s)'
+        else:
+            y_axis_label = f'{data_name} ({chr(956)}m²)'
+        
         axis_digits = np.ceil(-np.log10(
             np.abs(np.min(data.values)) -
             np.abs(np.floor(np.min(data.values))))) - 1
@@ -362,7 +370,7 @@ class Report():
             'max': round(max(data.index.values)*5),
             'crossing': y_axis_min,
             'log_base': 10,
-            'name': f'{data_name} ({chr(956)}m²)'})
+            'name': y_axis_label})
         chart.set_legend({'none': True})
         chart.set_style(1)
 
@@ -382,10 +390,10 @@ class Report():
             'max': round(max(data.index.values)*10),
             'crossing': y_axis_min,
             'log_base': 10,
-            'name': f'{data_name} ({chr(956)}m²)'})
+            'name': y_axis_label})
         mean_chart.set_legend({'none': True})
         mean_chart.set_style(1)
-
+            
         # Insert the chart into the worksheet.
         mean_time_chart = workbook.add_chartsheet(f'<{data_name}> vs Time')
         mean_time_chart.set_chart(mean_chart)
