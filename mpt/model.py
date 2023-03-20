@@ -88,8 +88,9 @@ class Analysis():
 
                 raw_data, i = self.prepare_for_track_py(raw_data, i)
                 raw_data.insert(loc=0, column='file_name', value=file_name)
-                self.trajectories = self.trajectories.append(
-                    raw_data, ignore_index=True)
+
+                self.trajectories = pd.concat(
+                    [self.trajectories, raw_data], ignore_index=True)
 
         self.remove_gaps()
 
