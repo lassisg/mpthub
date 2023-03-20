@@ -454,7 +454,7 @@ class Report():
         self.make_chart(workbook, msd, "MSD", 1)
         self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
-        writer.save()
+        writer.close()
 
     def make_chart_LOG(self, workbook: pd.ExcelWriter,
                        data: pd.DataFrame,
