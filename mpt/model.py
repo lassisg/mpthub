@@ -736,7 +736,7 @@ class Report():
         characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        writer.save()
+        writer.close()
 
     def export_einstein_stokes(self, path: str, data):
 
@@ -1083,4 +1083,4 @@ class Report():
                                 '=$E$5/$H3',
                                 summary_val_4d_format)
 
-        writer.save()
+        writer.close()
