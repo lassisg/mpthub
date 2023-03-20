@@ -146,3 +146,7 @@ poetry.lock
 
 # Qt
 .qt_for_python/*
+/MPTHub-1.0.4-x86_installer.exe
+
+# JetBrains
+.idea

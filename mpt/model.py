@@ -88,8 +88,9 @@ class Analysis():
 
                 raw_data, i = self.prepare_for_track_py(raw_data, i)
                 raw_data.insert(loc=0, column='file_name', value=file_name)
-                self.trajectories = self.trajectories.append(
-                    raw_data, ignore_index=True)
+
+                self.trajectories = pd.concat(
+                    [self.trajectories, raw_data], ignore_index=True)
 
         self.remove_gaps()
 
@@ -454,7 +455,7 @@ class Report():
         self.make_chart(workbook, msd, "MSD", 1)
         self.make_chart(workbook, deff, "Deff", len(msd)+4)
 
-        writer.save()
+        writer.close()
 
     def make_chart_LOG(self, workbook: pd.ExcelWriter,
                        data: pd.DataFrame,
@@ -736,7 +737,7 @@ class Report():
         characterization_sheet.write_formula('E9', '=COUNT(A:A)', count_format)
         characterization_sheet.write_formula('E10', '=STDEV(A:A)')
 
-        writer.save()
+        writer.close()
 
     def export_einstein_stokes(self, path: str, data):
 
@@ -1083,4 +1084,4 @@ class Report():
                                 '=$E$5/$H3',
                                 summary_val_4d_format)
 
-        writer.save()
+        writer.close()
