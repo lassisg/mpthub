@@ -634,15 +634,8 @@ fabric.properties
 
 ### DotnetCore ###
 # .NET Core build folders
-**/bin
+bin
 obj
-/**/obj/**/*
-MptHub.Domain/obj
-MptHub.Domain/obj/*
-MptHub.Domain/obj/**/*
-/MptHub.Domain/obj
-/MptHub.Domain/obj/*
-/MptHub.Domain/obj/**/*
 
 # Common node modules locations
 /node_modules
