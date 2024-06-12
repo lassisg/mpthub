@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MptHub.Domain", "MptHub.Dom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MptHub.ConsoleApp", "MptHub.ConsoleApp\MptHub.ConsoleApp.csproj", "{35A37090-3511-4D16-8E22-07539B78AC6C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MptHub.Desktop", "MptHub.Desktop\MptHub.Desktop.csproj", "{551F2596-318A-481C-A44F-5B1500D84089}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{35A37090-3511-4D16-8E22-07539B78AC6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{35A37090-3511-4D16-8E22-07539B78AC6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{35A37090-3511-4D16-8E22-07539B78AC6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{551F2596-318A-481C-A44F-5B1500D84089}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{551F2596-318A-481C-A44F-5B1500D84089}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{551F2596-318A-481C-A44F-5B1500D84089}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{551F2596-318A-481C-A44F-5B1500D84089}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -30,7 +30,7 @@ We understand that the user may have a specific folder with result files (from I
 The default configurations are:
 
 | Operating System | Input folder                 | Output folder                        |
-| ---------------- | ---------------------------- | ------------------------------------ |
+| ---------------- |------------------------------| ------------------------------------ |
 | Windows          | C:\\Users\\\<username>\\.mpt | C:\\Users\\\<username>\\.mpt\\export |
 | Linux            | /home/\<username>/.mpt       | /home/\<username>/.mpt/export        |
 | Mac OS           | /Users/\<username>/.mpt      | /Users/\<username>/.mpt/export       |

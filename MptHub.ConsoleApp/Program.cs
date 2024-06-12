@@ -1,23 +1,58 @@
-﻿using MptHub.Domain;
+﻿using System.Globalization;
+using System.Text;
+using CsvHelper;
+using CsvHelper.Configuration;
+using CsvHelper.Configuration.Attributes;
+using MptHub.Domain;
 
-var frame1 = new Frame() { Coordinates = 
-    {
-        new Coordinate { X = 0.001, Y = 0.002 },
-        new Coordinate { X = 0.001, Y = 0.002 }
-    } };
+// Add menu
 
-var frame2 = new Frame() { 
-    Coordinates = 
-    {
-        new Coordinate { X = 0.002, Y = 0.004 },
-        new Coordinate { X = 0.002, Y = 0.005 }
-    } };
+// Load configurations
+var generalConfig = new GeneralConfiguration();
+var analysisConfig = new AnalysisConfiguration();
+var diffusivityConfig = new DiffusivityConfiguration();
 
+// Import csv
+List<TrajectoryFile> result = [];
+const string fileName = "D:/github/MPTHub/MptHub.ConsoleApp/561_D2_H2O_200ul_Series001_RAW_ch00.csv";
 
-var traj = new Trajectory()
+var configuration = new CsvConfiguration(CultureInfo.InvariantCulture)
 {
-    Frames = { frame1, frame2 }
+    Encoding = Encoding.UTF8, // Our file uses UTF-8 encoding.
+    Delimiter = ",", // The delimiter is a comma.
+    
 };
 
-Console.WriteLine(traj);
+using (var reader = new StreamReader(fileName)) 
+using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+{
+    var records = csv.GetRecords<TrajectoryFile>();
+    Console.ReadLine();
+    // // result = records.ToList();
+    // foreach (TrajFile item in records)
+    // {
+    //     Console.WriteLine($"Trajectory { item.Trajectory, 3 }, Frame { item.Frame, 3 }, ({ item.x }, { item.y })");
+    // }
+}
+
+// Analyze (TrackPy motion)
+
+// Export excel
+
 Console.ReadLine();
+
+// Update analysis config
+// Update general config
+// Update diffusivity config
+
+public class TrajectoryFile
+{
+    [Index(1)]
+    public int Trajectory { get; set; }
+    [Index(2)]
+    public int Frame { get; set; }
+    [Index(3)]
+    public double x { get; set; }
+    [Index(4)]
+    public double y { get; set; }
+}
