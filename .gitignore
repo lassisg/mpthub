@@ -76,10 +76,6 @@ target/
 
 # Jupyter Notebook
 notebooks
-<<<<<<< HEAD
-notebooks/*
-=======
->>>>>>> redesign
 .ipynb
 .ipynb_checkpoints
 
@@ -133,16 +129,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-<<<<<<< HEAD
-src/data/config.db
-.vscode/settings.json
-=======
 data/config.db
 .vscode/settings.json
->>>>>>> redesign
 
 # Poetry
-poetry.lock
+# poetry.lock
 
 # Qt
 .qt_for_python/*
