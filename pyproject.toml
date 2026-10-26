@@ -14,7 +14,7 @@ SQLAlchemy = "<2.0"
 trackpy = ">=0.6.1"
 XlsxWriter = ">=3.0.9"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 autopep8 = ">=2.0.2"
 flake8 = ">=6.0.0"
 pyinstaller = ">=4.3"
