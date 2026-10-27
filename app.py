@@ -2,9 +2,12 @@ import os
 import sys
 import time
 import locale
+import inspect
+import logging
+import traceback
 import pandas as pd
 from PySide6.QtGui import QFont
-from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, Qt
+from PySide6.QtCore import QObject, QRunnable, Signal, Slot, QThreadPool, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QHBoxLayout, QWidget, QMessageBox,
@@ -14,6 +17,11 @@ from PySide6.QtWidgets import (
 import mpt
 from ui.MainWindow import Ui_MainWindow
 
+class WorkerSignals(QObject):
+    finished = Signal()
+    error = Signal(tuple)
+    progress = Signal(str)
+    result = Signal(object)
 
 class Worker(QRunnable):
     '''
@@ -30,18 +38,31 @@ class Worker(QRunnable):
     '''
 
     def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        # Store constructor arguments (re-used for processing)
+        super().__init__()
         self.fn = fn
         self.args = args
         self.kwargs = kwargs
+        self.signals = WorkerSignals()
+
+        # permite à callback emitir progresso sem saber da GUI:
+        # fn(progress_callback=self.signals.progress.emit, *args, ...)
+        if 'progress_callback' in inspect.signature(fn).parameters:
+            self.kwargs['progress_callback'] = self.signals.progress.emit
 
     @ Slot()  # QtCore.Slot
     def run(self):
         '''
         Initialise the runner function with passed args, kwargs.
         '''
-        self.fn(*self.args, **self.kwargs)
+        try:
+            result = self.fn(*self.args, **self.kwargs)
+        except Exception:
+            exctype, value, tb = sys.exc_info()
+            self.signals.error.emit((exctype, value, tb))
+        else:
+            self.signals.result.emit(result)
+        finally:
+            self.signals.finished.emit()
 
 
 class ApplicationConfiguration(QDialog):
@@ -275,8 +296,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.threadpool.start(worker)
 
     def on_start_analysis_tp(self):
+        self.setCursor(Qt.BusyCursor)
         worker = Worker(self.mpt_analysis_tp)
+        worker.signals.progress.connect(self.show_message)
+        worker.signals.finished.connect(self.on_analysis_finished)
+        worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
+
+    def on_analysis_finished(self):
+        self.setCursor(Qt.ArrowCursor)
+        self.actionExport_files.setDisabled(self.analysis.msd.empty)
+        self.show_message("Analysis complete.", 5000)
 
     def on_export_files(self):
         selected_folder = QFileDialog.getExistingDirectory(
@@ -293,8 +323,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             f"Saving reports to {self.general.config.save_folder}...")
 
         worker = Worker(self.export_reports)
+        worker.signals.progress.connect(self.show_message)
+        worker.signals.finished.connect(self.on_export_finished)
+        worker.signals.error.connect(self.on_worker_error)
         self.threadpool.start(worker)
         # self.export_reports()
+
+    def on_export_finished(self):
+        self.show_message("Reports exported.", 5000)
+    
+    def on_worker_error(self, exc_info):
+        exctype, value, tb = exc_info
+        self.setCursor(Qt.ArrowCursor)
+        self.show_message(f"Error: {value}", 5000)
+        logging.error("".join(traceback.format_exception(exctype, value, tb)))
 
     def on_about(self):
         QMessageBox.about(
@@ -422,9 +464,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_summary_view()
         self.actionRemove_selected.setDisabled(self.analysis.summary.empty)
 
-    def mpt_analysis_tp(self):
-        self.show_message("Starting trajectory analysis...")
-        self.setCursor(Qt.BusyCursor)
+    def mpt_analysis_tp(self, progress_callback=None):
+        progress_callback("Starting trajectory analysis...")
+        # self.show_message("Starting trajectory analysis...")
+        # self.setCursor(Qt.BusyCursor)
 
         startTime = time.time()
         self.analysis.start_trackpy()
@@ -434,19 +477,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionExport_files.setDisabled(self.analysis.msd.empty)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
-        self.show_message(
+        # self.show_message(
+        #     f"Trajectory analysis complete... {elapsed_time_message}")
+        progress_callback(
             f"Trajectory analysis complete... {elapsed_time_message}")
 
-    def export_reports(self):
-        self.show_message(
+    def export_reports(self, progress_callback=None):
+        progress_callback(
             f"Saving reports to {self.general.config.save_folder}...")
+        # self.show_message(
+        #     f"Saving reports to {self.general.config.save_folder}...")
 
         startTime = time.time()
-        self.analysis.export(self)
+        self.analysis.export()
         executionTime = (time.time() - startTime)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
-        self.show_message(f"Reports saved. {elapsed_time_message}")
+        progress_callback(f"Reports saved. {elapsed_time_message}")
+        # self.show_message(f"Reports saved. {elapsed_time_message}")
 
     @Slot(pd.DataFrame)
     def update_diffusivity_config(self, config):
