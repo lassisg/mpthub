@@ -255,7 +255,7 @@ class Analysis():
         analysis_timestamp = deff_index.flat[np.abs(
             deff_index - self.config.time).argmin()]
 
-        analysis_d0 = self.deff.loc[analysis_timestamp][-1]
+        analysis_d0 = self.deff.loc[analysis_timestamp].iloc[-1]
 
         return {'time': analysis_timestamp,
                 'deff': analysis_d0}
