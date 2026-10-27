@@ -6,7 +6,7 @@ authors = ["Leandro Gabriel <leandro@bigiogabriel.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.12,<3.13"
 # Guard pin: pandas 2.1 (current) is incompatible with numpy 2.x.
 # Remove when the SQLAlchemy 2 / pandas >=2.2 migration lands.
 numpy = ">=1.26,<2"
