@@ -62,8 +62,8 @@ class Analysis():
                              index=False, if_exists='replace')
 
     def load_reports(self, file_list: list) -> None:
-        """Loads '.csv' files into DB table 'trajectories' after filtering \
-            by valid trajectories.
+        """Loads '.csv' files into an in-memory DataFrame 'trajectories' after \
+            filtering by valid trajectories.
 
         Arguments:
             file_list {list} -- File path list to be imported.
