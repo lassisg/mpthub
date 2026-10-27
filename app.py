@@ -354,7 +354,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.show_message("File(s) selected...")
 
         self.analysis.load_reports(file_list)
-        print(time.time() - part_time)
 
         self.show_message("Creating summary...")
         self.analysis.summarize()
