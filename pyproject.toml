@@ -10,10 +10,10 @@ python = ">=3.9,<3.12"
 # Guard pin: pandas 2.1 (current) is incompatible with numpy 2.x.
 # Remove when the SQLAlchemy 2 / pandas >=2.2 migration lands.
 numpy = ">=1.26,<2"
-pandas = ">=1.5.3,<2.2"
+pandas = ">=2.2,<3"
 #pathlib = ">=1.0.1"
 PySide6 = ">=6.4.2"
-SQLAlchemy = "<2.0"
+SQLAlchemy = ">=2.0,<3"
 trackpy = ">=0.6.1"
 XlsxWriter = ">=3.0.9"
 

@@ -55,43 +55,8 @@ def persist() -> str:
     msg = create_table('app_config', app_config_df)
     msg += f"\n{create_table('diffusivity', diffusivity_df)}"
     msg += f"\n{create_table('analysis_config', analysis_config_df)}"
-    msg += f"\n{update_table('analysis_config', analysis_config_df)}"
     
     return msg
-
-
-def update_table(table_name: str, data: pd.DataFrame) -> str:
-    """Updates a table based on received DataFrame. Ignores update if pandas \
-        detect that the table is already updated.
-
-    Arguments:
-        table_name {str} -- Name of the table to be updated.
-        data {pd.DataFrame} -- Data to be inserted.
-    """
-
-    conn = connect()
-    current_table_df = None
-    current_table_df = pd.read_sql_table(table_name, con=conn)
-    msg = ""
-    try:
-        if current_table_df.columns.size != data.columns.size:
-            for (column, column_data) in data.iteritems():
-                if data[column].any() and current_table_df[column].any():
-                    data[column] = column_data
-
-            data.to_sql(table_name, con=conn,
-                        index=False, if_exists='replace')
-
-            msg = f"Table '{table_name}' updated."
-    except KeyError:
-        data.to_sql(table_name, con=conn,
-                    index=False, if_exists='replace')
-        msg = f"Table '{table_name}' updated."
-    except Exception:
-        msg = "Exception."
-    finally:
-        current_table_df = None
-        return msg
 
 
 def create_table(table_name: str, data: pd.DataFrame) -> str:
