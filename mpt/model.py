@@ -260,29 +260,26 @@ class Analysis():
         return {'time': analysis_timestamp,
                 'deff': analysis_d0}
 
-    def export(self, parent):
+    def export(self, save_folder, progress_callback=None):
         """Call specific export functions.
         """
         report = Report()
 
-        parent.show_message(
-            "Exporting 'Individual Particle Analysis' report...", 1000)
+        progress_callback(
+            "Exporting 'Individual Particle Analysis' report...")
         report.export_individual_particle_analysis(
-            parent.general.config.save_folder, self.msd, self.deff)
+            save_folder, self.msd, self.deff)
 
-        parent.show_message(
-            "Exporting 'Transport Mode Characterization' report...", 1000)
+        progress_callback(
+            "Exporting 'Transport Mode Characterization' report...")
         report.export_transport_mode(
-            parent.general.config.save_folder, self.msd_log)
+            save_folder, self.msd_log)
 
-        parent.show_message(
-            "Exporting 'Stokes-Einstein' report...", 1000)
-
+        progress_callback("Exporting 'Stokes-Einstein' report...")
         report_data = {'deffs': self.get_timestamp_deffs(),
                        'p_size': self.config.p_size,
                        'temperature_C': self.config.temperature_C}
-        report.export_einstein_stokes(
-            parent.general.config.save_folder, report_data)
+        report.export_einstein_stokes(save_folder, report_data)
 
 
 class Report():
