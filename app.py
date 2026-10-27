@@ -474,36 +474,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def mpt_analysis_tp(self, progress_callback=None):
         progress_callback("Starting trajectory analysis...")
-        # self.show_message("Starting trajectory analysis...")
-        # self.setCursor(Qt.BusyCursor)
 
         startTime = time.time()
         self.analysis.start_trackpy()
         executionTime = (time.time() - startTime)
 
-        # self.setCursor(Qt.ArrowCursor)
         self.actionExport_files.setDisabled(self.analysis.msd.empty)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
-        # self.show_message(
-        #     f"Trajectory analysis complete... {elapsed_time_message}")
         progress_callback(
             f"Trajectory analysis complete... {elapsed_time_message}")
 
     def export_reports(self, progress_callback=None):
         progress_callback(
             f"Saving reports to {self.general.config.save_folder}...")
-        # self.show_message(
-        #     f"Saving reports to {self.general.config.save_folder}...")
 
         startTime = time.time()
-        # self.analysis.export()
-        self.analysis.export(None)
+        self.analysis.export(
+            self.general.config.save_folder, progress_callback)
         executionTime = (time.time() - startTime)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
         progress_callback(f"Reports saved. {elapsed_time_message}")
-        # self.show_message(f"Reports saved. {elapsed_time_message}")
 
     @Slot(pd.DataFrame)
     def update_diffusivity_config(self, config):
