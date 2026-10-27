@@ -14,8 +14,10 @@ from PySide6.QtWidgets import (
     QDialog, QFileDialog, QCheckBox, QTableWidgetItem,  QTreeWidgetItem
 )
 
-import mpt
 from ui.MainWindow import Ui_MainWindow
+
+from mpt.model import Analysis, Diffusivity, General
+import mpt.database as db
 
 class WorkerSignals(QObject):
     finished = Signal()
@@ -236,9 +238,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def load_project_setup(self) -> None:
         locale.setlocale(locale.LC_ALL, '')
-        self.analysis = mpt.analysis
-        self.diffusivity = mpt.diffusivity
-        self.general = mpt.general
+        
+        db.persist()
+
+        self.analysis = Analysis()
+        self.diffusivity = Diffusivity()
+        self.general = General()
 
     def connectSignalsSlots(self):
         self.actionImport_files.triggered.connect(self.on_import_files)
