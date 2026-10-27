@@ -1,30 +1,32 @@
 [tool.poetry]
 name = "MPT"
-version = "1.1.0"
+version = "1.2.0"
 description = "Reads ImageJ results file, in CSV. Exports Multiple Particle Tracking Analysis in xlsx format."
-authors = ["Leandro Gabriel <leandro@bigiogabriel.com>"]
-license = "MIT"
+authors = ["Leandro Gabriel <git@lagabriel.com>"]
+license = "GPL-3.0-only"
+readme = "README.md"
+repository = "https://github.com/lassisg/mpthub"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"
-# Guard pin: pandas 2.1 (current) is incompatible with numpy 2.x.
-# Remove when the SQLAlchemy 2 / pandas >=2.2 migration lands.
-numpy = ">=1.26,<2"
-pandas = ">=2.2,<3"
-#pathlib = ">=1.0.1"
-PySide6 = ">=6.4.2"
-SQLAlchemy = ">=2.0,<3"
-trackpy = ">=0.6.1"
-XlsxWriter = ">=3.0.9"
+numpy = ">=1.26.4,<2"    # guard: lift with the pandas 3 / numpy 2 cycle
+pandas = ">=2.3.3,<3"
+PySide6 = ">=6.12,<7"
+SQLAlchemy = ">=2.1.6,<3"
+trackpy = ">=0.7"
+XlsxWriter = ">=3.3"
 
 [tool.poetry.group.dev.dependencies]
-autopep8 = ">=2.0.2"
-flake8 = ">=6.0.0"
-pyinstaller = ">=4.3"
-pytest = ">=7.2.2"
+autopep8 = ">=2.3"
+flake8 = ">=7.4"
+pyinstaller = ">=6.22"
+pytest = ">=9.1"
 
 [tool.poetry.scripts]
 build_mpt = "build_mpt:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
