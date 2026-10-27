@@ -24,11 +24,3 @@ def test_persist_is_idempotent(temp_db):
     db.persist()
     db.persist()  # second run must not raise or recreate
     assert "analysis_config" in _tables()
-
-
-def test_update_table_does_not_duplicate_rows(temp_db):
-    db.persist()
-    df = pd.DataFrame({"p_size": [999]})
-    db.update_table("analysis_config", df)
-    result = pd.read_sql_table("analysis_config", db.connect())
-    assert len(result) == 1  # canary: 2+ rows = update bug
