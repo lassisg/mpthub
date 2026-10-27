@@ -6,6 +6,7 @@ import locale
 import trackpy as tp
 from string import ascii_uppercase
 from itertools import chain, product
+from mpt.settings import Settings
 
 conn = db.connect()
 
@@ -740,9 +741,10 @@ class Report():
         writer.close()
 
     def export_einstein_stokes(self, path: str, data):
-
+        
         file_name = "Stokes-Einstein Calculations (D0_Dw)"
         full_path = os.path.join(path, file_name+'.xlsx')
+        _settings = Settings()
 
         writer = pd.ExcelWriter(full_path, engine='xlsxwriter')
 
@@ -899,7 +901,8 @@ class Report():
                                         title_format)
 
         h2o_viscosity_sheet.merge_range('A2:C4', '', sheet_format)
-        formula_image = './mpt/assets/h2o_viscosity_equation.png'
+        formula_image = os.path.join(
+            _settings.APP_PATH, 'mpt', 'assets', 'h2o_viscosity_equation.png')
         h2o_viscosity_sheet.insert_image('A2',
                                          formula_image,
                                          {'x_offset': 52, 'y_offset': 12,
@@ -941,7 +944,8 @@ class Report():
         worksheet.set_default_row(21)
 
         worksheet.merge_range('A1:B3', '', equation_format)
-        formula_image = './mpt/assets/einstein-stokes_equation.png'
+        formula_image = os.path.join(
+            _settings.APP_PATH, 'mpt', 'assets', 'einstein-stokes_equation.png')
         worksheet.insert_image('A1',
                                formula_image,
                                {'x_offset': 52, 'y_offset': 21,
