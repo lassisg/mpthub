@@ -296,19 +296,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.threadpool.start(worker)
 
     def on_start_analysis_tp(self):
-        self.setCursor(Qt.BusyCursor)
+        QApplication.setOverrideCursor(Qt.BusyCursor)
         worker = Worker(self.mpt_analysis_tp)
+        self._active_worker = worker                        # anti-GC (fica)
         worker.signals.progress.connect(self.show_message)
         worker.signals.finished.connect(self.on_analysis_finished)
         worker.signals.error.connect(self.on_worker_error)
+        worker.signals.error.connect(self._reset_cursor)
         self.threadpool.start(worker)
 
     def on_analysis_finished(self):
-        self.setCursor(Qt.ArrowCursor)
+        QApplication.restoreOverrideCursor()               # era self.setCursor
         self.actionExport_files.setDisabled(self.analysis.msd.empty)
         self.show_message("Analysis complete.", 5000)
 
     def on_export_files(self):
+        QApplication.setOverrideCursor(Qt.BusyCursor)
         selected_folder = QFileDialog.getExistingDirectory(
             parent=self, caption='Chose folder to save report files',
             dir=self.general.config.save_folder)
@@ -326,18 +329,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         worker.signals.progress.connect(self.show_message)
         worker.signals.finished.connect(self.on_export_finished)
         worker.signals.error.connect(self.on_worker_error)
+        worker.signals.error.connect(self._reset_cursor)
         self.threadpool.start(worker)
-        # self.export_reports()
 
     def on_export_finished(self):
+        QApplication.restoreOverrideCursor()               # era self.setCursor
         self.show_message("Reports exported.", 5000)
     
     def on_worker_error(self, exc_info):
+        QApplication.restoreOverrideCursor()               # era self.setCursor
         exctype, value, tb = exc_info
-        self.setCursor(Qt.ArrowCursor)
         self.show_message(f"Error: {value}", 5000)
         logging.error("".join(traceback.format_exception(exctype, value, tb)))
-
+    
+    def _reset_cursor(self):
+        while QApplication.overrideCursor() is not None:
+            QApplication.restoreOverrideCursor()
+    
     def on_about(self):
         QMessageBox.about(
             self,
@@ -473,7 +481,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.analysis.start_trackpy()
         executionTime = (time.time() - startTime)
 
-        self.setCursor(Qt.ArrowCursor)
+        # self.setCursor(Qt.ArrowCursor)
         self.actionExport_files.setDisabled(self.analysis.msd.empty)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
@@ -489,7 +497,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #     f"Saving reports to {self.general.config.save_folder}...")
 
         startTime = time.time()
-        self.analysis.export()
+        # self.analysis.export()
+        self.analysis.export(None)
         executionTime = (time.time() - startTime)
 
         elapsed_time_message = f"Elapsed time: {executionTime:.2f}"
