@@ -302,10 +302,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionExport_files.setEnabled(False)
         self.show_message("Summary cleared")
 
-    def on_start_analysis(self):
-        worker = Worker(self.mpt_analysis)
-        self.threadpool.start(worker)
-
     def on_start_analysis_tp(self):
         QApplication.setOverrideCursor(Qt.BusyCursor)
         worker = Worker(self.mpt_analysis_tp)
