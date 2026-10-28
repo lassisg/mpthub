@@ -17,7 +17,12 @@ from PySide6.QtWidgets import (
 from ui.MainWindow import Ui_MainWindow
 
 from mpt.model import Analysis, Diffusivity, General
+from mpt.settings import Settings
 import mpt.database as db
+
+_settings = Settings()
+UI_DIR = os.path.join(_settings.APP_PATH, 'ui')
+
 
 class WorkerSignals(QObject):
     finished = Signal()
@@ -74,7 +79,8 @@ class ApplicationConfiguration(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         loader = QUiLoader()
-        self.dialog = loader.load("ui/app_config.ui", self)
+        # self.dialog = loader.load("ui/app_config.ui", self)
+        self.dialog = loader.load(os.path.join(UI_DIR, 'app_config.ui'), self)
         self.connectSignalsSlots()
 
     def load_app_config(self, config):
@@ -138,7 +144,7 @@ class DiffusivityRanges(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         loader = QUiLoader()
-        self.dialog = loader.load("ui/diffusivity.ui", self)
+        self.dialog = loader.load(os.path.join(UI_DIR, 'diffusivity.ui'), self)
         self.connectSignalsSlots()
 
     def load_diffusivity_config(self, config):
@@ -159,21 +165,21 @@ class DiffusivityRanges(QDialog):
 
     def subdiffusive_changed(self, text):
         sub_diffusive_min = float(text)
-        self.config['sub_diffusive'][0] = sub_diffusive_min
-        self.config['immobile'][1] = sub_diffusive_min - 0.001
+        self.config.loc[0, 'sub_diffusive'] = sub_diffusive_min
+        self.config.loc[1, 'immobile'] = sub_diffusive_min - 0.001
         self.dialog.txt_immobile_max.setText(f"{self.config['immobile'][1]}")
 
     def diffusive_changed(self, text):
         diffusive_min = float(text)
-        self.config['diffusive'][0] = diffusive_min
-        self.config['sub_diffusive'][1] = diffusive_min - 0.001
+        self.config.loc[0, 'diffusive'] = diffusive_min
+        self.config.loc[1, 'sub_diffusive'] = diffusive_min - 0.001
         self.dialog.txt_subdiffusive_max.setText(
             f"{self.config['sub_diffusive'][1]}")
 
     def active_changed(self, text):
         active_min = float(text)
-        self.config['active'][0] = active_min
-        self.config['diffusive'][1] = active_min - 0.001
+        self.config.loc[0, 'active'] = active_min
+        self.config.loc[1, 'diffusive'] = active_min - 0.001
         self.dialog.txt_diffusive_max.setText(f"{self.config['diffusive'][1]}")
 
     def save_changes(self):
