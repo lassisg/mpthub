@@ -72,7 +72,7 @@ section "install"
 	
 	# Files added here should be removed by the uninstaller (see section "uninstall")
 	file /r "dist\MPTHub\*.*"
-	; file "dist\MPTHub\ui\icons\node-magnifier.ico"
+	
 	# Add any other files for the install directory (license files, app data, etc) here
  
 	# Uninstaller - See function un.onInit and section "uninstall" for configuration
@@ -80,7 +80,7 @@ section "install"
  
 	# Start Menu
 	createDirectory "$SMPROGRAMS\${COMPANYNAME}"
-	createShortCut "$SMPROGRAMS\${APPNAME}.lnk" "$INSTDIR\app.exe" "" "$INSTDIR\mpt\icons\node-magnifier.ico"
+	createShortCut "$SMPROGRAMS\${APPNAME}.lnk" "$INSTDIR\MPTHub.exe" "" "$INSTDIR\_internal\ui\resources\icons\node-magnifier.ico"
  
 ; 	# Registry information for add/remove programs
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
